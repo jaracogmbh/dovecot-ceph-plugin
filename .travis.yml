@@ -3,9 +3,7 @@ language: cpp
 services:
 - docker
 env:
-- DOVECOT="release-2.2.21"
 - DOVECOT="master-2.3"
-- DOVECOT="master-2.2"
 before_install:
 - docker volume create --name ceph_config
 - docker network create --driver=bridge --subnet=192.168.100.0/24 --gateway=192.168.100.1 ceph_network
@@ -17,7 +15,7 @@ before_install:
 - docker exec build apt-get -qq upgrade
 before_script:
 - docker exec build sh -c 'cd /usr/local/src/dovecot; git pull origin $SOURCE_VERSION'
-- docker exec build sh -c 'cd /usr/local/src/dovecot; make install'
+- docker exec build sh -c '<cd /usr/local/src/dovecot; make install'
 script:
 - docker exec build sh -c 'cd repo; ./autogen.sh'
 - docker exec build sh -c 'cd repo; ./configure --with-dovecot=/usr/local/lib/dovecot --enable-maintainer-mode --enable-debug --with-integration-tests --enable-valgrind --enable-debug'
@@ -28,7 +26,6 @@ script:
 - docker exec ceph_demo sh -c 'ceph tell mon.\* injectargs "--mon-allow-pool-delete=true"'
 - travis_wait 30 docker exec build sh -c 'cd repo/src/tests; make check-valgrind'
 - docker exec build sh -c 'cd repo; cat src/tests/test-suite-memcheck.log'
-#- travis_wait 30 docker exec build sh -c 'cd repo/src/tests; make check'
 - docker exec build sh -c 'ldconfig'
 - docker exec build sh -c 'chmod -R 777 /usr/local/var/'
 - docker exec --detach build sh -c 'service dovecot.service start'
@@ -69,7 +66,3 @@ after_script:
 - docker rm build ceph_demo
 - docker network rm ceph_network
 - docker volume rm ceph_config
-
-notifications:
-  slack:
-    secure: CZ4/u+Hl2K2/YIsjwJoghhO3zm5XkJffiXk7voppIBFSLTUHPEgSSsZCdcBgNUSh/gjMI23geQb5PgTcfuVjuexDuX5RH43pRLHKJoFPK4UHkUEucebUY1O5K0Czvw0s1Y5YWWBWoJCsYf540kIA7hi4PoyPQ+dUC0bUItYs8APLrsz2BssEnbWR9W0mo7v4N43+KSDUObxnpNGTUVhepogrw4/cmcpUeqJU0c+lt9QpV4wMkoiRgBVfX696SCegPTOq/CtOhTzHJ5R65Bv+7zImA+/AYpRtIvkJMoHY5brRNm3bYz7an0QnFJq5B+K52Q/1CU7qhH6iED/Do35HvhW7DWJ3NBnV49vD4hR8Gam0nhHsqgd8zDpA4pIYHpC2GjXKnKk5GETIz+Ju0aepccheyLzxEK1wZKM4heMVdizA4KMyYDSGyAkElWuJhCQ0SXO8NVwH5onpQtU9rWWgGAXAV4qnHoxXzsqexw6bE7sik2h/SVUdXYmhKDT4gGUlFH+RN/5xGnMOaaYYduYi4z2ueMANw6PfROT64arsRKyFaCby9MT1YgOGtDyXee2o1RfyI1FbOTEzb+q/yOrUnk0eExBzSBi8dYjJwccY2A57bYfTNYtNLDXbsQmuVjeBiZuc1RujOsnfPpklgcWAj59OwcmkjlCzrU9uC7/vzKI=
