@@ -1,0 +1,10 @@
+name: build_plugin
+on: [push]
+jobs:
+  check-bats-version:
+    runs-on: cephdovecot/travis-build-master-2.3:latest sh
+    steps:
+      - uses: actions/checkout@v2
+      - run: ./autogen.sh
+      - run: ./configure --with-dovecot=/usr/local/lib/dovecot --enable-maintainer-mode --enable-debug --with-integration-tests --enable-valgrind --enable-debug'
+      - run: make clean install
