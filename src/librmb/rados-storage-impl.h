@@ -49,7 +49,7 @@ class RadosStorageImpl : public RadosStorage {
 
   int aio_operate(librados::IoCtx *io_ctx_, const std::string &oid, librados::AioCompletion *c,
                   librados::ObjectWriteOperation *op) override;
-  librados::NObjectIterator find_mails(const RadosMetadata *attr) override;
+  std::set<std::string> find_mails(const RadosMetadata *attr) override;
   
   std::set<std::string> find_mails_async(const RadosMetadata *attr, std::string &pool_name, int num_threads, void (*ptr)(std::string&)) override;
 
@@ -57,18 +57,17 @@ class RadosStorageImpl : public RadosStorage {
   int open_connection(const std::string &poolname, const std::string &clustername,
                       const std::string &rados_username) override;
   void close_connection() override;
-  bool wait_for_write_operations_complete(librados::AioCompletion *completion,
-                                          librados::ObjectWriteOperation *write_operation) override;
+  
 
   bool wait_for_rados_operations(const std::list<librmb::RadosMail *> &object_list) override;
 
-  int read_mail(const std::string &oid, std::string *buffer) override;
+  int read_mail(const std::string &oid, std::iostream *buffer) override;
   int move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
            std::list<RadosMetadata> &to_update, bool delete_source) override;
   int copy(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
            std::list<RadosMetadata> &to_update) override;
 
-  int save_mail(const std::string &oid, std::string &buffer) override;
+  int save_mail(const std::string &oid, std::iostream &buffer) override;
   bool save_mail(RadosMail *mail) override;
   int save_mail_write_chunk(librmb::RadosMail *rados_mail,const unit64_t chunk_size) override;
   /***SARA*/
@@ -92,6 +91,8 @@ class RadosStorageImpl : public RadosStorage {
   std::string& convert_set_to_string( const std::set<std::string> &oids );
   std::set<std::string>& convert_string_to_set(std::string &buffer);
   std::string to_string(ceph::bufferlist& object);
+  bool wait_for_write_operations_complete(librados::AioCompletion *completion,
+                                          librados::ObjectWriteOperation *write_operation) override;
 
  private:
   RadosCluster *cluster;

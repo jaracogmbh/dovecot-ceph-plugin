@@ -16,7 +16,7 @@ docker exec ceph_dovecot_build sh -c 'cd /usr/local/src/dovecot; git fetch origi
 docker exec ceph_dovecot_build sh -c 'cd /usr/local/src/dovecot; git checkout 2.3.15'
 docker exec ceph_dovecot_build sh -c 'cd /usr/local/src/dovecot; ./autogen.sh && ./configure --enable-maintainer-mode --enable-devel-checks --with-zlib'
 docker exec ceph_dovecot_build sh -c 'cd /usr/local/src/dovecot; make install'
-#docker exec ceph_dovecot_build sh -c './autogen.sh && ./configure --with-dovecot=/usr/local/lib/dovecot --enable-maintainer-mode --enable-debug --with-integration-tests --enable-valgrind --enable-debug'
+docker exec ceph_dovecot_build sh -c './autogen.sh && ./configure --with-dovecot=/usr/local/lib/dovecot --enable-maintainer-mode --enable-debug --with-integration-tests --enable-valgrind --enable-debug'
 
 docker exec ceph_cluster_demo sh -c 'cp -r /etc/ceph/* /root/cfg'
 docker exec ceph_dovecot_build sh -c 'chmod 777 /etc/ceph/*'

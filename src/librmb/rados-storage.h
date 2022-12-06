@@ -108,7 +108,7 @@ class RadosStorage {
    * @param[in] attr a list of filter attributes
    *
    * @return object iterator or librados::NObjectIterator::__EndObjectIterator */
-  virtual librados::NObjectIterator find_mails(const RadosMetadata *attr) = 0;
+  virtual std::set<std::string> find_mails(const RadosMetadata *attr) = 0;
 
 
   virtual std::set<std::string> find_mails_async(const RadosMetadata *attr, 
@@ -140,8 +140,8 @@ class RadosStorage {
    * @param[in] completion_op_map map of write operations with matching completion objects.
    * @return false if successful !!!!
    *  */
-  virtual bool wait_for_write_operations_complete(librados::AioCompletion *completion,
-                                                  librados::ObjectWriteOperation *write_operation) = 0;
+  // virtual bool wait_for_write_operations_complete(librados::AioCompletion *completion,
+  //                                                 librados::ObjectWriteOperation *write_operation) = 0;
   /*!
    * wait for all rados operations
    *
@@ -158,12 +158,12 @@ class RadosStorage {
    *
    * @return linux errorcode or 0 if successful
    * */
-  virtual int save_mail(const std::string &oid, std::string &buffer) = 0;
+  virtual int save_mail(const std::string &oid, std::iostream &buffer) = 0;
 
   /**
    * append oid to index object
   */
-  virtual int ceph_index_append(const std::string &oid) = 0;
+  // virtual int ceph_index_append(const std::string &oid) = 0;
 
   /**
    * append oids to index object
@@ -194,7 +194,7 @@ class RadosStorage {
    * @param[out] buffer valid ptr to bufferlist.
    * @return linux errorcode or 0 if successful
    * */
-  virtual int read_mail(const std::string &oid, std::string *buffer) = 0;
+  virtual int read_mail(const std::string &oid, std::iostream *buffer) = 0;
   /*! move a object from the given namespace to the other, updates the metadata given in to_update list
    *
    * @param[in] src_oid unique identifier of source object

@@ -179,14 +179,14 @@ int RadosStorageImpl::save_mail_write_chunk(librmb::RadosMail *rados_mail,const 
 
   return ret_val;
 }
-int RadosStorageImpl::save_mail(const std::string &oid, std::string &buffer) {
+int RadosStorageImpl::save_mail(const std::string &oid, std::iostream &buffer) {
   librados::bufferlist& ceph_buffer;
   ceph_buffer.append(oid,buffer);
 
   return get_io_ctx().write_full(oid, ceph_buffer);
 }
 
-int RadosStorageImpl::read_mail(const std::string &oid, std::string *buffer) {
+int RadosStorageImpl::read_mail(const std::string &oid, std::iostream *buffer) {
   if (!cluster->is_connected() || !io_ctx_created) {
     return -1;
   }
@@ -236,12 +236,34 @@ void RadosStorageImpl::set_namespace(const std::string &_nspace) {
   this->nspace = _nspace;
 }
 
-librados::NObjectIterator RadosStorageImpl::find_mails(const RadosMetadata *attr) {
+// librados::NObjectIterator RadosStorageImpl::find_mails(const RadosMetadata *attr) {
+//   if (!cluster->is_connected() || !io_ctx_created) {
+//     return librados::NObjectIterator::__EndObjectIterator;
+//   }
+
+//   if (attr != nullptr) {
+//     std::string filter_name = PLAIN_FILTER_NAME;
+//     ceph::bufferlist filter_bl;
+
+//     encode(filter_name, filter_bl);
+//     encode("_" + attr->key, filter_bl);
+//     encode(attr->bl.to_str(), filter_bl);
+
+//     return get_io_ctx().nobjects_begin(filter_bl);
+//   } else {
+//     return get_io_ctx().nobjects_begin();
+//   }
+// }
+
+std::set<std::string> RadosStorageImpl::find_mails(const RadosMetadata *attr){
   if (!cluster->is_connected() || !io_ctx_created) {
-    return librados::NObjectIterator::__EndObjectIterator;
+    return nullptr;
   }
 
+  librados::NObjectIterator iter_guid;
+  std::set<std::string> oid_list;
   if (attr != nullptr) {
+
     std::string filter_name = PLAIN_FILTER_NAME;
     ceph::bufferlist filter_bl;
 
@@ -249,10 +271,15 @@ librados::NObjectIterator RadosStorageImpl::find_mails(const RadosMetadata *attr
     encode("_" + attr->key, filter_bl);
     encode(attr->bl.to_str(), filter_bl);
 
-    return get_io_ctx().nobjects_begin(filter_bl);
-  } else {
-    return get_io_ctx().nobjects_begin();
+    iter_guid= get_io_ctx().nobjects_begin(filter_bl);
+  }else {
+    iter_guid= get_io_ctx().nobjects_begin();
   }
+  while (iter_guid != librados::NObjectIterator::__EndObjectIterator) {
+        oid_list.append((*iter_guid).get_oid());
+        iter_guid++;
+  } 
+  return oid_list;
 }
 /**
  * POC Implementation: 
