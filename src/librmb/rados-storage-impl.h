@@ -25,6 +25,7 @@
 
 #include "rados-mail.h"
 #include "rados-storage.h"
+
 namespace librmb {
 
 class RadosStorageImpl : public RadosStorage {
@@ -32,7 +33,7 @@ class RadosStorageImpl : public RadosStorage {
   explicit RadosStorageImpl(RadosCluster *cluster);
   virtual ~RadosStorageImpl();
 
-  librados::IoCtx &get_io_ctx() override;
+  librados::IoCtx &get_io_ctx();
   int stat_mail(const std::string &oid, uint64_t *psize, time_t *pmtime) override;
   void set_namespace(const std::string &_nspace) override;
   std::string get_namespace() override { return nspace; }
@@ -48,9 +49,9 @@ class RadosStorageImpl : public RadosStorage {
   int delete_mail(const std::string &oid) override;
 
   int aio_operate(librados::IoCtx *io_ctx_, const std::string &oid, librados::AioCompletion *c,
-                  librados::ObjectWriteOperation *op) override;
+                  librados::ObjectWriteOperation *op);
   std::set<std::string> find_mails(const RadosMetadata *attr) override;
-  
+  // librados::NObjectIterator find_mails (const RadosMetadata *attr) override;
   std::set<std::string> find_mails_async(const RadosMetadata *attr, std::string &pool_name, int num_threads, void (*ptr)(std::string&)) override;
 
   int open_connection(const std::string &poolname) override;
@@ -69,30 +70,29 @@ class RadosStorageImpl : public RadosStorage {
 
   int save_mail(const std::string &oid, std::iostream &buffer) override;
   bool save_mail(RadosMail *mail) override;
-  int save_mail_write_chunk(librmb::RadosMail *rados_mail,const unit64_t chunk_size) override;
-  /***SARA*/
-  // bool save_mail(librados::ObjectWriteOperation *write_op_xattr, RadosMail *mail) override;
+  int save_mail_write_chunk(librmb::RadosMail *rados_mail,const uint64_t chunk_size) override;
+  bool save_mail(librados::ObjectWriteOperation *write_op_xattr, RadosMail *mail);
   librmb::RadosMail *alloc_rados_mail() override;
 
   void free_rados_mail(librmb::RadosMail *mail) override;
 
-  int ceph_index_append(const std::string &oid)  override;
-  int ceph_index_append(const std::set<std::string> &oids)  override;
-  int ceph_index_overwrite(const std::set<std::string> &oids)  override;
-  std::set<std::string> ceph_index_read() override;
-  int ceph_index_delete(const std::set<std::string> &oids) override;
+  int ceph_index_append(const std::string &oid);
+  int ceph_index_append(const std::set<std::string> &oids);
+  int ceph_index_overwrite(const std::set<std::string> &oids);
+  std::set<std::string> ceph_index_read();
+  int ceph_index_delete(const std::set<std::string> &oids);
 
  private:
  /***SARA:This method exsited on RadosStorage.
   *  BUT it can be a private method here because it is only used in RadosStorageImpl.cpp*/
   int split_buffer_and_exec_op(RadosMail *current_object, librados::ObjectWriteOperation *write_op_xattr,
-                               const uint64_t &max_write) override;
+                               const uint64_t &max_write);
   int create_connection(const std::string &poolname);
   std::string& convert_set_to_string( const std::set<std::string> &oids );
   std::set<std::string>& convert_string_to_set(std::string &buffer);
   std::string to_string(ceph::bufferlist& object);
   bool wait_for_write_operations_complete(librados::AioCompletion *completion,
-                                          librados::ObjectWriteOperation *write_operation) override;
+                                          librados::ObjectWriteOperation *write_operation);
 
  private:
   RadosCluster *cluster;

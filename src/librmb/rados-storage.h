@@ -21,6 +21,7 @@
 #include "rados-mail.h"
 #include "rados-types.h"
 
+
 namespace librmb {
 /** class RadosStorage
  *  brief an abstract Rados Storage
@@ -110,7 +111,7 @@ class RadosStorage {
    * @return object iterator or librados::NObjectIterator::__EndObjectIterator */
   virtual std::set<std::string> find_mails(const RadosMetadata *attr) = 0;
 
-
+  // virtual librados::NObjectIterator find_mails (const RadosMetadata *attr)=0;
   virtual std::set<std::string> find_mails_async(const RadosMetadata *attr, 
                                                  std::string &pool_name, 
                                                  int num_threads,
@@ -246,7 +247,7 @@ class RadosStorage {
    * */
   virtual void free_rados_mail(librmb::RadosMail *mail) = 0;
 /*save mail from chunks, metadata and main mail save process is done once*/
-  virtual int save_mail_write_chunk(librmb::RadosMail *rados_mail,const unit64_t chunk_size)=0;
+  virtual int save_mail_write_chunk(librmb::RadosMail *rados_mail,const uint64_t chunk_size)=0;
 
 };
 

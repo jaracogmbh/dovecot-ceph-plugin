@@ -67,10 +67,6 @@ static ssize_t o_stream_buffer_sendv(struct ostream_private *stream, const struc
     stream->ostream.offset += iov[i].iov_len;
     ret += iov[i].iov_len;
   }
-
-  if (bstream->execute_write_ops) {
-      bstream->rados_storage->append(&bstream->rados_mail->get_oid(),&bstream->buf,INT_MAX);
-  }
   return ret;
 }
 

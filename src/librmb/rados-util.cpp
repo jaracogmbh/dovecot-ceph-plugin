@@ -23,6 +23,8 @@
 #include <cctype>
 #include <algorithm>
 #include "encoding.h"
+#include "rados-storage-impl.h"
+
 
 namespace librmb {
 
@@ -228,7 +230,7 @@ bool RadosUtils::validate_metadata(map<string, ceph::bufferlist> *metadata) {
   return test == 0;
 }
 // assumes that destination is open and initialized with uses namespace
-int RadosUtils::move_to_alt(std::string &oid, RadosStorageImplImpl *primary, RadosStorageImplImpl *alt_storage,
+int RadosUtils::move_to_alt(std::string &oid, RadosStorageImpl *primary, RadosStorageImpl *alt_storage,
                             RadosMetadataStorage *metadata, bool inverse) {
   int ret = -1;
   ret = copy_to_alt(oid, oid, primary, alt_storage, metadata, inverse);
@@ -242,60 +244,58 @@ int RadosUtils::move_to_alt(std::string &oid, RadosStorageImplImpl *primary, Rad
   return ret;
 }
 
-/****SARA : there is no use of this method. 
-   * Also it invokes save_mail from RadosStorage that does not exsit anymore****/
-// int RadosUtils::copy_to_alt(std::string &src_oid, std::string &dest_oid, RadosStorageImpl *primary,
-//                             RadosStorageImpl *alt_storage, RadosMetadataStorage *metadata, bool inverse) {
-//   int ret = 0;
+int RadosUtils::copy_to_alt(std::string &src_oid, std::string &dest_oid, RadosStorageImpl *primary,
+                            RadosStorageImpl *alt_storage, RadosMetadataStorage *metadata, bool inverse) {
+  int ret = 0;
 
-//   // TODO(jrse) check that storage is connected and open.
-//   if (primary == nullptr || alt_storage == nullptr) {
-//     return 0;
-//   }
+  // TODO(jrse) check that storage is connected and open.
+  if (primary == nullptr || alt_storage == nullptr) {
+    return 0;
+  }
 
-//   RadosMail mail;
-//   mail.set_oid(src_oid);
+  RadosMail mail;
+  mail.set_oid(src_oid);
 
-//   librados::bufferlist *bl = new librados::bufferlist();
-//   mail.set_mail_buffer(bl);
+  // librados::bufferlist *bl = new librados::bufferlist();
+  // mail.set_mail_buffer(bl);
+  std::iostream *buffer;
+  if (inverse) {
+    ret = alt_storage->read_mail(src_oid, buffer);
+    metadata->get_storage()->set_io_ctx(&alt_storage->get_io_ctx());
+  } else {
+    ret = primary->read_mail(src_oid, buffer);
+  }
 
-//   if (inverse) {
-//     ret = alt_storage->read_mail(src_oid, mail.get_mail_buffer());
-//     metadata->get_storage()->set_io_ctx(&alt_storage->get_io_ctx());
-//   } else {
-//     ret = primary->read_mail(src_oid, mail.get_mail_buffer());
-//   }
+  if (ret < 0) {
+    metadata->get_storage()->set_io_ctx(&primary->get_io_ctx());
+    return ret;
+  }
+  mail.set_mail_size(mail.get_mail_buffer()->length());
 
-//   if (ret < 0) {
-//     metadata->get_storage()->set_io_ctx(&primary->get_io_ctx());
-//     return ret;
-//   }
-//   mail.set_mail_size(mail.get_mail_buffer()->length());
+  // load the metadata;
+  ret = metadata->get_storage()->load_metadata(&mail);
+  if (ret < 0) {
+    return ret;
+  }
 
-//   // load the metadata;
-//   ret = metadata->get_storage()->load_metadata(&mail);
-//   if (ret < 0) {
-//     return ret;
-//   }
+  mail.set_oid(dest_oid);
 
-//   mail.set_oid(dest_oid);
+  librados::ObjectWriteOperation write_op;  // = new librados::ObjectWriteOperation();
+  metadata->get_storage()->save_metadata(&write_op, &mail);
 
-//   librados::ObjectWriteOperation write_op;  // = new librados::ObjectWriteOperation();
-//   metadata->get_storage()->save_metadata(&write_op, &mail);
+  bool success;
+  if (inverse) {
+    success = primary->save_mail(&write_op, &mail);
+  } else {
+    success = alt_storage->save_mail(&write_op, &mail);
+  }
 
-//   bool success;
-//   if (inverse) {
-//     success = primary->save_mail(&write_op, &mail);
-//   } else {
-//     success = alt_storage->save_mail(&write_op, &mail);
-//   }
+  if (!success) {
+    return 0;
+  }
 
-//   if (!success) {
-//     return 0;
-//   }
-
-//   return success ? 0 : 1;
-// }
+  return success ? 0 : 1;
+}
 
 static std::vector<std::string> RadosUtils::extractPgs(const std::string& str)
 {

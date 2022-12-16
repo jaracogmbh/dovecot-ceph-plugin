@@ -121,7 +121,7 @@ class RboxDoveadmPlugin {
 
  public:
   librmb::RadosCluster *cluster;
-  librmb::RadosStorage *storage;
+  librmb::RadosStorageImpl *storage;
   librmb::RadosDovecotCephCfg *config;
 };
 
@@ -890,6 +890,7 @@ static int iterate_list_objects(struct mail_namespace* ns, const struct mailbox_
   if (mailbox_transaction_commit(&mailbox_transaction) < 0) {
     return -1;
   }
+  
   mailbox_free(&box);
   
   return 0;

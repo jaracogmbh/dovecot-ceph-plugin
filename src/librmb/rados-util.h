@@ -27,6 +27,7 @@
 #include "rados-storage.h"
 #include "rados-metadata-storage.h"
 #include "rados-types.h"
+#include "rados-storage-impl.h"
 
 namespace librmb {
 
@@ -126,10 +127,8 @@ class RadosUtils {
    * @return linux error code or 0 if sucessful
    */
   
-  /****SARA: there is no use of this method. 
-   * Also it invokes save_mail from RadosStorage that does not exsit anymore****/
-  // static int copy_to_alt(std::string &src_oid, std::string &dest_oid, RadosStorage *primary, RadosStorage *alt_storage,
-  //                        RadosMetadataStorage *metadata, bool inverse);
+ 
+ 
   /*!
    * move object to alternative storage
    * @param[in] src_oid
@@ -140,7 +139,7 @@ class RadosUtils {
    * @param[in] bool inverse if true, move from alt to primary.
    * @return linux error code or 0 if sucessful
    */
-  static int move_to_alt(std::string &oid, RadosStorage *primary, RadosStorage *alt_storage,
+  static int move_to_alt(std::string &oid, RadosStorageImpl *primary, RadosStorageImpl *alt_storage,
                          RadosMetadataStorage *metadata, bool inverse);
   /*!
    * increment (add) value directly on osd
@@ -200,6 +199,9 @@ class RadosUtils {
   static std::vector<std::string> split(std::string str_to_split, char delimiter);
   static std::string& convert_set_to_string( const std::set<std::string> &oids );
   static std::set<std::string>& convert_string_to_set(std::string &buffer);
+  private:
+  static int copy_to_alt(std::string &src_oid, std::string &dest_oid, RadosStorageImpl *primary, RadosStorageImpl *alt_storage,
+                         RadosMetadataStorage *metadata, bool inverse);
 
 };
 

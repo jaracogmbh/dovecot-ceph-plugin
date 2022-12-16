@@ -427,7 +427,7 @@ int repair_namespace(struct mail_namespace *ns, bool force, struct rbox_storage 
         FUNC_END();
         return -1;
       }
-
+      
       mail_index_lock_sync(box->index, "LOCKED_FOR_REPAIR");
       
       if(rados_mails.size() == 0) {
@@ -485,6 +485,7 @@ int repair_namespace(struct mail_namespace *ns, bool force, struct rbox_storage 
           //   iter_guid++;
           // } 
           mail_list= r_storage->s->find_mails(nullptr);
+          i_info("find_mail is working correctly and mail list is fulled by a set of STRING");
         }           
         
         i_info("Loading mail metadata...");
