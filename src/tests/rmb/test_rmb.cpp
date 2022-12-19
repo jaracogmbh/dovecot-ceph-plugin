@@ -148,11 +148,12 @@ TEST(rmb1, rmb_commands_no_objects_found) {
   librmb::RmbCommands rmb_cmd(&storage_mock, &cluster_mock, &opts);
   std::list<librmb::RadosMail *> mails;
   std::string search_string = "uid";
-  const librados::NObjectIterator iter = librados::NObjectIterator::__EndObjectIterator;
-  librados::IoCtx test_ioctx;
+  // const librados::NObjectIterator iter = librados::NObjectIterator::__EndObjectIterator;
+  std::set<std::string> iter;
+  // librados::IoCtx test_ioctx;
 
   EXPECT_CALL(storage_mock, find_mails(nullptr)).WillRepeatedly(Return(iter));
-  EXPECT_CALL(storage_mock, get_io_ctx()).WillRepeatedly(ReturnRef(test_ioctx));
+  // EXPECT_CALL(storage_mock, get_io_ctx()).WillRepeatedly(ReturnRef(test_ioctx));
   EXPECT_CALL(storage_mock, stat_mail(_, _, _)).WillRepeatedly(Return(0));
   int ret = rmb_cmd.load_objects(&ms_module_mock, mails, search_string);
   EXPECT_EQ(ret, 0);

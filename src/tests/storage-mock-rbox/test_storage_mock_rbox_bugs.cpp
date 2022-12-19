@@ -100,11 +100,11 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
   delete storage->s;
   librmbtest::RadosStorageMock *storage_mock = new librmbtest::RadosStorageMock();
 
-  EXPECT_CALL(*storage_mock, aio_operate(_,_,_,_)).Times(AtLeast(1)).WillRepeatedly(Return(0));
-  EXPECT_CALL(*storage_mock, wait_for_write_operations_complete(_,_)).WillRepeatedly(Return(false));//failed = false
+  // EXPECT_CALL(*storage_mock, aio_operate(_,_,_,_)).Times(AtLeast(1)).WillRepeatedly(Return(0));
+  // EXPECT_CALL(*storage_mock, wait_for_write_operations_complete(_,_)).WillRepeatedly(Return(false));//failed = false
  
   librados::IoCtx test_ioctx;
-  EXPECT_CALL(*storage_mock, get_io_ctx()).WillRepeatedly(ReturnRef(test_ioctx));
+  // EXPECT_CALL(*storage_mock, get_io_ctx()).WillRepeatedly(ReturnRef(test_ioctx));
 
   EXPECT_CALL(*storage_mock, set_ceph_wait_method(_)).Times(1);
 
@@ -258,11 +258,11 @@ TEST_F(StorageTest, save_mail_success) {
 
   librmbtest::RadosStorageMock *storage_mock = new librmbtest::RadosStorageMock();
 
-  EXPECT_CALL(*storage_mock, aio_operate(_,_,_,_)).Times(AtLeast(1)).WillRepeatedly(Return(0));
-  EXPECT_CALL(*storage_mock, wait_for_write_operations_complete(_,_)).WillRepeatedly(Return(false));//failed = false
+  // EXPECT_CALL(*storage_mock, aio_operate(_,_,_,_)).Times(AtLeast(1)).WillRepeatedly(Return(0));
+  // EXPECT_CALL(*storage_mock, wait_for_write_operations_complete(_,_)).WillRepeatedly(Return(false));//failed = false
   librados::IoCtx io_ctx;
 
-  EXPECT_CALL(*storage_mock, get_io_ctx()).WillRepeatedly(ReturnRef(io_ctx));
+  // EXPECT_CALL(*storage_mock, get_io_ctx()).WillRepeatedly(ReturnRef(io_ctx));
 
   EXPECT_CALL(*storage_mock, set_ceph_wait_method(_)).Times(1);
 

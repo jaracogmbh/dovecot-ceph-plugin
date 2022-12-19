@@ -257,6 +257,7 @@ void RadosStorageImpl::set_namespace(const std::string &_nspace) {
 // }
 
 std::set<std::string> RadosStorageImpl::find_mails(const RadosMetadata *attr){
+  
   if (!cluster->is_connected() || !io_ctx_created) {
     return ;
   }

@@ -32,6 +32,8 @@ using librmb::RadosStorageMetadataModule;
 class RadosStorageMock : public RadosStorage {
  public:
   // MOCK_METHOD0(get_io_ctx, librados::IoCtx &());
+  // MOCK_METHOD0(get_recovery_io_ctx, librados::IoCtx &());
+
   MOCK_METHOD3(stat_mail, int(const std::string &oid, uint64_t *psize, time_t *pmtime));
   MOCK_METHOD1(set_namespace, void(const std::string &nspace));
   MOCK_METHOD0(get_namespace, std::string());
@@ -52,37 +54,43 @@ class RadosStorageMock : public RadosStorage {
   //                               librados::ObjectWriteOperation *op));
   MOCK_METHOD1(find_mails, std::set<std::string>(const RadosMetadata *attr));
   MOCK_METHOD1(open_connection, int(const std::string &poolname));
+  MOCK_METHOD2(open_connection, int(const std::string &poolname, const std::string &index_pool));
 
   MOCK_METHOD4(find_mails_async, std::set<std::string>(const RadosMetadata *attr, std::string &pool_name,int num_threads, void (*ptr)(std::string&)));
+
+  MOCK_METHOD4(open_connection,
+               int(const std::string &poolname, const std::string &index_pool, const std::string &clustername, const std::string &rados_username));
 
   MOCK_METHOD3(open_connection,
                int(const std::string &poolname, const std::string &clustername, const std::string &rados_username));
   MOCK_METHOD0(close_connection, void());
   // MOCK_METHOD2(wait_for_write_operations_complete,
-              //  bool(librados::AioCompletion *completion, librados::ObjectWriteOperation *write_operation));
+  //              bool(librados::AioCompletion *completion, librados::ObjectWriteOperation *write_operation));
   MOCK_METHOD1(wait_for_rados_operations, bool(const std::list<librmb::RadosMail *> &object_list));
   MOCK_METHOD1(set_ceph_wait_method, void(enum librmb::rbox_ceph_aio_wait_method wait_method));
-  MOCK_METHOD2(read_mail, int(const std::string &oid, std::string *buffer));
+  MOCK_METHOD2(read_mail, int(const std::string &oid, std::iostream *buffer));
   MOCK_METHOD6(move, int(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
                          std::list<RadosMetadata> &to_update, bool delete_source));
 
   MOCK_METHOD5(copy, int(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
                          std::list<RadosMetadata> &to_update));
-  MOCK_METHOD2(save_mail, int(const std::string &oid, std::string &bufferlist));
+  MOCK_METHOD2(save_mail, int(const std::string &oid,std::iostream &buffer ));
   MOCK_METHOD1(save_mail, bool(RadosMail *mail));
   // MOCK_METHOD2(save_mail, bool(librados::ObjectWriteOperation *write_op, RadosMail *mail));
   MOCK_METHOD0(alloc_rados_mail, librmb::RadosMail *());
 
   MOCK_METHOD1(free_rados_mail, void(librmb::RadosMail *mail));
 
-  MOCK_METHOD0(create_anker, int());
+  // MOCK_METHOD0(create_anker, int());
 
+  // MOCK_METHOD0(ceph_index_size,uint64_t());
 
-  MOCK_METHOD1(ceph_index_append,int(const std::string &oid));
+  // MOCK_METHOD1(ceph_index_append,int(const std::string &oid));
   MOCK_METHOD1(ceph_index_append,int(const std::set<std::string> &oids));
   MOCK_METHOD1(ceph_index_overwrite,int(const std::set<std::string> &oids));
   MOCK_METHOD0(ceph_index_read,std::set<std::string>());
   MOCK_METHOD1(ceph_index_delete,int(const std::set<std::string> &oids));
+  MOCK_METHOD2(save_mail_write_chunk,int(librmb::RadosMail *rados_mail,const uint64_t chunk_size));
 };
 
 class RadosStorageMetadataMock : public RadosStorageMetadataModule {
@@ -140,6 +148,8 @@ class RadosClusterMock : public RadosCluster {
 
   MOCK_METHOD0(deinit, void());
   MOCK_METHOD1(pool_create, int(const std::string &pool));
+  MOCK_METHOD2(recovery_index_io_ctx, int(const std::string &pool,librados::IoCtx *io_ctx));
+
   MOCK_METHOD2(io_ctx_create, int(const std::string &pool, librados::IoCtx *io_ctx));
   MOCK_METHOD2(get_config_option, int(const char *option, std::string *value));
   MOCK_METHOD0(is_connected, bool());
@@ -181,6 +191,8 @@ class RadosDovecotCephCfgMock : public RadosDovecotCephCfg {
   MOCK_METHOD0(get_config, std::map<std::string, std::string> *());
 
   MOCK_METHOD0(get_pool_name, std::string &());
+  MOCK_METHOD0(get_index_pool_name, std::string &());
+
   MOCK_METHOD0(is_update_attributes, bool());
 
   MOCK_METHOD2(update_metadata, void(const std::string &key, const char *value_));

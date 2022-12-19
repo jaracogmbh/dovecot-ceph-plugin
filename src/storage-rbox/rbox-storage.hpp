@@ -44,6 +44,7 @@ struct rbox_storage {
   librmb::RadosMetadataStorage *ms;
   librmb::RadosStorageImpl *alt;
   librmb::RadosSaveLog *save_log;
+  librmb::RadosStorage *s_mock;
 
   uint32_t corrupted_rebuild_count;
   bool corrupted;
