@@ -250,17 +250,17 @@ namespace librmb {
       return 0;
     }
 
-    RadosMail* mail;
+    RadosMail* mail = new RadosMail();
     mail->set_oid(src_oid);
 
     librados::bufferlist *bl = new librados::bufferlist();
     mail->set_mail_buffer(bl);
 
     if (inverse) {
-      ret = alt_storage->read_mail(src_oid,&mail);
+      ret = alt_storage->read_mail(src_oid,mail);
       metadata->get_storage()->set_io_ctx(&alt_storage->get_io_ctx());
     } else {
-      ret = primary->read_mail(src_oid,&mail);
+      ret = primary->read_mail(src_oid,mail);
     }
 
     if (ret < 0) {

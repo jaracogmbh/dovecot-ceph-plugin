@@ -202,7 +202,7 @@ TEST(librmb1, read_mail) {
   int ret_stat = storage.stat_mail(*obj->get_oid(), &size, &save_date);
 
   librados::bufferlist bl;
-  int copy_mail_ret = storage.read_mail(*obj->get_oid(),&obj);
+  int copy_mail_ret = storage.read_mail(*obj->get_oid(),obj);
   char *buff = new char[copy_mail_ret + 1];
   memset(buff, 1, size + 1);
   memcpy(buff, bl.to_str().c_str(), copy_mail_ret + 1);

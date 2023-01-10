@@ -614,7 +614,7 @@ int rbox_save_finish(struct mail_save_context *_ctx) {
       r_ctx->rados_mail->set_mail_size(r_ctx->output_stream->offset);
       rbox_save_mail_set_metadata(r_ctx, r_ctx->rados_mail);
       struct rbox_storage *r_storage = (struct rbox_storage *)&r_ctx->mbox->storage->storage;
-      r_ctx->failed=r_storage->s->save_mail(r_ctx->rados_mail)?false:true;
+      r_ctx->failed=r_storage->s->save_mail(r_ctx->rados_mail) ? false : true;
       if (r_ctx->failed) {
         i_error("saved mail: %s failed. Metadata_count %ld, mail_size (%d)", r_ctx->rados_mail->get_oid()->c_str(),
                 r_ctx->rados_mail->get_metadata()->size(), r_ctx->rados_mail->get_mail_size());

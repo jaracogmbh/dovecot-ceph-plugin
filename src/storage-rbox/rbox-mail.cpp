@@ -484,19 +484,19 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
     }
  
     /* Pop3 and virtual box needs this. it looks like rbox_index_mail_set_seq is not called. */
-    // if (rmail->rados_mail == nullptr) {
-    //   // make sure that mail_object is initialized,
-    //   // else create and load guid from index.
-    //   rmail->rados_mail = rados_storage->alloc_rados_mail();
-    //   if (rbox_get_index_record(_mail) < 0) {
-    //     i_error("Error rbox_get_index uid(%d)", _mail->uid);
-    //     FUNC_END();
-    //     return -1;
-    //   }
-    // }
+    if (rmail->rados_mail == nullptr) {
+       // make sure that mail_object is initialized,
+       // else create and load guid from index.
+       rmail->rados_mail = rados_storage->alloc_rados_mail();
+       if (rbox_get_index_record(_mail) < 0) {
+         i_error("Error rbox_get_index uid(%d)", _mail->uid);
+         FUNC_END();
+         return -1;
+       }
+    }    
     const std::string mail_oid=guid_128_to_string(rmail->index_oid);
-    ret=rados_storage->read_mail(mail_oid,&(rmail->rados_mail));
-    
+
+    ret=rados_storage->read_mail(mail_oid,rmail->rados_mail);
     
     if (ret < 0) {
       if (ret == -ENOENT) {
@@ -520,9 +520,7 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
       }
     }
     int physical_size = rmail->rados_mail->get_mail_size();
-    // rmail->rados_mail->set_mail_size(psize);
-    // rmail->rados_mail->set_rados_save_date(save_date);
-
+  
     if (physical_size == 0) {
       i_error(
           "trying to read a mail(%s) with size = 0, namespace(%s), alt_storage(%d) uid(%d), which is currently copied, "

@@ -125,24 +125,23 @@ int RadosStorageImpl::save_mail(const std::string &oid, librados::bufferlist &bu
   return get_io_ctx().write_full(oid, buffer);
 }
 
-int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail** mail){
-  assert((*mail) != nullptr);
-  // librmb::RadosMail* mail_ptr;
-  (*mail)=this->alloc_rados_mail();
-  (*mail)->set_oid(oid);
-  (*mail)->set_mail_buffer(new librados::bufferlist());
-
+int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail){
+  
   int ret=0;
   int stat_err = 0;
   int read_err = 0;
   uint64_t psize;
   time_t save_date;
-
+  
+  mail->set_oid(oid);
+ 
+  mail->set_mail_buffer(new librados::bufferlist());
+ 
   
   librados::ObjectReadOperation *read_op = new librados::ObjectReadOperation();
-  read_op->read(0, INT_MAX, (*mail)->get_mail_buffer(), &read_err);
+  read_op->read(0, INT_MAX, mail->get_mail_buffer(), &read_err);
   read_op->stat(&psize, &save_date, &stat_err);
-  ret=this->get_io_ctx().operate(oid, read_op, (*mail)->get_mail_buffer());
+  ret=this->get_io_ctx().operate(oid, read_op, mail->get_mail_buffer());
   
   if(ret == -ETIMEDOUT) {
     int max_retry = 10; //TODO FIX 
@@ -152,18 +151,14 @@ int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail** mail
         break;
       }
       usleep(((rand() % 5) + 1) * 10000);
-      delete (*mail);
-      (*mail)=nullptr;
     }
   }
   if(ret<0){
-    delete (*mail);
-    (*mail)=nullptr;
     return ret;
   }
   
-  (*mail)->set_mail_size(psize);
-  (*mail)->set_rados_save_date(&save_date);
+  mail->set_mail_size(psize);
+  mail->set_rados_save_date(&save_date);
   
   return ret;
 }
@@ -614,6 +609,7 @@ bool RadosStorageImpl::save_mail(librados::ObjectWriteOperation *write_op_xattr,
  ***/
 
 bool  RadosStorageImpl::save_mail(RadosMail *current_object){
+  
   bool ret_val=false;
   /*1-compare email size with Max allowed object size*/
   int object_size = current_object->get_mail_size();
@@ -628,7 +624,6 @@ bool  RadosStorageImpl::save_mail(RadosMail *current_object){
   librmb::RadosMetadataStorageDefault rados_metadata_storage (io_ctx_);
   rados_metadata_storage.save_metadata(&write_metadata,current_object);
   ret_val=execute_operation(*current_object->get_oid(), &write_metadata);
-  
   
   int max_write=get_max_write_size_bytes();
   uint64_t rest = object_size % max_write;
@@ -645,9 +640,8 @@ bool  RadosStorageImpl::save_mail(RadosMail *current_object){
     }
 
     if (div == 1) {
-      librados::ObjectWriteOperation write_op;
-      const librados::bufferlist& mail_buffer=*current_object->get_mail_buffer();
-      write_op.write(0,mail_buffer);
+      librados::ObjectWriteOperation write_op;      
+      write_op.write(0,*current_object->get_mail_buffer());
       ret_val=execute_operation(*current_object->get_oid(), &write_op);
     }
     else {
@@ -666,10 +660,7 @@ bool  RadosStorageImpl::save_mail(RadosMail *current_object){
       return ret_val;
     }
   }
-  librados::bufferlist *mail_buff_ = current_object->get_mail_buffer();
-  delete mail_buff_;
-  io_ctx_=nullptr;
-  delete io_ctx_;
+
   return ret_val;
 }
   

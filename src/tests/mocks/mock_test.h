@@ -70,7 +70,7 @@ class RadosStorageMock : public RadosStorage {
                bool(librados::AioCompletion *completion, librados::ObjectWriteOperation *write_operation));
   MOCK_METHOD1(wait_for_rados_operations, bool(const std::list<librmb::RadosMail *> &object_list));
   MOCK_METHOD1(set_ceph_wait_method, void(enum librmb::rbox_ceph_aio_wait_method wait_method));
-  MOCK_METHOD2(read_mail, int(const std::string &oid,librmb::RadosMail** mail));
+  MOCK_METHOD2(read_mail, int(const std::string &oid,librmb::RadosMail* mail));
   MOCK_METHOD6(move, int(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
                          std::list<RadosMetadata> &to_update, bool delete_source));
 
