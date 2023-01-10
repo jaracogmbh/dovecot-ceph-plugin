@@ -429,19 +429,17 @@ int RmbCommands::overwrite_ceph_object_index(std::set<std::string> &mail_oids){
 }
 std::set<std::string> RmbCommands::load_objects(librmb::RadosStorageMetadataModule *ms){
   std::set<std::string> mail_list;
-  librados::NObjectIterator iter_guid = storage->find_mails(nullptr);
-  while (iter_guid != librados::NObjectIterator::__EndObjectIterator) {
+  mail_list = storage->find_mails(nullptr);
+  std::set<std::string>::iterator it;
+  for(it=mail_list.begin();it!=mail_list.end();it++){
       librmb::RadosMail mail;
-      mail.set_oid((*iter_guid).get_oid());
+      mail.set_oid(*it);
      
       int load_metadata_ret = ms->load_metadata(&mail); 
       if (load_metadata_ret < 0 || !librmb::RadosUtils::validate_metadata(mail.get_metadata())) {    
-         std::cerr << "metadata for object : " << mail.get_oid()->c_str() << " is not valid, skipping object " << std::endl;
-         iter_guid++;     
+         std::cerr << "metadata for object : " << mail.get_oid()->c_str() << " is not valid, skipping object " << std::endl;    
          continue;
-      }
-      mail_list.insert((*iter_guid).get_oid());       
-      iter_guid++;     
+      }           
   } 
   return mail_list;
 }
@@ -464,28 +462,26 @@ int RmbCommands::load_objects(librmb::RadosStorageMetadataModule *ms, std::list<
   // TODO(jrse): Fix completions.....
   std::list<librados::AioCompletion *> completions;
   // load all objects metadata into memory
-  librados::NObjectIterator iter(storage->find_mails(nullptr));
-  while (iter != librados::NObjectIterator::__EndObjectIterator) {
+  std::set<std::string> mail_list=storage->find_mails(nullptr);
+  std::set<std::string>::iterator mail_iter;
+  for (mail_iter=mail_list.begin();mail_iter!=mail_list.end();mail_iter++) {
     librmb::RadosMail *mail = new librmb::RadosMail();
     AioStat *stat = new AioStat();
     stat->mail = mail;
     stat->mail_objects = &mail_objects;
     stat->load_metadata = load_metadata;
     stat->ms = ms;
-    std::string oid = iter->get_oid();
+    std::string oid = *mail_iter;
     stat->completion = librados::Rados::aio_create_completion(static_cast<void *>(stat), aio_cb, NULL);
     int ret = storage->get_io_ctx().aio_stat(oid, stat->completion, &stat->object_size, &stat->save_date_rados);
     if (ret != 0) {
       std::cout << " object '" << oid << "' is not a valid mail object, size = 0, ret code: " << ret << std::endl;
-      ++iter;
       delete mail;
       delete stat;
       continue;
     }
     mail->set_oid(oid);
     completions.push_back(stat->completion);
-
-    ++iter;
     if (is_debug) {
       std::cout << "added: mail " << *mail->get_oid() << std::endl;
     }

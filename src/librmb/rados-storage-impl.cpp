@@ -227,11 +227,12 @@ void RadosStorageImpl::set_namespace(const std::string &_nspace) {
   this->nspace = _nspace;
 }
 
-librados::NObjectIterator RadosStorageImpl::find_mails(const RadosMetadata *attr) {
+std::set<std::string> RadosStorageImpl::find_mails(const RadosMetadata *attr) {
   if (!cluster->is_connected() || !io_ctx_created) {
-    return librados::NObjectIterator::__EndObjectIterator;
+    return ;
   }
-
+  std::set<std::string> mail_list;
+  librados::NObjectIterator iter_guid;
   if (attr != nullptr) {
     std::string filter_name = PLAIN_FILTER_NAME;
     ceph::bufferlist filter_bl;
@@ -240,10 +241,15 @@ librados::NObjectIterator RadosStorageImpl::find_mails(const RadosMetadata *attr
     encode("_" + attr->key, filter_bl);
     encode(attr->bl.to_str(), filter_bl);
 
-    return get_io_ctx().nobjects_begin(filter_bl);
+    iter_guid=get_io_ctx().nobjects_begin(filter_bl);
   } else {
-    return get_io_ctx().nobjects_begin();
+    iter_guid=get_io_ctx().nobjects_begin();
   }
+  while (iter_guid != librados::NObjectIterator::__EndObjectIterator) {
+    mail_list.insert((*iter_guid).get_oid());
+    iter_guid++;
+  }
+  return mail_list;
 }
 /**
  * POC Implementation: 
@@ -665,7 +671,7 @@ bool  RadosStorageImpl::save_mail(RadosMail *current_object){
   io_ctx_=nullptr;
   delete io_ctx_;
   return ret_val;
-  }
+}
   
 librmb::RadosMail *RadosStorageImpl::alloc_rados_mail() { return new librmb::RadosMail(); }
 

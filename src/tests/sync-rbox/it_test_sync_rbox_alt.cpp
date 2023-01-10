@@ -49,12 +49,11 @@ static void copy_object(struct mail_namespace *_ns, struct mailbox *box) {
   struct rbox_storage *r_storage = (struct rbox_storage *)box->storage;
 
   librmb::RadosMetadata xattr(librmb::rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, box->name);
-  librados::NObjectIterator iter = r_storage->s->find_mails(&xattr);
-
+  std::set<std::string> mail_list = r_storage->s->find_mails(&xattr);
+  std::set<std::string>::iterator mail_iter;
   std::string oid;
-  while (iter != librados::NObjectIterator::__EndObjectIterator) {
-    oid = iter->get_oid();
-    iter++;
+  for(mail_iter=mail_list.begin();mail_iter!=mail_list.end();mail_iter++){
+    oid = *mail_iter;
   }
   EXPECT_TRUE(oid.length() > 0);
 

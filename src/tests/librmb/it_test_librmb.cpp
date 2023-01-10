@@ -66,7 +66,6 @@ TEST(librmb, split_write_operation) {
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
   std::cout << "accccc" << std::endl;
-  std::cout<<"obj_pointer_address::"<<&obj;
   bool ret_storage=storage.save_mail(&obj);
   std::cout << "lsdlslslss" << std::endl;
 
@@ -181,7 +180,7 @@ TEST(librmb1, read_mail) {
   obj->set_oid("test_oid");
   librados::IoCtx io_ctx;
 
-  librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
+  // librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
 
@@ -192,7 +191,7 @@ TEST(librmb1, read_mail) {
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
 
-  int ret_storage = storage.split_buffer_and_exec_op(obj, &op, max_size);
+  bool ret_storage = storage.save_mail(obj);
 
   // wait for op to finish.
   storage.wait_for_write_operations_complete(obj->get_completion(), obj->get_write_operation());
@@ -214,7 +213,7 @@ TEST(librmb1, read_mail) {
 
   // tear down
   cluster.deinit();
-  EXPECT_EQ(ret_storage, 0);
+  EXPECT_EQ(ret_storage, true);
   EXPECT_EQ(ret_stat, 0);
   EXPECT_EQ(ret_remove, 0);
   EXPECT_EQ(copy_mail_ret, 14);
@@ -253,12 +252,19 @@ TEST(librmb, load_metadata) {
 
   librmb::RadosMetadataStorageDefault ms(&storage.get_io_ctx());
 
-  ceph::bufferlist bl;
-  bl.append("xyz\0");
-  op.setxattr("A", bl);
-  op.setxattr("B", bl);
-
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
+  // ceph::bufferlist bl;
+  // bl.append("xyz\0");
+  // op.setxattr("A", bl);
+  // op.setxattr("B", bl);
+  std::string key="key_1";
+  std::string val="val_1";
+  const librmb::RadosMetadata rados_metadata_1=librmb::RadosMetadata::RadosMetadata(key,val);
+  obj.add_metadata(rados_metadata_1);
+  key="key_2";
+  val="val_2";
+  const librmb::RadosMetadata rados_metadata_2=librmb::RadosMetadata::RadosMetadata(key,val);
+  obj.add_metadata(rados_metadata_2);
+  bool ret_storage = storage.save_mail(&obj);
 
   ms.load_metadata(&obj);
   std::cout << "load metadata ok" << std::endl;
@@ -268,7 +274,7 @@ TEST(librmb, load_metadata) {
   int ret_stat = storage.stat_mail(*obj.get_oid(), &size, &save_date);
 
   EXPECT_EQ(buffer_length, size);
-  EXPECT_EQ(0, ret_storage);
+  EXPECT_EQ(true, ret_storage);
   EXPECT_EQ(0, ret_stat);
   EXPECT_EQ(0, (int)obj.get_num_active_op());
   EXPECT_EQ(2, (int)obj.get_metadata()->size());
@@ -315,12 +321,21 @@ TEST(librmb, AttributeVersions) {
 
   librmb::RadosMetadataStorageDefault ms(&storage.get_io_ctx());
 
-  ceph::bufferlist bl;
-  bl.append("xyz\0");
-  op.setxattr("A", bl);
+  // ceph::bufferlist bl;
+  // bl.append("xyz\0");
+  // op.setxattr("A", bl);
 
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
-  EXPECT_EQ(ret_storage, 0);
+  std::string key="key_1";
+  std::string val="val_1";
+  const librmb::RadosMetadata rados_metadata_1=librmb::RadosMetadata::RadosMetadata(key,val);
+  obj.add_metadata(rados_metadata_1);
+  key="key_2";
+  val="val_2";
+  const librmb::RadosMetadata rados_metadata_2=librmb::RadosMetadata::RadosMetadata(key,val);
+  obj.add_metadata(rados_metadata_2);
+
+  bool ret_storage = storage.save_mail(&obj);
+  EXPECT_EQ(ret_storage, true);
   
   // stat the object
   uint64_t size;
@@ -394,8 +409,8 @@ TEST(librmb, json_ima) {
   obj.add_metadata(attr4);
 
   ms.save_metadata(&op, &obj);
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
-  EXPECT_EQ(ret_storage, 0);
+  bool ret_storage = storage.save_mail(&obj);
+  EXPECT_EQ(ret_storage, true);
 
   // wait for op to finish.
   storage.wait_for_write_operations_complete(obj.get_completion(), obj.get_write_operation());
@@ -465,8 +480,8 @@ TEST(librmb, json_ima_2) {
   obj.add_metadata(attr4);
 
   ms.save_metadata(&op, &obj);
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
-  EXPECT_EQ(ret_storage, 0);
+  bool ret_storage = storage.save_mail(&obj);
+  EXPECT_EQ(ret_storage, true);
 
   // wait for op to finish.
   storage.wait_for_write_operations_complete(obj.get_completion(), obj.get_write_operation());
@@ -543,8 +558,8 @@ TEST(librmb, json_ima_3) {
   }
 
   ms.save_metadata(&op, &obj);
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
-  EXPECT_EQ(ret_storage, 0);
+  bool ret_storage = storage.save_mail(&obj);
+  EXPECT_EQ(ret_storage, true);
 
   // wait for op to finish.
   storage.wait_for_write_operations_complete(obj.get_completion(), obj.get_write_operation());
@@ -626,8 +641,8 @@ TEST(librmb, test_default_metadata_load_attributes) {
   }
 
   ms.save_metadata(&op, &obj);
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
-  EXPECT_EQ(ret_storage, 0);
+  bool ret_storage = storage.save_mail(&obj);
+  EXPECT_EQ(ret_storage, true);
 
   // wait for op to finish.
   storage.wait_for_write_operations_complete(obj.get_completion(), obj.get_write_operation());
