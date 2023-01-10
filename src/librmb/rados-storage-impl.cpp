@@ -603,75 +603,70 @@ bool RadosStorageImpl::save_mail(librados::ObjectWriteOperation *write_op_xattr,
 }
 /***SARA:this method is invoked by  from rbox_save from Plugin part
  * 1-compare email size with Max allowed object size
- * 2-consider whether the email can be write in one chunk or it must be splited
- * 3-save metadat***/
+ * 2-save metadat
+ * 3-consider whether the email can be write in one chunk or it must be splited
+ ***/
 
-bool  RadosStorageImpl::save_mail(RadosMail *mail){
+bool  RadosStorageImpl::save_mail(RadosMail *current_object){
   bool ret_val=false;
   /*1-compare email size with Max allowed object size*/
-   int object_size = mail->get_mail_size();
-   int max_object_size = this->get_max_object_size();
-   if( max_object_size < object_size ||object_size<0||max_object_size==0){
-    return false;
-   }
-  /*2-cosider whether the email can be write in one chunk or it must be splited*/
-  int max_write=get_max_write_size_bytes();
-  int buff_size=mail->get_mail_buffer()->length();
-  if(buff_size<0||max_write==0){
+  int object_size = current_object->get_mail_size();
+  int max_object_size = this->get_max_object_size();
+  if( max_object_size < object_size ||object_size<0||max_object_size==0){
     return false;
   }
 
-  int rest = buff_size % max_write;
-  int div =  buff_size / max_write + (rest > 0 ? 1 : 0);
+  /*2-save metadata*/
+  librados::ObjectWriteOperation write_metadata;
+  librados::IoCtx *io_ctx_=&this->get_io_ctx();
+  librmb::RadosMetadataStorageDefault rados_metadata_storage (io_ctx_);
+  rados_metadata_storage.save_metadata(&write_metadata,current_object);
+  ret_val=execute_operation(*current_object->get_oid(), &write_metadata);
+  
+  
+  int max_write=get_max_write_size_bytes();
+  uint64_t rest = object_size % max_write;
+  int div = object_size / max_write + (rest > 0 ? 1 : 0);
+  for (int i = 0; i < div; ++i) {
 
-  for (int i = 0; i <div; i++) {
-
+    // split the buffer.
     librados::bufferlist tmp_buffer;
-    
     int offset = i * max_write;
-    int length = max_write;
-    
-    if (buff_size < ((i+1) * length)) {
+
+    uint64_t length = max_write;
+    if (object_size < ((i + 1) * length)) {
       length = rest;
     }
-    if(i==0){
-      /*start step3:save metadata*/
+
+    if (div == 1) {
       librados::ObjectWriteOperation write_op;
-      librados::IoCtx *io_ctx_=&this->get_io_ctx();
-      librmb::RadosMetadataStorageDefault SMM (io_ctx_);
-      SMM.save_metadata(&write_op,mail);
-      time_t save_date = mail->get_rados_save_date();
-      write_op.mtime(&save_date);  
-      /*End step3;*/
-
-      /*start create first chunk*/
-      tmp_buffer.substr_of(mail->get_mail_buffer(),offset,length);
-      write_op.write(0, mail->get_mail_buffer());
-      /*End*/
-
-      /*Save metadata and first chunk together in a common write_op
-      If (div==1) so after this step quick this loop. */
-      ret_val =execute_operation(*mail->get_oid(), &write_op);
-      if(!ret_val){
-        return ret_val;
-      }
+      const librados::bufferlist& mail_buffer=*current_object->get_mail_buffer();
+      write_op.write(0,mail_buffer);
+      ret_val=execute_operation(*current_object->get_oid(), &write_op);
     }
-    else {      
-      if(offset + length > buff_size){
+    else {
+      if(offset + length >object_size){
         return false;
       }else{
-        tmp_buffer.substr_of(mail->get_mail_buffer(),offset,length);
-        ret_val =append_to_object(*mail->get_oid(),tmp_buffer,length);
-        if(!ret_val){
-          return ret_val;
+        if(offset + length > current_object->get_mail_buffer()->length() ){
+          tmp_buffer.substr_of(*current_object->get_mail_buffer(), offset,current_object->get_mail_buffer()->length() - offset );
+        }else{  
+          tmp_buffer.substr_of(*current_object->get_mail_buffer(), offset, length);
         }
-      }
-    }  
-    delete &tmp_buffer;    
+      }      
+      ret_val = append_to_object(*current_object->get_oid(), tmp_buffer, length); 
+    }
+    if(!ret_val){
+      return ret_val;
+    }
   }
+  librados::bufferlist *mail_buff_ = current_object->get_mail_buffer();
+  delete mail_buff_;
+  io_ctx_=nullptr;
+  delete io_ctx_;
   return ret_val;
-}
-
+  }
+  
 librmb::RadosMail *RadosStorageImpl::alloc_rados_mail() { return new librmb::RadosMail(); }
 
 void RadosStorageImpl::free_rados_mail(librmb::RadosMail *mail) {
