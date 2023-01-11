@@ -10,23 +10,19 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
-  - setup
   - build
-prepare:
-  stage: setup
-  tags: ["kubernetes"]
-  script:
-    - chmod 777 /etc/ceph/*
-    - chmod -R 777 /usr/local/var/
-    - git submodule update --init --recursive
+
 build:
   stage: build
   tags: ["kubernetes"]
   script:
+    - chmod 777 /etc/ceph/*
+    - chmod -R 777 /usr/local/var/
     - ./autogen.sh
     - ./configure --with-dovecot=/usr/local/lib/dovecot --enable-maintainer-mode --enable-debug --with-integration-tests --enable-valgrind --enable-debug
     - make clean install
     - ldconfig
+    - ceph tell mon.\* injectargs "--mon-allow-pool-delete=true"
     - make check
 
     
