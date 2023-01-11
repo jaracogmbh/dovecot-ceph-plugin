@@ -8,7 +8,7 @@ variables:
   DOCKER_TLS_CERTDIR: ""
   PROJECT_NAME: jaraco-website
   GIT_SUBMODULE_STRATEGY: recursive
-  
+
 stages:
   - setup
   - build
@@ -32,6 +32,6 @@ test:
   stage: test
   tags: ["kubernetes"]
   script:
-    - ceph tell mon.\* injectargs "--mon-allow-pool-delete=true"
+    #- ceph tell mon.\* injectargs "--mon-allow-pool-delete=true"
     - cd src/tests/; make check-valgrind
     
