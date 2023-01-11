@@ -1,0 +1,35 @@
+image: 192.168.178.73:6088/ceph/dovecot-ceph-demo:latest
+
+variables:
+  DOCKER_REGISTRY_URL: "192.168.178.73:6088"
+  LC_ALL: "en_US.UTF-8"
+  LANG: "en_US.UTF-8"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  PROJECT_NAME: jaraco-website
+
+stages:
+  - setup
+  - build
+  - test
+prepare:
+  stage: prepare
+  tags: ["kubernetes"]
+  script:
+    - chmod 777 /etc/ceph/*
+    - ceph tell mon.\* injectargs "--mon-allow-pool-delete=true"
+    - chmod -R 777 /usr/local/var/
+build:
+  stage: build
+  tags: ["kubernetes"]
+  script:
+    - ./autogen.sh
+    - ./configure --with-dovecot=/usr/local/lib/dovecot --enable-maintainer-mode --enable-debug --with-integration-tests --enable-valgrind --enable-debug
+    - make clean install
+    - ldconfig
+test:
+  stage: test
+  tags: ["kubernetes"]
+  script:
+    - cd src/tests/; make check-valgrind
+    
