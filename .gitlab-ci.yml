@@ -33,5 +33,5 @@ test:
   tags: ["kubernetes"]
   script:
     #- ceph tell mon.\* injectargs "--mon-allow-pool-delete=true"
-    - cd src/tests/; make check-valgrind
+    - make check
     
