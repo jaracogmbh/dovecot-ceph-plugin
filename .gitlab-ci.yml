@@ -7,7 +7,8 @@ variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
   PROJECT_NAME: jaraco-website
-
+  GIT_SUBMODULE_STRATEGY: recursive
+  
 stages:
   - setup
   - build
