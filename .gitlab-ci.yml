@@ -12,7 +12,6 @@ variables:
 stages:
   - setup
   - build
-  - test
 prepare:
   stage: setup
   tags: ["kubernetes"]
@@ -28,10 +27,6 @@ build:
     - ./configure --with-dovecot=/usr/local/lib/dovecot --enable-maintainer-mode --enable-debug --with-integration-tests --enable-valgrind --enable-debug
     - make clean install
     - ldconfig
-test:
-  stage: test
-  tags: ["kubernetes"]
-  script:
-    #- ceph tell mon.\* injectargs "--mon-allow-pool-delete=true"
     - make check
+
     
