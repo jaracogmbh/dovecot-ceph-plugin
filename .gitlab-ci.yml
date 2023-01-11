@@ -18,7 +18,7 @@ prepare:
   script:
     - chmod 777 /etc/ceph/*
     - chmod -R 777 /usr/local/var/
-    - git submodule update --recursive
+    - git submodule update --init --recursive
 build:
   stage: build
   tags: ["kubernetes"]
