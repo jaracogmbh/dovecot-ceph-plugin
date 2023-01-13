@@ -52,7 +52,7 @@ static void copy_object(struct mail_namespace *_ns, struct mailbox *box) {
   std::set<std::string> mail_list = r_storage->s->find_mails(&xattr);
   std::set<std::string>::iterator mail_iter;
   std::string oid;
-  for(mail_iter=mail_list.begin();mail_iter!=mail_list.end();mail_iter++){
+  for(mail_iter=mail_list.begin();mail_iter!=mail_list.end();++mail_iter){
     oid = *mail_iter;
   }
   EXPECT_TRUE(oid.length() > 0);

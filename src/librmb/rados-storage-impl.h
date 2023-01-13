@@ -65,11 +65,6 @@ class RadosStorageImpl : public RadosStorage {
   int open_connection(const std::string &poolname, const std::string &clustername,
                       const std::string &rados_username) override;
   void close_connection() override;
-  bool wait_for_write_operations_complete(librados::AioCompletion *completion,
-                                          librados::ObjectWriteOperation *write_operation) override;
-
-  bool wait_for_rados_operations(const std::list<librmb::RadosMail *> &object_list) override;
-
   // int read_mail(const std::string &oid, librados::bufferlist *buffer) override;
   int read_mail(const std::string &oid,librmb::RadosMail* mail) override;
   int move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,

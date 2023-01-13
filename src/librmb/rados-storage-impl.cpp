@@ -122,7 +122,9 @@ int RadosStorageImpl::split_buffer_and_exec_op(RadosMail *current_object,
 }
 
 int RadosStorageImpl::save_mail(const std::string &oid, librados::bufferlist &buffer) {
-  return get_io_ctx().write_full(oid, buffer);
+  librados::bufferlist librados_buffer;
+  librados_buffer.append(buffer);
+  return get_io_ctx().write_full(oid, librados_buffer);
 }
 
 int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail){
@@ -414,58 +416,8 @@ void RadosStorageImpl::close_connection() {
     cluster->deinit();
   }
 }
-bool RadosStorageImpl::wait_for_write_operations_complete(librados::AioCompletion *completion,
-                                                          librados::ObjectWriteOperation *write_operation) {
-  if (completion == nullptr) {
-    return true;  // failed!
-  }
 
-  bool failed = false;
 
-  switch (wait_method) {
-    case WAIT_FOR_COMPLETE_AND_CB:
-      completion->wait_for_complete_and_cb();
-      break;
-    case WAIT_FOR_SAFE_AND_CB:
-      completion->wait_for_safe_and_cb();
-      break;
-    default:
-      completion->wait_for_complete_and_cb();
-      break;
-  }
-  failed = completion->get_return_value() < 0 || failed ? true : false;
-  // clean up
-  completion->release();
-
-  return failed;
-}
-//DEPRECATED and buggy
-bool RadosStorageImpl::wait_for_rados_operations(const std::list<librmb::RadosMail *> &object_list) {
-  bool ctx_failed = false;
-  if(object_list.size() == 0){
-    return ctx_failed;
-  }
-  // wait for all writes to finish!
-  // imaptest shows it's possible that begin -> continue -> finish cycle is invoked several times before
-  // rbox_transaction_save_commit_pre is called.
-  for (std::list<librmb::RadosMail *>::const_iterator it_cur_obj = object_list.begin(); it_cur_obj != object_list.end();
-       ++it_cur_obj) {
-    // if we come from copy mail, there is no operation to wait for.
-    if ((*it_cur_obj)->has_active_op()) {
-      bool op_failed =
-          wait_for_write_operations_complete((*it_cur_obj)->get_completion(), (*it_cur_obj)->get_write_operation());
-
-      ctx_failed = ctx_failed ? ctx_failed : op_failed;
-      (*it_cur_obj)->set_active_op(0);
-      // (*it_cur_obj)->set_completion(nullptr);
-      (*it_cur_obj)->set_write_operation(nullptr);
-    }
-    // free mail's buffer cause we don't need it anymore
-    librados::bufferlist *mail_buffer = (*it_cur_obj)->get_mail_buffer();
-    delete mail_buffer;
-  }
-  return ctx_failed;
-}
 
 // assumes that destination io ctx is current io_ctx;
 int RadosStorageImpl::move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,

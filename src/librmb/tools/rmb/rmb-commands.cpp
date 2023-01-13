@@ -431,7 +431,7 @@ std::set<std::string> RmbCommands::load_objects(librmb::RadosStorageMetadataModu
   std::set<std::string> mail_list;
   mail_list = storage->find_mails(nullptr);
   std::set<std::string>::iterator it;
-  for(it=mail_list.begin();it!=mail_list.end();it++){
+  for(it=mail_list.begin();it!=mail_list.end();++it){
       librmb::RadosMail mail;
       mail.set_oid(*it);
      
@@ -464,7 +464,7 @@ int RmbCommands::load_objects(librmb::RadosStorageMetadataModule *ms, std::list<
   // load all objects metadata into memory
   std::set<std::string> mail_list=storage->find_mails(nullptr);
   std::set<std::string>::iterator mail_iter;
-  for (mail_iter=mail_list.begin();mail_iter!=mail_list.end();mail_iter++) {
+  for (mail_iter=mail_list.begin();mail_iter!=mail_list.end();++mail_iter) {
     librmb::RadosMail *mail = new librmb::RadosMail();
     AioStat *stat = new AioStat();
     stat->mail = mail;
@@ -491,7 +491,8 @@ int RmbCommands::load_objects(librmb::RadosStorageMetadataModule *ms, std::list<
     (*it)->wait_for_complete_and_cb();
     (*it)->release();
   }
-
+  
+  
   if (load_metadata) {
     if (sort_string.compare("uid") == 0) {
       mail_objects.sort(sort_uid);

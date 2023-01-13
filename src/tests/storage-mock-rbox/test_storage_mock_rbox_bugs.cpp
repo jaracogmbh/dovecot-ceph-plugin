@@ -254,7 +254,6 @@ TEST_F(StorageTest, save_mail_success) {
 
   librmbtest::RadosStorageMock *storage_mock = new librmbtest::RadosStorageMock();
 
-  EXPECT_CALL(*storage_mock, wait_for_write_operations_complete(_,_)).WillRepeatedly(Return(false));//failed = false
   librados::IoCtx io_ctx;
   EXPECT_CALL(*storage_mock, execute_operation(_,_)).WillRepeatedly(Return(true));
   EXPECT_CALL(*storage_mock, append_to_object(_,_,_)).WillRepeatedly(Return(true));

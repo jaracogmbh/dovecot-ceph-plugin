@@ -87,20 +87,6 @@ underTest.ceph_index_add("dkfkjdf")
   /*! get the max ceph object size 
    */
   virtual int get_max_object_size() = 0;
-
-  /*! In case the current object size exceeds the max_write (bytes), object should be split into
-   * max smaller operations and executed separately.
-   *
-   * @param[in] current_object ptr to a valid mailobject.
-   * @param[in] write_op_xattr pointer to a write operation / if null, function will create new one.
-   * @param[in] max_write max number of bytes to write in one operation
-   *
-   * @return <0 in case of failure
-   * */
-  /***SARA: the method can be private*** /
-  virtual int split_buffer_and_exec_op(RadosMail *current_object, librados::ObjectWriteOperation *write_op_xattr,
-                                       const uint64_t &max_write) = 0;
-
   /*! deletes a mail object from rados
    * @param[in] mail pointer to valid mail object
    *
@@ -173,20 +159,6 @@ underTest.ceph_index_add("dkfkjdf")
    */
   virtual void close_connection() = 0;
 
-  /*! wait for all write operations to complete
-   * @param[in] completion_op_map map of write operations with matching completion objects.
-   * @return false if successful !!!!
-   *  */
-  virtual bool wait_for_write_operations_complete(librados::AioCompletion *completion,
-                                                  librados::ObjectWriteOperation *write_operation) = 0;
-  /*!
-   * wait for all rados operations
-   *
-   * @param[in] object_list list of outstanding rados objects
-   *
-   * @return true if successful
-   */
-  virtual bool wait_for_rados_operations(const std::list<librmb::RadosMail *> &object_list) = 0;
 
   /*! save the mail object
    *
