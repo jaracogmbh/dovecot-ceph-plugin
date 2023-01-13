@@ -121,13 +121,10 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
       .Times(AtLeast(1))
       .WillRepeatedly(Return(0));
 
-  EXPECT_CALL(*storage_mock, get_max_object_size())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(100000));
 
-  EXPECT_CALL(*storage_mock, get_max_write_size_bytes())
+  EXPECT_CALL(*storage_mock, save_mail(_))
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(10));
+      .WillRepeatedly(Return(false));
 
 
   librmb::RadosMail *test_obj = new librmb::RadosMail();
@@ -168,7 +165,6 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
   EXPECT_CALL(*cfg_mock, is_mail_attribute(_)).WillRepeatedly(Return(true));
   EXPECT_CALL(*cfg_mock, is_user_mapping()).WillRepeatedly(Return(false));
   EXPECT_CALL(*cfg_mock, get_write_method()).WillRepeatedly(Return(1));
-  EXPECT_CALL(*cfg_mock, get_chunk_size()).WillOnce(Return(100));
   storage->ns_mgr->set_config(cfg_mock);
 
   storage->config = cfg_mock;
@@ -273,14 +269,10 @@ TEST_F(StorageTest, save_mail_success) {
       .Times(AtLeast(1))
       .WillRepeatedly(Return(0));
 
-  EXPECT_CALL(*storage_mock, get_max_object_size())
+  EXPECT_CALL(*storage_mock, save_mail(_))
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(100000));
+      .WillRepeatedly(Return(true));
 
-  EXPECT_CALL(*storage_mock, get_max_write_size_bytes())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(10));
- 
   
   librmb::RadosMail *test_obj = new librmb::RadosMail();
   test_obj->set_mail_buffer(nullptr);
@@ -318,7 +310,6 @@ TEST_F(StorageTest, save_mail_success) {
   EXPECT_CALL(*cfg_mock, is_mail_attribute(_)).WillRepeatedly(Return(true));
   EXPECT_CALL(*cfg_mock, get_chunk_size()).WillOnce(Return(100));
   EXPECT_CALL(*cfg_mock, is_user_mapping()).WillRepeatedly(Return(false));
-  EXPECT_CALL(*cfg_mock, get_write_method()).WillRepeatedly(Return(1));
   
 
   storage->ns_mgr->set_config(cfg_mock);
