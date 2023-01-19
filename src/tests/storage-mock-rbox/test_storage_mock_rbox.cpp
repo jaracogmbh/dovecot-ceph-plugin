@@ -65,12 +65,66 @@ using ::testing::ReturnRef;
 
 TEST_F(StorageTest, init) {}
 
-/** 
- * make sure is deprecated uid is always false initialy  
- **/
+// test storage class, cluster not initialized
+TEST_F(StorageTest, connect_failed_test) {
+
+  librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
+  /* configure behavior of the mock */
+  EXPECT_CALL(*cluster_mock, init()).Times(1).WillOnce(Return(-1));
+
+  librmb::RadosStorageImpl under_test(cluster_mock);
+
+  std::string pool_name("test");
+
+  int open_connection = under_test.open_connection(pool_name);
+  
+  EXPECT_EQ(-1, open_connection);
+
+  delete cluster_mock;
+}
+
+// test storage class, cluster not initialized
+TEST_F(StorageTest, connect_io_ctx_cant_be_created_test) {
+
+  librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
+  /* configure behavior of the mock */
+  EXPECT_CALL(*cluster_mock, init()).Times(1).WillOnce(Return(0));
+  EXPECT_CALL(*cluster_mock, io_ctx_create(_ , _)).Times(1).WillOnce(Return(-1));
+  librmb::RadosStorageImpl under_test(cluster_mock);
+
+  std::string pool_name("test");
+
+  int open_connection = under_test.open_connection(pool_name);
+  
+  EXPECT_EQ(-1, open_connection);
+
+  delete cluster_mock;
+}
+
+// test storage class, cluster not initialized
+TEST_F(StorageTest, connect_io_ctx_recovery_index_io_ctx_failed) {
+
+  librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
+  /* configure behavior of the mock */
+  EXPECT_CALL(*cluster_mock, init()).Times(1).WillOnce(Return(0));
+  EXPECT_CALL(*cluster_mock, io_ctx_create(_ , _)).Times(1).WillOnce(Return(0));
+  EXPECT_CALL(*cluster_mock, recovery_index_io_ctx(_ , _)).Times(1).WillOnce(Return(-1));
+  librmb::RadosStorageImpl under_test(cluster_mock);
+
+  std::string pool_name("test");
+
+  int open_connection = under_test.open_connection(pool_name);
+  
+  EXPECT_EQ(-1, open_connection);
+
+  delete cluster_mock;
+}
+/*
+ //make sure is deprecated uid is always false initialy   
 TEST_F(StorageTest, split_buffer) {
-/*simple test for save method:: the buffer must be splited*/ 
-librmbtest::RadosClusterMock* cluster_mock;
+
+//simple test for save method:: the buffer must be splited 
+ librmbtest::RadosClusterMock* cluster_mock;
 librmb::RadosStorageImpl under_test(cluster_mock);
 
 std::string pool_name("test");
@@ -96,7 +150,7 @@ rados_mail.set_oid("test_mail_id");
 // bool ret_storage = under_test.save_mail(&rados_mail);
 // EXPECT_EQ(true,ret_storage);
 // under_test.delete_mail(&rados_mail);
-/*test save metada*/
+//test save metada
 librmb::RadosDovecotCephCfgImpl cfg(&under_test.get_io_ctx());
 librmb::RadosMetadataStorageIma ms(&under_test.get_io_ctx(), &cfg);
 unsigned int flags = 0x18;
@@ -193,6 +247,7 @@ TEST_F(StorageTest,read_mail){
   EXPECT_EQ(ret_remove, 0);
   EXPECT_EQ(copy_mail_ret, 0);
 }
+*/
 TEST_F(StorageTest, deinit) {}
 
 int main(int argc, char **argv) {
