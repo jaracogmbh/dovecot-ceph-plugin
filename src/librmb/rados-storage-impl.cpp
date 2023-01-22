@@ -18,11 +18,12 @@
 #include <utility>
 #include <thread>
 #include <mutex>
-
+#include <iostream>
 #include "rados-util.h"
 
 #include <rados/librados.hpp>
 
+#include <sstream>
 #include "encoding.h"
 #include "limits.h"
 #include "rados-metadata-storage-impl.h"
@@ -393,14 +394,19 @@ int RadosStorageImpl::create_connection(const std::string &poolname, const std::
   if (err < 0) {
     return err;
   }
-  max_write_size = std::stoi(max_write_size_str);
+
+  std::stringstream ss_write;
+  ss_write << max_write_size_str;
+  ss_write >> max_write_size;
  
   string max_object_size_str;
   err = cluster->get_config_option(RadosStorageImpl::CFG_OSD_MAX_OBJECT_SIZE, &max_object_size_str);
   if (err < 0) {
     return err;
   }
-  max_object_size = std::stoi(max_object_size_str);
+  std::stringstream ss;
+  ss << max_object_size_str;
+  ss >> max_object_size;
   
   if (err == 0) {
     io_ctx_created = true;
@@ -562,6 +568,9 @@ bool RadosStorageImpl::save_mail(librados::ObjectWriteOperation *write_op_xattr,
 
 bool  RadosStorageImpl::save_mail(RadosMail *current_object){
   
+  if (!cluster->is_connected() || !io_ctx_created) {
+    return false;
+  }
   bool ret_val=false;
   /*1-compare email size with Max allowed object size*/
   int object_size = current_object->get_mail_size();
@@ -576,6 +585,9 @@ bool  RadosStorageImpl::save_mail(RadosMail *current_object){
   librmb::RadosMetadataStorageDefault rados_metadata_storage (io_ctx_);
   rados_metadata_storage.save_metadata(&write_metadata,current_object);
   ret_val=execute_operation(*current_object->get_oid(), &write_metadata);
+  if(!ret_val){
+    return ret_val;
+  }
   
   int max_write=get_max_write_size_bytes();
   uint64_t rest = object_size % max_write;
