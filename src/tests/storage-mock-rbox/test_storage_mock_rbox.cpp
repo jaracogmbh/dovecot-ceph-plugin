@@ -51,6 +51,9 @@ using ::testing::AtLeast;
 using ::testing::Matcher;
 using ::testing::Return;
 using ::testing::ReturnRef;
+using ::testing::DoAll;
+using ::testing::Assign;
+using ::testing::Lt;
 #pragma GCC diagnostic pop
 
 #if DOVECOT_PREREQ(2, 3)
@@ -176,20 +179,26 @@ TEST_F(StorageTest,second_cluster_connectio){
 
 }
 TEST_F(StorageTest,true_cluster_connectio){
+
   librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
   librmb::RadosStorageImpl under_test(cluster_mock);
 
+  librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
+  under_test.set_io_ctx(io_ctx_mock);
+  EXPECT_CALL(*io_ctx_mock,append(_,_,_)).Times(0);
+  EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(1).WillOnce(Return(0)); 
+ 
+  
   EXPECT_CALL(*cluster_mock, init()).Times(1).WillOnce(Return(0));
-  EXPECT_CALL(*cluster_mock, io_ctx_create(_ , _)).Times(1).WillOnce(Return(0));
+  EXPECT_CALL(*cluster_mock, io_ctx_create(_ , _)).Times(1).WillOnce(Return(0));   
   EXPECT_CALL(*cluster_mock, recovery_index_io_ctx(_ , _)).Times(1).WillOnce(Return(0));
   EXPECT_CALL(*cluster_mock, get_config_option(_ , _)).Times(2).WillRepeatedly(Return(0));
 
+ 
   std::string pool_name("test");
   /*create_connection is invoked by open_connection method*/
   int open_connection = under_test.open_connection(pool_name);
-  EXPECT_EQ(0, open_connection);
-  librados::IoCtx io_ctx=under_test.get_io_ctx();
-  EXPECT_NE(io_ctx,NULL);
+  EXPECT_EQ(0, open_connection); 
 
   EXPECT_CALL(*cluster_mock, is_connected()).Times(3).WillOnce(Return(true))
                                                      .WillOnce(Return(true))
@@ -204,18 +213,20 @@ TEST_F(StorageTest,true_cluster_connectio){
   int buffer_length = rados_mail.get_mail_buffer()->length();
   rados_mail.set_mail_size(buffer_length);  
   rados_mail.set_oid("test_mail_id"); 
-  int append=under_test.get_io_ctx().append("test_mail_id", buffer, buffer_length);
-
-  EXPECT_EQ(append,0);
-
-  /*div==1*/ 
-  bool ret_storage = under_test.save_mail(&rados_mail);
-  EXPECT_EQ(true,ret_storage);
+ /*div==1*/ 
+ bool ret_storage = under_test.save_mail(&rados_mail);
+  EXPECT_EQ(false,ret_storage);
   delete cluster_mock;
+  delete io_ctx_mock;
 }
 TEST_F(StorageTest,split_buffer){
   librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
   librmb::RadosStorageImpl under_test(cluster_mock);
+
+  librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
+  under_test.set_io_ctx(io_ctx_mock);
+  EXPECT_CALL(*io_ctx_mock,append(_,_,_)).Times(4).WillRepeatedly(Return(true));
+  EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(1).WillOnce(Return(0));
   
   EXPECT_CALL(*cluster_mock, init()).Times(1).WillOnce(Return(0));
   EXPECT_CALL(*cluster_mock, io_ctx_create(_ , _)).Times(1).WillOnce(Return(0));
@@ -226,8 +237,7 @@ TEST_F(StorageTest,split_buffer){
   /*create_connection is invoked by open_connection method*/
   int open_connection = under_test.open_connection(pool_name);
   EXPECT_EQ(0, open_connection);
-  librados::IoCtx *io_ctx=&(under_test.get_io_ctx());
-  EXPECT_NE(io_ctx,nullptr);
+
   
   EXPECT_CALL(*cluster_mock, is_connected()).Times(6).WillRepeatedly(Return(true));
 
@@ -248,6 +258,58 @@ TEST_F(StorageTest,split_buffer){
   bool ret_storage = under_test.save_mail(&rados_mail);
   EXPECT_EQ(true,ret_storage);
   delete cluster_mock;
+  delete io_ctx_mock;
+}
+TEST_F(StorageTest,true_first_read){
+  librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
+  librmb::RadosStorageImpl storage(cluster_mock);
+  librmb::RadosMail* mail=new librmb::RadosMail();
+  const std::string& oid="read_test";
+  mail->set_oid(oid);
+  mail->set_mail_buffer(new librados::bufferlist);
+
+  librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
+  storage.set_io_ctx(io_ctx_mock);
+  EXPECT_CALL(*io_ctx_mock,operate(_,_,_)).Times(1).WillOnce(Return(0));
+  int ret=storage.read_mail(oid,mail,0);
+  EXPECT_EQ(0,ret);
+  delete io_ctx_mock;
+}
+TEST_F(StorageTest,true_repeated_read){
+  librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
+  librmb::RadosStorageImpl storage(cluster_mock);
+  librmb::RadosMail* mail=new librmb::RadosMail();
+  const std::string& oid="read_test";
+  mail->set_oid(oid);
+  mail->set_mail_buffer(new librados::bufferlist);
+
+  librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
+  storage.set_io_ctx(io_ctx_mock);
+
+  EXPECT_CALL(*io_ctx_mock,operate(_,_,_)).Times(4).WillOnce(Return(-ETIMEDOUT))
+                                                   .WillOnce(Return(-ETIMEDOUT))
+                                                   .WillOnce(Return(-ETIMEDOUT))
+                                                   .WillOnce(Return(0));
+  int ret=storage.read_mail(oid,mail,0);
+  EXPECT_EQ(0,ret);
+  delete io_ctx_mock;
+}
+TEST_F(StorageTest,false_read){
+  librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
+  librmb::RadosStorageImpl storage(cluster_mock);
+  librmb::RadosMail* mail=new librmb::RadosMail();
+  const std::string& oid="read_test";
+  mail->set_oid(oid);
+  mail->set_mail_buffer(new librados::bufferlist);
+
+  librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
+  storage.set_io_ctx(io_ctx_mock);
+
+  EXPECT_CALL(*io_ctx_mock,operate(_,_,_)).Times(11).WillRepeatedly(Return(-ETIMEDOUT));
+  int ret=storage.read_mail(oid,mail,0);
+  std::cout<<"ret_value"<<ret<<std::endl;
+  EXPECT_NE(0,ret);
+  delete io_ctx_mock;
 }
 TEST_F(StorageTest, deinit) {}
 

@@ -24,17 +24,21 @@
 #include <rados/librados.hpp>
 
 #include "rados-mail.h"
+#include "rbox-io-ctx.h"
 #include "rados-storage.h"
-namespace librmb {
 
+namespace librmb {
 class RadosStorageImpl : public RadosStorage {
  public:
   explicit RadosStorageImpl(RadosCluster *cluster);
   virtual ~RadosStorageImpl();
 
   librados::IoCtx &get_io_ctx() override;
+  void set_io_ctx(librmb::RboxIoCtx* io_ctx_){
+    io_ctx_sample=io_ctx_;
+  }
   
-
+  
   int stat_mail(const std::string &oid, uint64_t *psize, time_t *pmtime) override;
   void set_namespace(const std::string &_nspace) override;
   std::string get_namespace() override { return nspace; }
@@ -66,7 +70,7 @@ class RadosStorageImpl : public RadosStorage {
                       const std::string &rados_username) override;
   void close_connection() override;
   // int read_mail(const std::string &oid, librados::bufferlist *buffer) override;
-  int read_mail(const std::string &oid,librmb::RadosMail* mail) override;
+  int read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter) override;
   int move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
            std::list<RadosMetadata> &to_update, bool delete_source) override;
   int copy(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
@@ -104,8 +108,9 @@ class RadosStorageImpl : public RadosStorage {
   int max_object_size;
   std::string nspace;
   librados::IoCtx io_ctx;
+  RboxIoCtx* io_ctx_sample;
   librados::IoCtx recovery_io_ctx;
-
+  static int read_count;
   bool io_ctx_created;
   std::string pool_name;
   enum rbox_ceph_aio_wait_method wait_method;

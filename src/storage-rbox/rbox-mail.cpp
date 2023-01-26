@@ -496,7 +496,7 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
     }    
     const std::string mail_oid=guid_128_to_string(rmail->index_oid);
 
-    ret=rados_storage->read_mail(mail_oid,rmail->rados_mail);
+    ret=rados_storage->read_mail(mail_oid,rmail->rados_mail,0);
     
     if (ret < 0) {
       if (ret == -ENOENT) {

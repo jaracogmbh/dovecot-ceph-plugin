@@ -38,6 +38,7 @@ using librmb::RadosStorageImpl;
 #define DICT_USERNAME_SEPARATOR '/'
 const char *RadosStorageImpl::CFG_OSD_MAX_WRITE_SIZE = "osd_max_write_size";
 const char *RadosStorageImpl::CFG_OSD_MAX_OBJECT_SIZE= "osd_max_object_size";
+int RadosStorageImpl::read_count=0;
 
 RadosStorageImpl::RadosStorageImpl(RadosCluster *_cluster) {
   cluster = _cluster;
@@ -127,29 +128,26 @@ int RadosStorageImpl::save_mail(const std::string &oid, librados::bufferlist &bu
   librados_buffer.append(buffer);
   return get_io_ctx().write_full(oid, librados_buffer);
 }
-
-int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail){
+/*SARA: I tried static variable to count tries of read_mail,but it did not behave as expectation
+I have found it is normal and some other people had same problem,they suggest to
+use counter as an input argument so I added an int variable to read_mail arguments.**/
+int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter){
   
   int ret=0;
   int stat_err = 0;
   int read_err = 0;
   uint64_t psize;
   time_t save_date;
-  
-  mail->set_oid(oid);
- 
-  mail->set_mail_buffer(new librados::bufferlist());
- 
-  
+   
   librados::ObjectReadOperation *read_op = new librados::ObjectReadOperation();
   read_op->read(0, INT_MAX, mail->get_mail_buffer(), &read_err);
   read_op->stat(&psize, &save_date, &stat_err);
-  ret=this->get_io_ctx().operate(oid, read_op, mail->get_mail_buffer());
+  ret=io_ctx_sample->operate(oid, read_op, mail->get_mail_buffer());
   
   if(ret == -ETIMEDOUT) {
     int max_retry = 10; //TODO FIX 
-    for(static int i=0;i<max_retry;i++){
-      ret =read_mail(oid,mail);
+    while(try_counter < max_retry){
+      ret=read_mail(oid,mail,try_counter++);
       if(ret >= 0){
         break;
       }
@@ -160,7 +158,7 @@ int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail)
     return ret;
   }
   
-  mail->set_mail_size(psize);
+  mail->set_mail_size((const int)psize);
   mail->set_rados_save_date(&save_date);
   
   return ret;
@@ -184,14 +182,14 @@ bool RadosStorageImpl::execute_operation(std::string &oid, librados::ObjectWrite
   if (!cluster->is_connected() || !io_ctx_created) {
     return false;
   }
-  return get_io_ctx().operate(oid, write_op_xattr) >=0 ? true : false;
+  return io_ctx_sample->operate(oid, write_op_xattr) >=0 ? true : false;
 }
 
 bool RadosStorageImpl::append_to_object(std::string &oid, librados::bufferlist &bufferlist, int length) {
   if (!cluster->is_connected() || !io_ctx_created) {
     return false;
   }
-  return get_io_ctx().append(oid, bufferlist, length) >=0 ? true : false;
+  return io_ctx_sample->append(oid, bufferlist, length) >=0 ? true : false;
 }
 int RadosStorageImpl::read_operate(const std::string &oid, librados::ObjectReadOperation *read_operation, librados::bufferlist *bufferlist) {
 if (!cluster->is_connected() || !io_ctx_created) {
