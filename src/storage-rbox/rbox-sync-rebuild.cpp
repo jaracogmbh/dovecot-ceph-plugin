@@ -480,11 +480,7 @@ int repair_namespace(struct mail_namespace *ns, bool force, struct rbox_storage 
           i_debug("processing ceph index done : took: %ld ms", (milli_time));
         }
         else {
-          librados::NObjectIterator iter_guid  = r_storage->s->find_mails(nullptr);
-          while (iter_guid != librados::NObjectIterator::__EndObjectIterator) {
-            mail_list.insert((*iter_guid).get_oid());
-            iter_guid++;
-          } 
+          mail_list = r_storage->s->find_mails(nullptr);
         }           
         
         i_info("Loading mail metadata...");

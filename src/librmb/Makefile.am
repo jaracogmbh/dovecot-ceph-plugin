@@ -35,7 +35,10 @@ headers = \
 	rados-metadata-storage-module.h \
 	rados-metadata-storage-default.h \
 	rados-metadata-storage-ima.h \
-	rados-save-log.h 	
+	rados-save-log.h \
+	rbox-io-ctx.h \
+	rbox-io-ctx-impl.h
+		
 	
 
 librmb_la_SOURCES = \

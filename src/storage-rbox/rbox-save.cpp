@@ -611,44 +611,10 @@ int rbox_save_finish(struct mail_save_context *_ctx) {
       i_error("ERROR, mailsize is <= 0 ");
     } 
     else {
-
-      if (!zlib_plugin_active) {
-        // write \0 to ceph (length()+1) if stream is not binary
-        r_ctx->rados_mail->set_mail_size(r_ctx->output_stream->offset);
-
-      } else {
-        // binary stream, do not modify the length of stream.
-        r_ctx->rados_mail->set_mail_size(r_ctx->output_stream->offset);
-      }
-
+      r_ctx->rados_mail->set_mail_size(r_ctx->output_stream->offset);
       rbox_save_mail_set_metadata(r_ctx, r_ctx->rados_mail);
-
-      librados::ObjectWriteOperation write_op;
       struct rbox_storage *r_storage = (struct rbox_storage *)&r_ctx->mbox->storage->storage;
-
-      r_storage->ms->get_storage()->save_metadata(&write_op, r_ctx->rados_mail);
-
-      int max_object_size = r_storage->s->get_max_object_size();
-      i_debug("oid: %s, max_object_size %d mail_size %d",r_ctx->rados_mail->get_oid()->c_str(), max_object_size, r_ctx->rados_mail->get_mail_size() );
-      if(max_object_size < r_ctx->rados_mail->get_mail_size()) {
-        i_error("configured CEPH Object size %d < then mail size %d ", r_storage->s->get_max_object_size(), r_ctx->rados_mail->get_mail_size() );
-        mail_set_critical(r_ctx->ctx.dest_mail, "write(%s) failed: %s", o_stream_get_name(r_ctx->ctx.data.output),"MAX OBJECT SIZE REACHED");      
-        r_ctx->failed = true;  
-      }else {
-        
-          time_t save_date = r_ctx->rados_mail->get_rados_save_date();
-          write_op.mtime(&save_date);  
-
-          uint32_t config_chunk_size = r_storage->config->get_chunk_size();
-          if(config_chunk_size > r_storage->s->get_max_write_size_bytes()){
-            config_chunk_size = r_storage->s->get_max_write_size_bytes();
-          }
-
-          int ret = save_mail_write_append(r_storage->s,r_ctx->rados_mail, &write_op, config_chunk_size);
-
-          r_ctx->failed = ret < 0;
-          i_debug("SAVE_MAIL result: %d", r_ctx->failed);        
-      }
+      r_ctx->failed=r_storage->s->save_mail(r_ctx->rados_mail) ? false : true;
       if (r_ctx->failed) {
         i_error("saved mail: %s failed. Metadata_count %ld, mail_size (%d)", r_ctx->rados_mail->get_oid()->c_str(),
                 r_ctx->rados_mail->get_metadata()->size(), r_ctx->rados_mail->get_mail_size());
@@ -656,6 +622,7 @@ int rbox_save_finish(struct mail_save_context *_ctx) {
 
         if( r_storage->config->get_object_search_method() == 2){
           // ceph config schalter an oder aus!
+          
           r_storage->s->ceph_index_append(*r_ctx->rados_mail->get_oid());
           uint64_t index_size = r_storage->s->ceph_index_size();
           // WARN if index reaches 80% of max object size
