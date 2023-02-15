@@ -198,7 +198,7 @@ TEST(librmb1, read_mail) {
   time_t save_date;
 
   int ret_stat = storage.stat_mail(*obj.get_oid(), &size, &save_date);
-  int copy_mail_ret = storage.read_mail(*obj.get_oid(),&obj,0);
+  int copy_mail_ret = storage.read_mail(*obj.get_oid(),&obj);
   // remove it
   int ret_remove = storage.delete_mail(*obj.get_oid());
 

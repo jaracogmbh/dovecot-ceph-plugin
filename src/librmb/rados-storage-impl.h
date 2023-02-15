@@ -32,7 +32,7 @@ class RadosStorageImpl : public RadosStorage {
  public:
   explicit RadosStorageImpl(RadosCluster *cluster);
   virtual ~RadosStorageImpl();
-
+  static int read_count;
   librados::IoCtx &get_io_ctx() override;
   void set_io_ctx(librmb::RboxIoCtx* io_ctx_){
     io_ctx_sample=io_ctx_;
@@ -70,7 +70,7 @@ class RadosStorageImpl : public RadosStorage {
                       const std::string &rados_username) override;
   void close_connection() override;
   // int read_mail(const std::string &oid, librados::bufferlist *buffer) override;
-  int read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter) override;
+  int read_mail(const std::string &oid, librmb::RadosMail* mail) override;
   int move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
            std::list<RadosMetadata> &to_update, bool delete_source) override;
   int copy(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
@@ -101,7 +101,7 @@ class RadosStorageImpl : public RadosStorage {
                                const uint64_t &max_write);
   int aio_operate(librados::IoCtx *io_ctx_, const std::string &oid, librados::AioCompletion *c,
                   librados::ObjectWriteOperation *op);                             
-
+ 
  private:
   RadosCluster *cluster;
   int max_write_size;
@@ -110,7 +110,7 @@ class RadosStorageImpl : public RadosStorage {
   librados::IoCtx io_ctx;
   RboxIoCtx* io_ctx_sample;
   librados::IoCtx recovery_io_ctx;
-  static int read_count;
+ 
   bool io_ctx_created;
   std::string pool_name;
   enum rbox_ceph_aio_wait_method wait_method;

@@ -76,7 +76,7 @@ class RadosStorageMock : public RadosStorage {
                int(const std::string &poolname, const std::string &clustername, const std::string &rados_username));
   MOCK_METHOD0(close_connection, void());
   MOCK_METHOD1(set_ceph_wait_method, void(enum librmb::rbox_ceph_aio_wait_method wait_method));
-  MOCK_METHOD3(read_mail, int(const std::string &oid, librmb::RadosMail* mail,int try_counter));
+  MOCK_METHOD2(read_mail, int(const std::string &oid, librmb::RadosMail* mail));
   MOCK_METHOD6(move, int(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
                          std::list<RadosMetadata> &to_update, bool delete_source));
 

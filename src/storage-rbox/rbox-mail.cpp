@@ -438,28 +438,6 @@ static int get_mail_stream(struct rbox_mail *mail, librados::bufferlist *buffer,
 
   return ret;
 }
-/***SARA::Replaced with:RadosMail* read_mail(std::string & oid) which is written in RadosStorage.h***/
-// static int read_mail_from_storage(librmb::RadosStorage *rados_storage, 
-//                                   struct rbox_mail *rmail,
-//                                   uint64_t *psize,
-//                                   time_t *save_date) {
-    
-//     int stat_err = 0;
-//     int read_err = 0;
-
-//     /* duplicate code: get_attribute */
-//     librados::ObjectReadOperation *read_mail = new librados::ObjectReadOperation();
-//     read_mail->read(0, INT_MAX, rmail->rados_mail->get_mail_buffer(), &read_err);
-//     read_mail->stat(psize, save_date, &stat_err);
-
-//     int ret = rados_storage->read_operate(*rmail->rados_mail->get_oid(), read_mail,
-//                                                   rmail->rados_mail->get_mail_buffer());
-    
-//     delete read_mail;
-
-//     return ret;
-// }
-
 static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, struct message_size *hdr_size,
                                 struct message_size *body_size, struct istream **stream_r) {
   FUNC_START();
@@ -496,7 +474,7 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
     }    
     const std::string mail_oid=guid_128_to_string(rmail->index_oid);
 
-    ret=rados_storage->read_mail(mail_oid,rmail->rados_mail,0);
+    ret=rados_storage->read_mail(mail_oid,rmail->rados_mail);
     
     if (ret < 0) {
       if (ret == -ENOENT) {

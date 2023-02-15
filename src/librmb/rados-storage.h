@@ -208,7 +208,7 @@ underTest.ceph_index_add("dkfkjdf")
    * @return linux errorcode or 0 if successful
    * */
   // virtual int read_mail(const std::string &oid, librados::bufferlist *buffer) = 0;
-  virtual int read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter)=0;
+  virtual int read_mail(const std::string &oid, librmb::RadosMail* mail)=0;
 
   /*! read the complete mail object into bufferlist
    *

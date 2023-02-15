@@ -38,7 +38,7 @@ using librmb::RadosStorageImpl;
 #define DICT_USERNAME_SEPARATOR '/'
 const char *RadosStorageImpl::CFG_OSD_MAX_WRITE_SIZE = "osd_max_write_size";
 const char *RadosStorageImpl::CFG_OSD_MAX_OBJECT_SIZE= "osd_max_object_size";
-int RadosStorageImpl::read_count=0;
+static int RadosStorageImpl::read_count=0;
 
 RadosStorageImpl::RadosStorageImpl(RadosCluster *_cluster) {
   cluster = _cluster;
@@ -131,14 +131,14 @@ int RadosStorageImpl::save_mail(const std::string &oid, librados::bufferlist &bu
 /*SARA: I tried static variable to count tries of read_mail,but it did not behave as expectation
 I have found it is normal and some other people had same problem,they suggest to
 use counter as an input argument so I added an int variable to read_mail arguments.**/
-int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter){
+int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail){
   
   int ret=0;
   int stat_err = 0;
   int read_err = 0;
   uint64_t psize;
   time_t save_date;
-   
+  
   librados::ObjectReadOperation *read_op = new librados::ObjectReadOperation();
   read_op->read(0, INT_MAX, mail->get_mail_buffer(), &read_err);
   read_op->stat(&psize, &save_date, &stat_err);
@@ -146,12 +146,10 @@ int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,
   
   if(ret == -ETIMEDOUT) {
     int max_retry = 10; //TODO FIX 
-    while(try_counter < max_retry){
-      ret=read_mail(oid,mail,try_counter++);
-      if(ret >= 0){
-        break;
-      }
+    if(read_count < max_retry){
       usleep(((rand() % 5) + 1) * 10000);
+      ++read_count;
+      ret=read_mail(oid,mail);
     }
   }
   if(ret<0){
