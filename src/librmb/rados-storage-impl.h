@@ -70,7 +70,7 @@ class RadosStorageImpl : public RadosStorage {
                       const std::string &rados_username) override;
   void close_connection() override;
   // int read_mail(const std::string &oid, librados::bufferlist *buffer) override;
-  int read_mail(const std::string &oid, librmb::RadosMail* mail) override;
+  int read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter) override;
   int move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
            std::list<RadosMetadata> &to_update, bool delete_source) override;
   int copy(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,

@@ -303,7 +303,7 @@ TEST_F(StorageTest,true_first_read){
   librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
   storage.set_io_ctx(io_ctx_mock);
   EXPECT_CALL(*io_ctx_mock,operate(_,_,_)).Times(1).WillOnce(Return(0));
-  int ret=storage.read_mail(oid,mail);
+  int ret=storage.read_mail(oid,mail,0);
   EXPECT_EQ(0,ret);
   delete io_ctx_mock;
 }
@@ -322,7 +322,7 @@ TEST_F(StorageTest,true_repeated_read){
                                                    .WillOnce(Return(-ETIMEDOUT))
                                                    .WillOnce(Return(-ETIMEDOUT))
                                                    .WillOnce(Return(0));
-  int ret=storage.read_mail(oid,mail);
+  int ret=storage.read_mail(oid,mail,0);
   EXPECT_EQ(0,ret);
   delete io_ctx_mock;
 }
@@ -338,8 +338,8 @@ TEST_F(StorageTest,false_read){
   storage.set_io_ctx(io_ctx_mock);
   int read_count=storage.read_count;
   std::cout<<"read_value"<<read_count<<std::endl;
-  EXPECT_CALL(*io_ctx_mock,operate(_,_,_)).Times(8).WillRepeatedly(Return(-ETIMEDOUT));
-  int ret=storage.read_mail(oid,mail);
+  EXPECT_CALL(*io_ctx_mock,operate(_,_,_)).Times(11).WillRepeatedly(Return(-ETIMEDOUT));
+  int ret=storage.read_mail(oid,mail,0);
   read_count=storage.read_count;
   std::cout<<"ret_value"<<ret<<std::endl;
   std::cout<<"read_value"<<read_count<<std::endl;
