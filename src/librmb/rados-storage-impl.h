@@ -35,7 +35,7 @@ class RadosStorageImpl : public RadosStorage {
   static int read_count;
   librados::IoCtx &get_io_ctx() override;
   void set_io_ctx(librmb::RboxIoCtx* io_ctx_){
-    io_ctx_sample=io_ctx_;
+    io_ctx_wrapper=io_ctx_;
   }
   
   
@@ -108,7 +108,7 @@ class RadosStorageImpl : public RadosStorage {
   int max_object_size;
   std::string nspace;
   librados::IoCtx io_ctx;
-  RboxIoCtx* io_ctx_sample;
+  RboxIoCtx* io_ctx_wrapper;
   librados::IoCtx recovery_io_ctx;
  
   bool io_ctx_created;

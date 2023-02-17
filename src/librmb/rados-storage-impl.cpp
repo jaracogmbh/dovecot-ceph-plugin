@@ -139,10 +139,12 @@ int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,
   uint64_t psize;
   time_t save_date;
   
-  librados::ObjectReadOperation *read_op = new librados::ObjectReadOperation();
-  read_op->read(0, INT_MAX, mail->get_mail_buffer(), &read_err);
-  read_op->stat(&psize, &save_date, &stat_err);
-  ret=get_io_ctx().operate(oid, read_op, mail->get_mail_buffer());
+  librados::ObjectReadOperation read_op;
+  read_op.read(0, INT_MAX, mail->get_mail_buffer(), &read_err);
+  read_op.stat(&psize, &save_date, &stat_err);
+  // io_ctx_wrapper->set_Io_Ctx(&(this->get_io_ctx()));
+  // ret=io_ctx_wrapper->operate(&oid, &read_op, mail->get_mail_buffer());
+  ret=get_io_ctx().operate(oid, &read_op, mail->get_mail_buffer());
   
   if(ret == -ETIMEDOUT) {
     int max_retry = 10; //TODO FIX 
@@ -181,6 +183,8 @@ bool RadosStorageImpl::execute_operation(std::string &oid, librados::ObjectWrite
   if (!cluster->is_connected() || !io_ctx_created) {
     return false;
   }
+  // io_ctx_wrapper->set_Io_Ctx(&(this->get_io_ctx()));
+  // return io_ctx_wrapper->operate(&oid, write_op_xattr) >=0 ? true : false;
   return get_io_ctx().operate(oid, write_op_xattr) >=0 ? true : false;
 }
 
@@ -188,6 +192,8 @@ bool RadosStorageImpl::append_to_object(std::string &oid, librados::bufferlist &
   if (!cluster->is_connected() || !io_ctx_created) {
     return false;
   }
+  // io_ctx_wrapper->set_Io_Ctx(&(this->get_io_ctx()));
+  // return io_ctx_wrapper->append(&oid, bufferlist, length) >=0 ? true : false;
   return get_io_ctx().append(oid, bufferlist, length) >=0 ? true : false;
 }
 int RadosStorageImpl::read_operate(const std::string &oid, librados::ObjectReadOperation *read_operation, librados::bufferlist *bufferlist) {
@@ -625,7 +631,11 @@ bool  RadosStorageImpl::save_mail(RadosMail *current_object){
   return ret_val;
 }
   
-librmb::RadosMail *RadosStorageImpl::alloc_rados_mail() { return new librmb::RadosMail(); }
+librmb::RadosMail *RadosStorageImpl::alloc_rados_mail() {
+  librmb::RadosMail * mail=new librmb::RadosMail(); 
+  mail->set_mail_buffer(new librados::bufferlist());
+  return mail;
+}
 
 void RadosStorageImpl::free_rados_mail(librmb::RadosMail *mail) {
   if (mail != nullptr) {

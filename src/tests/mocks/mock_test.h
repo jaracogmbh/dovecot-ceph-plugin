@@ -33,9 +33,12 @@ using librmb::RboxIoCtx;
 
 class RboxIoCtxMock : public RboxIoCtx{
   public:
-    MOCK_METHOD2(operate,int(std::string &oid, librados::ObjectWriteOperation *write_op_xattr));
-    MOCK_METHOD3(append,bool(std::string &oid, librados::bufferlist &bufferlist, int length));
-    MOCK_METHOD3(operate,int(const std::string &oid,librados::ObjectReadOperation *read_op,librados::bufferlist* buffer));
+    MOCK_METHOD1(set_Io_Ctx,void(librados::IoCtx* storage_io_ctx));
+    MOCK_METHOD0(get_Io_Ctx,librados::IoCtx*());
+    MOCK_METHOD4(read,int(std::string* oid, librados::bufferlist* bl, size_t len, uint64_t off));
+    MOCK_METHOD2(operate,int(std::string* oid, librados::ObjectWriteOperation *write_op_xattr));
+    MOCK_METHOD3(append,bool(std::string* oid, librados::bufferlist &bufferlist, int length));
+    MOCK_METHOD3(operate,int(std::string* oid,librados::ObjectReadOperation *read_op,librados::bufferlist* buffer));
 };
 
 class RadosStorageMock : public RadosStorage {

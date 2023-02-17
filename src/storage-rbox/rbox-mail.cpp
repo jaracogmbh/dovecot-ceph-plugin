@@ -463,8 +463,6 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
  
     /* Pop3 and virtual box needs this. it looks like rbox_index_mail_set_seq is not called. */
     if (rmail->rados_mail == nullptr) {
-       // make sure that mail_object is initialized,
-       // else create and load guid from index.
        rmail->rados_mail = rados_storage->alloc_rados_mail();
        if (rbox_get_index_record(_mail) < 0) {
          i_error("Error rbox_get_index uid(%d)", _mail->uid);
@@ -475,7 +473,8 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
     const std::string mail_oid=guid_128_to_string(rmail->index_oid);
 
     ret=rados_storage->read_mail(mail_oid,rmail->rados_mail,0);
-    
+    i_debug("rbox_mail_buffer::%d",rmail->rados_mail->get_mail_buffer());
+    i_error("ret value line 478::: ret is equal to ::%d",ret);
     if (ret < 0) {
       if (ret == -ENOENT) {
         // This can happen, if we have more then 2 processes running at the same time.
@@ -520,7 +519,7 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
 
     i_debug("reading stream for oid: %s, phy: %d, buffer: %d", rmail->rados_mail->get_oid()->c_str(),
                                                                physical_size, 
-                                                               rmail->rados_mail->get_mail_buffer()->length());
+                                                               rmail->rados_mail->get_mail_buffer()->length());                                                        
     // validates if object is in zlib format (first 2 byte)
     bool isGzip = check_is_zlib(rmail->rados_mail->get_mail_buffer());
     if(isGzip) {
