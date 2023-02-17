@@ -614,7 +614,9 @@ int rbox_save_finish(struct mail_save_context *_ctx) {
       r_ctx->rados_mail->set_mail_size(r_ctx->output_stream->offset);
       rbox_save_mail_set_metadata(r_ctx, r_ctx->rados_mail);
       struct rbox_storage *r_storage = (struct rbox_storage *)&r_ctx->mbox->storage->storage;
+      i_info("SAVING MAIL %lx",r_ctx->rados_mail->get_mail_buffer());
       r_ctx->failed=r_storage->s->save_mail(r_ctx->rados_mail) ? false : true;
+      i_info("SAVING MAIL done! %lx",r_ctx->rados_mail->get_mail_buffer());
       if (r_ctx->failed) {
         i_error("saved mail: %s failed. Metadata_count %ld, mail_size (%d)", r_ctx->rados_mail->get_oid()->c_str(),
                 r_ctx->rados_mail->get_metadata()->size(), r_ctx->rados_mail->get_mail_size());
@@ -622,8 +624,10 @@ int rbox_save_finish(struct mail_save_context *_ctx) {
 
         if( r_storage->config->get_object_search_method() == 2){
           // ceph config schalter an oder aus!
-          
+          i_info("ADD INDEX!");
+
           r_storage->s->ceph_index_append(*r_ctx->rados_mail->get_oid());
+          i_info("INDEX ADDED!");
           uint64_t index_size = r_storage->s->ceph_index_size();
           // WARN if index reaches 80% of max object size
           if( ((index_size/r_storage->s->get_max_object_size()) * 100) > 80) {
@@ -631,6 +635,7 @@ int rbox_save_finish(struct mail_save_context *_ctx) {
           }
         }
       }
+
       if (r_storage->save_log->is_open()) {
         r_storage->save_log->append(
             librmb::RadosSaveLogEntry(*r_ctx->rados_mail->get_oid(), r_storage->s->get_namespace(),
@@ -639,6 +644,8 @@ int rbox_save_finish(struct mail_save_context *_ctx) {
       
     }
   }
+
+  i_info("nearly done cleaning up...");
   clean_up_write_finish(_ctx);
 
   FUNC_END();

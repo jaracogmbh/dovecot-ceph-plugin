@@ -139,11 +139,17 @@ int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,
   uint64_t psize;
   time_t save_date;
   
-  librados::ObjectReadOperation *read_op = new librados::ObjectReadOperation();
-  read_op->read(0, INT_MAX, mail->get_mail_buffer(), &read_err);
-  read_op->stat(&psize, &save_date, &stat_err);
-  ret=get_io_ctx().operate(oid, read_op, mail->get_mail_buffer());
+  if(mail->get_mail_buffer() == nullptr || mail->get_mail_buffer() == NULL){
+    return -1;
+  }
   
+  librados::ObjectReadOperation read_op;
+
+  read_op.read(0, INT_MAX, mail->get_mail_buffer(), &read_err);
+  read_op.stat(&psize, &save_date, &stat_err);
+
+  ret = get_io_ctx().operate(oid, &read_op, mail->get_mail_buffer());
+  std::cout << "THIS IS THE MAIL BUFFER " << mail->get_mail_buffer() << std::endl;
   if(ret == -ETIMEDOUT) {
     int max_retry = 10; //TODO FIX 
     if(try_counter < max_retry){
@@ -152,7 +158,7 @@ int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,
       ret=read_mail(oid,mail,try_counter);
     }
   }
-  if(ret<0 || ret == -ETIMEDOUT){
+  if(ret < 0 || ret == -ETIMEDOUT){
     return ret;
   }
   
@@ -625,7 +631,11 @@ bool  RadosStorageImpl::save_mail(RadosMail *current_object){
   return ret_val;
 }
   
-librmb::RadosMail *RadosStorageImpl::alloc_rados_mail() { return new librmb::RadosMail(); }
+librmb::RadosMail *RadosStorageImpl::alloc_rados_mail() { 
+  librmb::RadosMail *mail =new librmb::RadosMail(); 
+  mail->set_mail_buffer(new librados::bufferlist());
+  return mail;
+}
 
 void RadosStorageImpl::free_rados_mail(librmb::RadosMail *mail) {
   if (mail != nullptr) {

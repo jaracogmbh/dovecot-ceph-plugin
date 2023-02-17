@@ -472,10 +472,13 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
          return -1;
        }
     }    
-    const std::string mail_oid=guid_128_to_string(rmail->index_oid);
-
-    ret=rados_storage->read_mail(mail_oid,rmail->rados_mail,0);
+    const std::string mail_oid = guid_128_to_string(rmail->index_oid);
+  
+    i_info("TRYING TO READ THE MAIL!!! %lx",rmail->rados_mail->get_mail_buffer());
     
+    ret=rados_storage->read_mail(mail_oid,rmail->rados_mail,0);
+
+    i_info("YEAH DONE IT!! %lx",rmail->rados_mail->get_mail_buffer());
     if (ret < 0) {
       if (ret == -ENOENT) {
         // This can happen, if we have more then 2 processes running at the same time.
@@ -517,10 +520,11 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
       delete rmail->rados_mail->get_mail_buffer();
       return -1;
     }
-
+    i_info("STILL ALIVE? oid %s mail buffer %lx", rmail->rados_mail->get_oid()->c_str(),rmail->rados_mail->get_mail_buffer());
     i_debug("reading stream for oid: %s, phy: %d, buffer: %d", rmail->rados_mail->get_oid()->c_str(),
                                                                physical_size, 
                                                                rmail->rados_mail->get_mail_buffer()->length());
+    i_info("STILL ALIVE 2?");
     // validates if object is in zlib format (first 2 byte)
     bool isGzip = check_is_zlib(rmail->rados_mail->get_mail_buffer());
     if(isGzip) {
@@ -536,7 +540,7 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
           physical_size+=1;                 
       }
     }
-  
+  i_info("STILL ALIVE trying to get_mail_stream!");
     if (get_mail_stream(rmail, rmail->rados_mail->get_mail_buffer(), physical_size, &input) < 0) {
       i_debug("get mail failed");
       FUNC_END_RET("ret == -1");
