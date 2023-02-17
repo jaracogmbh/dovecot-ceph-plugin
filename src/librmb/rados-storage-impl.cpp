@@ -145,7 +145,6 @@ int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,
   // io_ctx_wrapper->set_Io_Ctx(&(this->get_io_ctx()));
   // ret=io_ctx_wrapper->operate(&oid, &read_op, mail->get_mail_buffer());
   ret=get_io_ctx().operate(oid, &read_op, mail->get_mail_buffer());
-  
   if(ret == -ETIMEDOUT) {
     int max_retry = 10; //TODO FIX 
     if(try_counter < max_retry){
@@ -154,7 +153,7 @@ int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,
       ret=read_mail(oid,mail,try_counter);
     }
   }
-  if(ret<0 || ret == -ETIMEDOUT){
+  if(ret < 0 || ret == -ETIMEDOUT){
     return ret;
   }
   

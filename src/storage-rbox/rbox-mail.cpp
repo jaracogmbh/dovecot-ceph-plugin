@@ -473,8 +473,7 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
     const std::string mail_oid=guid_128_to_string(rmail->index_oid);
 
     ret=rados_storage->read_mail(mail_oid,rmail->rados_mail,0);
-    i_debug("rbox_mail_buffer::%d",rmail->rados_mail->get_mail_buffer());
-    i_error("ret value line 478::: ret is equal to ::%d",ret);
+
     if (ret < 0) {
       if (ret == -ENOENT) {
         // This can happen, if we have more then 2 processes running at the same time.
@@ -516,7 +515,7 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
       delete rmail->rados_mail->get_mail_buffer();
       return -1;
     }
-
+    i_info("STILL ALIVE? oid %s mail buffer %lx", rmail->rados_mail->get_oid()->c_str(),rmail->rados_mail->get_mail_buffer());
     i_debug("reading stream for oid: %s, phy: %d, buffer: %d", rmail->rados_mail->get_oid()->c_str(),
                                                                physical_size, 
                                                                rmail->rados_mail->get_mail_buffer()->length());                                                        
@@ -535,7 +534,7 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
           physical_size+=1;                 
       }
     }
-  
+  i_info("STILL ALIVE trying to get_mail_stream!");
     if (get_mail_stream(rmail, rmail->rados_mail->get_mail_buffer(), physical_size, &input) < 0) {
       i_debug("get mail failed");
       FUNC_END_RET("ret == -1");
