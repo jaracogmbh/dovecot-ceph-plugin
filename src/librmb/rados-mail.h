@@ -115,7 +115,6 @@ class RadosMail {
 
  private:
   string oid;
-  
   uint8_t guid[GUID_128_SIZE] = {};
   int object_size;  // byte
   AioCompletion* completion;

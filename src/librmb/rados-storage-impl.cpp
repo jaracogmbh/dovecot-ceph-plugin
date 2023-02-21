@@ -431,7 +431,7 @@ int RadosStorageImpl::move(std::string &src_oid, const char *src_ns, std::string
   librados::AioCompletion *completion = librados::Rados::aio_create_completion();
 
   // destination io_ctx is current io_ctx
-  dest_io_ctx = io_ctx;
+  dest_io_ctx = get_io_ctx();
 
   if (strcmp(src_ns, dest_ns) != 0) {
     src_io_ctx.dup(dest_io_ctx);
@@ -489,7 +489,7 @@ int RadosStorageImpl::copy(std::string &src_oid, const char *src_ns, std::string
   librados::IoCtx src_io_ctx, dest_io_ctx;
 
   // destination io_ctx is current io_ctx
-  dest_io_ctx = io_ctx;
+  dest_io_ctx = get_io_ctx();
 
   if (strcmp(src_ns, dest_ns) != 0) {
     src_io_ctx.dup(dest_io_ctx);

@@ -23,10 +23,37 @@ class RboxIoCtxImpl:public RboxIoCtx{
     public:
     virtual ~RboxIoCtxImpl(){}
     RboxIoCtxImpl(){}
+    int aio_stat(const std::string& oid,librados::AioCompletion *c,uint64_t *psize,time_t *pmtime) override{
+        int ret=get_Io_Ctx().aio_stat(oid,c,psize,pmtime);
+        c=nullptr;psize=nullptr;pmtime=nullptr;
+        delete c; delete psize; delete pmtime;
+        return ret;
+    }
+    int omap_get_vals_by_keys(const std::string& oid,const std::set<std::string>& keys,std::map<std::string, librados::bufferlist> *vals)override{
+        int ret=get_Io_Ctx().omap_get_vals_by_keys(oid,keys,vals);
+        vals=nullptr;
+        delete vals;
+        return ret;
+    }
+    int omap_rm_keys(const std::string& oid,const std::set<std::string>& keys)override{
+        return omap_rm_keys(oid,keys);
+    }
+    void omap_set(const std::string& oid,const std::map<std::string, librados::bufferlist>& map)override{
+        get_Io_Ctx().omap_set(oid,map);
+    }
+    int setxattr(const std::string& oid,const char *name, librados::bufferlist& bl)override{
+        int ret=get_Io_Ctx().setxattr(oid,name,bl);
+        name=nullptr;
+        delete name;
+        return ret;
+    }
+    int getxattrs(const std::string& oid,std::map<std::string, librados::bufferlist>& attrset)override{
+        return get_Io_Ctx().getxattrs(oid,attrset);
+    }
     librados::NObjectIterator nobjects_begin() override{
         return get_Io_Ctx().nobjects_begin();
     }
-    librados::NObjectIterator nobjects_begin(const ceph::bufferlist& filter) override{
+    librados::NObjectIterator nobjects_begin(const librados::bufferlist& filter) override{
         return get_Io_Ctx().nobjects_begin(filter);
     }
     void set_namespace(const std::string& nspace) override{

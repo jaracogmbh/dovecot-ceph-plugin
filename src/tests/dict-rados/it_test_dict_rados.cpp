@@ -26,7 +26,6 @@ extern "C" {
 #include "dict.h"
 #include "dict-private.h"
 #include "ioloop.h"
-
 #include "libdict-rados-plugin.h"
 }
 

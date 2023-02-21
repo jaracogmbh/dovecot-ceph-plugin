@@ -110,8 +110,7 @@ underTest.ceph_index_add("dkfkjdf")
    *
    * @return object iterator or librados::NObjectIterator::__EndObjectIterator */
   virtual std::set<std::string> find_mails(const RadosMetadata *attr) = 0;
-
-
+ 
   virtual std::set<std::string> find_mails_async(const RadosMetadata *attr, 
                                                  std::string &pool_name, 
                                                  int num_threads,

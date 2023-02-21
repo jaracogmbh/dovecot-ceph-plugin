@@ -108,7 +108,6 @@ class RadosStorageImpl : public RadosStorage {
   int max_write_size;
   int max_object_size;
   std::string nspace;
-  librados::IoCtx io_ctx;
   librmb::RboxIoCtx* io_ctx_wrapper;
   librados::IoCtx recovery_io_ctx;
  

@@ -73,9 +73,7 @@ struct mail_storage *rbox_storage_alloc(void) {
   r_storage->storage.pool = pool;
   r_storage->cluster = new librmb::RadosClusterImpl();
   r_storage->s = new librmb::RadosStorageImpl(r_storage->cluster);
-  i_debug("struct mail_storage *rbox_storage_alloc(void):lineeeeeee76::::: %lx",&r_storage->s->get_io_ctx());
   r_storage->config = new librmb::RadosDovecotCephCfgImpl(&r_storage->s->get_io_ctx());
-  i_info("struct mail_storage *rbox_storage_alloc(void):lineeeeeee78");
   r_storage->ns_mgr = new librmb::RadosNamespaceManager(r_storage->config);
   r_storage->ms = new librmb::RadosMetadataStorageImpl();
   r_storage->alt = new librmb::RadosStorageImpl(r_storage->cluster);
@@ -480,6 +478,8 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
   }
   
   if (ret < 0) {
+
+    i_debug("it is still working there is no prblem before here");
     i_error(
         "Open rados connection. Error(%d,%s) (pool_name(%s), cluster_name(%s), rados_user_name(%s), "
         "alt_storage(%d), "
