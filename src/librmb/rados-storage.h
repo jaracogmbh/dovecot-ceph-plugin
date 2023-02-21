@@ -35,13 +35,11 @@ class RadosStorage {
   /*!
    * if connected, return the valid ioCtx
    */
-  virtual librados::IoCtx &get_io_ctx() = 0;
+  virtual librados::IoCtx& get_io_ctx() = 0;
 
   /*!
    * if connected, return the valid ioCtx for recovery index
    */
-  /***SARA:the method can be private***/
-  // virtual librados::IoCtx &get_recovery_io_ctx() = 0;
 
 
   /*! get the object size and object save date
@@ -105,7 +103,6 @@ underTest.ceph_index_add("dkfkjdf")
    * @param[in] c valid pointer to a completion.
    * @param[in] op the prepared write operation
    * */
-  /***SARA: the method can be private***/ 
   // virtual int aio_operate(librados::IoCtx *io_ctx_, const std::string &oid, librados::AioCompletion *c,
   //                         librados::ObjectWriteOperation *op) = 0;
   /*! search for mails based on given Filter

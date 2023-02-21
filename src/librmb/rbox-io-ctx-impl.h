@@ -22,30 +22,61 @@ namespace librmb{
 class RboxIoCtxImpl:public RboxIoCtx{
     public:
     virtual ~RboxIoCtxImpl(){}
-    void set_Io_Ctx(librados::IoCtx* storage_io_ctx) override{
-        io_ctx=storage_io_ctx;
+    RboxIoCtxImpl(){}
+    librados::NObjectIterator nobjects_begin() override{
+        return get_Io_Ctx().nobjects_begin();
     }
-    librados::IoCtx* get_Io_Ctx() override{
+    librados::NObjectIterator nobjects_begin(const ceph::bufferlist& filter) override{
+        return get_Io_Ctx().nobjects_begin(filter);
+    }
+    void set_namespace(const std::string& nspace) override{
+        get_Io_Ctx().set_namespace(nspace);
+    }
+    int stat(const std::string& oid, uint64_t *psize, time_t *pmtime)override{
+        int ret=get_Io_Ctx().stat(oid,psize,pmtime);
+        psize=nullptr;pmtime=nullptr;
+        delete psize;delete pmtime;
+        return ret;
+    }
+    int aio_operate(const std::string& oid, librados::AioCompletion *c, librados::ObjectWriteOperation *op)override{
+        int ret=get_Io_Ctx().aio_operate(oid,c,op);
+        c=nullptr;op=nullptr;
+        delete c;delete op;
+        return ret;
+    }
+    int remove(const std::string& oid){
+        return get_Io_Ctx().remove(oid);
+    }
+    int  write_full(const std::string& oid, librados::bufferlist& bl) override{
+        return get_Io_Ctx().write_full(oid,bl);
+    }
+    void set_Io_Ctx(librados::IoCtx& io_ctx_) override{
+        io_ctx=io_ctx_;
+    }
+    librados::IoCtx& get_Io_Ctx() override{
         return io_ctx;
     }
-    int read(std::string* oid, librados::bufferlist* bl, size_t len, uint64_t off) override{
-        const std::string& oid_ref=*oid;
-        return io_ctx->read(oid_ref,*bl,len,0);
+    int read(const std::string& oid, librados::bufferlist& bl, size_t len, uint64_t off) override{
+        return get_Io_Ctx().read(oid,bl,len,0);
     }
-    int operate(std::string* oid, librados::ObjectWriteOperation *write_op_xattr) override{
-        const std::string& oid_ref=*oid;
-        return io_ctx->operate(oid,write_op_xattr);
+    int operate(const std::string& oid, librados::ObjectWriteOperation* write_op_xattr) override{
+        int ret=get_Io_Ctx().operate(oid,write_op_xattr);
+        write_op_xattr=nullptr;
+        delete write_op_xattr;
+        return ret;
     }
-    bool append(std::string* oid, librados::bufferlist &bufferlist, int length) override{
-        const std::string& oid_ref=*oid;
-        return io_ctx->append(oid, bufferlist, length);
+    bool append(const std::string& oid, librados::bufferlist& bufferlist, int length) override{
+        return get_Io_Ctx().append(oid,bufferlist, length);
     }
-    int operate(std::string* oid,librados::ObjectReadOperation *read_op,librados::bufferlist* buffer) override{
-        const std::string& oid_ref=*oid;
-        return io_ctx->operate(oid,read_op,buffer);
+    int operate(
+        const std::string& oid,librados::ObjectReadOperation* read_op,librados::bufferlist* buffer) override{
+        int ret=get_Io_Ctx().operate(oid,read_op,buffer);
+        read_op=nullptr;buffer=nullptr;
+        delete read_op;delete buffer;
+        return ret;
     }
     private:
-    librados::IoCtx* io_ctx;
+    librados::IoCtx io_ctx;
 };    
 }
 #endif  // SRC_LIBRMB_RBOX_IO_CTX_IMPL_H_

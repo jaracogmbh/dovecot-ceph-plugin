@@ -149,7 +149,6 @@ static int rbox_mail_metadata_get(struct rbox_mail *rmail, enum rbox_metadata_ke
     }
   }
   if(rmail->rados_mail->get_oid()->length() == 0){
-    i_info("mail uid: %d , oid '%s', guid: %s, index-oid: %s ",mail->uid,rmail->rados_mail->get_oid()->c_str(), guid_128_to_string(rmail->index_guid),  guid_128_to_string(rmail->index_oid) );
     rmail->rados_mail->set_oid(rmail->index_oid);
   }
   int ret_load_metadata = r_storage->ms->get_storage()->load_metadata(rmail->rados_mail);
@@ -515,7 +514,6 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
       delete rmail->rados_mail->get_mail_buffer();
       return -1;
     }
-    i_info("STILL ALIVE? oid %s mail buffer %lx", rmail->rados_mail->get_oid()->c_str(),rmail->rados_mail->get_mail_buffer());
     i_debug("reading stream for oid: %s, phy: %d, buffer: %d", rmail->rados_mail->get_oid()->c_str(),
                                                                physical_size, 
                                                                rmail->rados_mail->get_mail_buffer()->length());                                                        
@@ -534,7 +532,6 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
           physical_size+=1;                 
       }
     }
-  i_info("STILL ALIVE trying to get_mail_stream!");
     if (get_mail_stream(rmail, rmail->rados_mail->get_mail_buffer(), physical_size, &input) < 0) {
       i_debug("get mail failed");
       FUNC_END_RET("ret == -1");

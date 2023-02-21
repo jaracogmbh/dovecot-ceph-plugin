@@ -54,6 +54,7 @@ using ::testing::ReturnRef;
 using ::testing::DoAll;
 using ::testing::Assign;
 using ::testing::Lt;
+using ::testing::NiceMock;
 #pragma GCC diagnostic pop
 
 #if DOVECOT_PREREQ(2, 3)
@@ -125,11 +126,7 @@ TEST_F(StorageTest, connect_io_ctx_recovery_index_io_ctx_failed) {
 TEST_F(StorageTest,false_io_ctx_created){
   librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
   librmb::RadosStorageImpl under_test(cluster_mock);
-
-
-  /*if io_ctx_created is false the expected value of save_mail is false,
-   io_ctx_created gets value on create_connection method 
-   and will be true if all following methods return 0 otherwise it will be false */ 
+  
   EXPECT_CALL(*cluster_mock, init()).Times(1).WillOnce(Return(0)); 
   EXPECT_CALL(*cluster_mock, io_ctx_create(_ , _)).Times(1).WillOnce(Return(-1));
   EXPECT_CALL(*cluster_mock, recovery_index_io_ctx(_ , _)).Times(0);
@@ -215,11 +212,13 @@ TEST_F(StorageTest,true_cluster_connectio){
   librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
   librmb::RadosStorageImpl under_test(cluster_mock);
 
-  librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
+  NiceMock<librmbtest::RboxIoCtxMock>* io_ctx_mock=new librmbtest::RboxIoCtxMock();
   under_test.set_io_ctx(io_ctx_mock);
+  librados::IoCtx io_ctx;
   EXPECT_CALL(*io_ctx_mock,append(_,_,_)).Times(0);
-  EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(1).WillOnce(Return(0)); 
- 
+  EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(1).WillOnce(Return(0));
+  ON_CALL(*io_ctx_mock,get_Io_Ctx()).WillByDefault(ReturnRef(io_ctx)); 
+  
   
   EXPECT_CALL(*cluster_mock, init()).Times(1).WillOnce(Return(0));
   EXPECT_CALL(*cluster_mock, io_ctx_create(_ , _)).Times(1).WillOnce(Return(0));   
@@ -255,10 +254,12 @@ TEST_F(StorageTest,split_buffer){
   librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
   librmb::RadosStorageImpl under_test(cluster_mock);
 
-  librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
+  NiceMock<librmbtest::RboxIoCtxMock>* io_ctx_mock=new librmbtest::RboxIoCtxMock();
   under_test.set_io_ctx(io_ctx_mock);
+  librados::IoCtx io_ctx;
   EXPECT_CALL(*io_ctx_mock,append(_,_,_)).Times(4).WillRepeatedly(Return(true));
   EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(1).WillOnce(Return(0));
+  ON_CALL(*io_ctx_mock,get_Io_Ctx()).WillByDefault(ReturnRef(io_ctx)); 
   
   EXPECT_CALL(*cluster_mock, init()).Times(1).WillOnce(Return(0));
   EXPECT_CALL(*cluster_mock, io_ctx_create(_ , _)).Times(1).WillOnce(Return(0));

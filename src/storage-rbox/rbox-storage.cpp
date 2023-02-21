@@ -62,7 +62,8 @@ extern struct mailbox_vfuncs rbox_mailbox_vfuncs;
 
 struct mail_storage *rbox_storage_alloc(void) {
   FUNC_START();
-
+  
+  
   struct rbox_storage *r_storage;
   pool_t pool;
   pool = pool_alloconly_create("rbox storage", 512 + 256);
@@ -72,7 +73,9 @@ struct mail_storage *rbox_storage_alloc(void) {
   r_storage->storage.pool = pool;
   r_storage->cluster = new librmb::RadosClusterImpl();
   r_storage->s = new librmb::RadosStorageImpl(r_storage->cluster);
+  i_debug("struct mail_storage *rbox_storage_alloc(void):lineeeeeee76::::: %lx",&r_storage->s->get_io_ctx());
   r_storage->config = new librmb::RadosDovecotCephCfgImpl(&r_storage->s->get_io_ctx());
+  i_info("struct mail_storage *rbox_storage_alloc(void):lineeeeeee78");
   r_storage->ns_mgr = new librmb::RadosNamespaceManager(r_storage->config);
   r_storage->ms = new librmb::RadosMetadataStorageImpl();
   r_storage->alt = new librmb::RadosStorageImpl(r_storage->cluster);

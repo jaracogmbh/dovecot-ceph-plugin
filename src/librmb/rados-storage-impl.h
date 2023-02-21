@@ -26,7 +26,7 @@
 #include "rados-mail.h"
 #include "rbox-io-ctx.h"
 #include "rados-storage.h"
-
+#include "rbox-io-ctx-impl.h"
 namespace librmb {
 class RadosStorageImpl : public RadosStorage {
  public:
@@ -35,6 +35,7 @@ class RadosStorageImpl : public RadosStorage {
   static int read_count;
   librados::IoCtx &get_io_ctx() override;
   void set_io_ctx(librmb::RboxIoCtx* io_ctx_){
+    assert(io_ctx_wrapper!=nullptr);
     io_ctx_wrapper=io_ctx_;
   }
   
@@ -108,7 +109,7 @@ class RadosStorageImpl : public RadosStorage {
   int max_object_size;
   std::string nspace;
   librados::IoCtx io_ctx;
-  RboxIoCtx* io_ctx_wrapper;
+  librmb::RboxIoCtx* io_ctx_wrapper;
   librados::IoCtx recovery_io_ctx;
  
   bool io_ctx_created;

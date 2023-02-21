@@ -43,11 +43,8 @@ class RadosMail {
   void set_mail_size(const int _size) { object_size = _size; }
   void set_active_op(int num_write_op) { this->active_op = num_write_op; }
   void set_rados_save_date(const time_t& _save_date) { this->save_date_rados = _save_date; }
-  
-
   string* get_oid() { return &this->oid; }
   int get_mail_size() { return this->object_size; }
-
   time_t get_rados_save_date() { return this->save_date_rados; }
   uint8_t get_guid_ref() { return *this->guid; }
   

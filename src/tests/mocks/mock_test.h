@@ -33,17 +33,24 @@ using librmb::RboxIoCtx;
 
 class RboxIoCtxMock : public RboxIoCtx{
   public:
-    MOCK_METHOD1(set_Io_Ctx,void(librados::IoCtx* storage_io_ctx));
-    MOCK_METHOD0(get_Io_Ctx,librados::IoCtx*());
-    MOCK_METHOD4(read,int(std::string* oid, librados::bufferlist* bl, size_t len, uint64_t off));
-    MOCK_METHOD2(operate,int(std::string* oid, librados::ObjectWriteOperation *write_op_xattr));
-    MOCK_METHOD3(append,bool(std::string* oid, librados::bufferlist &bufferlist, int length));
-    MOCK_METHOD3(operate,int(std::string* oid,librados::ObjectReadOperation *read_op,librados::bufferlist* buffer));
+    MOCK_METHOD0(nobjects_begin,librados::NObjectIterator());
+    MOCK_METHOD1(nobjects_begin,librados::NObjectIterator(const ceph::bufferlist& filter));
+    MOCK_METHOD1(set_namespace,void(const std::string& nspace));
+    MOCK_METHOD3(stat,int(const std::string& oid, uint64_t *psize, time_t *pmtime));
+    MOCK_METHOD3(aio_operate,int(const std::string& oid, librados::AioCompletion *c, librados::ObjectWriteOperation *op));
+    MOCK_METHOD1(remove,int(const std::string& oid));
+    MOCK_METHOD2(write_full,int(const std::string& oid, librados::bufferlist& bl));
+    MOCK_METHOD1(set_Io_Ctx,void(librados::IoCtx& io_ctx_));
+    MOCK_METHOD0(get_Io_Ctx,librados::IoCtx& ());
+    MOCK_METHOD4(read,int(const std::string& oid, librados::bufferlist& bl, size_t len, uint64_t off));
+    MOCK_METHOD2(operate,int(const std::string& oid, librados::ObjectWriteOperation* write_op_xattr));
+    MOCK_METHOD3(append,bool(const std::string& oid, librados::bufferlist& bufferlist, int length));
+    MOCK_METHOD3(operate,int(const std::string& oid,librados::ObjectReadOperation* read_op,librados::bufferlist* buffer));
 };
 
 class RadosStorageMock : public RadosStorage {
  public:
-  MOCK_METHOD0(get_io_ctx, librados::IoCtx &());
+  MOCK_METHOD0(get_io_ctx, librados::IoCtx& ());
  
 
   MOCK_METHOD3(stat_mail, int(const std::string &oid, uint64_t *psize, time_t *pmtime));
