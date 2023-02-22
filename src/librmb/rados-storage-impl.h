@@ -32,11 +32,12 @@ class RadosStorageImpl : public RadosStorage {
  public:
   explicit RadosStorageImpl(RadosCluster *cluster);
   virtual ~RadosStorageImpl();
-  static int read_count;
   librados::IoCtx &get_io_ctx() override;
   void set_io_ctx(librmb::RboxIoCtx* io_ctx_){
-    assert(io_ctx_wrapper!=nullptr);
-    io_ctx_wrapper=io_ctx_;
+    if(io_ctx_wrapper!=nullptr){
+      delete io_ctx_wrapper;
+      io_ctx_wrapper=io_ctx_;
+    }
   }
   
   

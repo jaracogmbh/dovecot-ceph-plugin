@@ -513,33 +513,16 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
       delete rmail->rados_mail->get_mail_buffer();
       return -1;
     }
+
     i_debug("reading stream for oid: %s, phy: %d, buffer: %d", rmail->rados_mail->get_oid()->c_str(),
                                                                physical_size, 
                                                                rmail->rados_mail->get_mail_buffer()->length());                                                        
     // validates if object is in zlib format (first 2 byte)
-    bool isGzip = check_is_zlib(rmail->rados_mail->get_mail_buffer());
-    if(isGzip) {
-      uint32_t result = zlib_trailer_msg_length(rmail->rados_mail->get_mail_buffer(),physical_size);
-      
-      // get mails real physical size and compare against trailer length
-      uoff_t real_physical_size;
-      rbox_mail_get_physical_size(_mail, &real_physical_size);
-      // in case we have corrupt trailer, 
-      if(result-real_physical_size > zlib_header_length(rmail->rados_mail->get_mail_buffer())) {
-          i_warning("zlib size check failed %d trailer not as expected, fixing by adding 0x00 to msb",(result-real_physical_size));
-          rmail->rados_mail->get_mail_buffer()->append(0x00);
-          physical_size+=1;                 
-      }
-    }
     if (get_mail_stream(rmail, rmail->rados_mail->get_mail_buffer(), physical_size, &input) < 0) {
-      i_debug("get mail failed");
       FUNC_END_RET("ret == -1");
       delete rmail->rados_mail->get_mail_buffer();
       return -1;
     }
-    
-    i_debug("get mail failed retval of get_mail_stream %d",ret);
-
     data->stream = input;
     index_mail_set_read_buffer_size(_mail, input);
   }

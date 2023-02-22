@@ -33,7 +33,7 @@ using librmb::RboxIoCtx;
 
 class RboxIoCtxMock : public RboxIoCtx{
   public:
-    MOCK_METHOD4(aio_stat,int(const std::string& oid,librados::AioCompletion *c,uint64_t *psize,time_t *pmtime));
+    MOCK_METHOD4(aio_stat,int(const std::string& oid,librados::AioCompletion *aio_complete,uint64_t *psize,time_t *pmtime));
     MOCK_METHOD3(omap_get_vals_by_keys,int(const std::string& oid,const std::set<std::string>& keys,std::map<std::string, librados::bufferlist> *vals));
     MOCK_METHOD2(omap_rm_keys,int(const std::string& oid,const std::set<std::string>& keys));
     MOCK_METHOD2(omap_set,void(const std::string& oid,const std::map<std::string, librados::bufferlist>& map));
@@ -43,7 +43,7 @@ class RboxIoCtxMock : public RboxIoCtx{
     MOCK_METHOD1(nobjects_begin,librados::NObjectIterator(const librados::bufferlist& filter));
     MOCK_METHOD1(set_namespace,void(const std::string& nspace));
     MOCK_METHOD3(stat,int(const std::string& oid, uint64_t *psize, time_t *pmtime));
-    MOCK_METHOD3(aio_operate,int(const std::string& oid, librados::AioCompletion *c, librados::ObjectWriteOperation *op));
+    MOCK_METHOD3(aio_operate,int(const std::string& oid, librados::AioCompletion *aio_complete, librados::ObjectWriteOperation *op));
     MOCK_METHOD1(remove,int(const std::string& oid));
     MOCK_METHOD2(write_full,int(const std::string& oid, librados::bufferlist& bl));
     MOCK_METHOD1(set_Io_Ctx,void(librados::IoCtx& io_ctx_));

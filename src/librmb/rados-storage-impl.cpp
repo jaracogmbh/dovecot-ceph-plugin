@@ -38,7 +38,6 @@ using librmb::RadosStorageImpl;
 #define DICT_USERNAME_SEPARATOR '/'
 const char *RadosStorageImpl::CFG_OSD_MAX_WRITE_SIZE = "osd_max_write_size";
 const char *RadosStorageImpl::CFG_OSD_MAX_OBJECT_SIZE= "osd_max_object_size";
-static int RadosStorageImpl::read_count=0;
 
 RadosStorageImpl::RadosStorageImpl(RadosCluster *_cluster) {
   cluster = _cluster;
@@ -50,8 +49,8 @@ RadosStorageImpl::RadosStorageImpl(RadosCluster *_cluster) {
 }
 
 RadosStorageImpl::~RadosStorageImpl() {
-  io_ctx_wrapper=nullptr;
   delete io_ctx_wrapper;
+  io_ctx_wrapper=nullptr;
 }
 
 //DEPRECATED!!!!! -> moved to rbox-save.cpp
@@ -128,11 +127,17 @@ int RadosStorageImpl::split_buffer_and_exec_op(RadosMail *current_object,
 }
 
 int RadosStorageImpl::save_mail(const std::string &oid, librados::bufferlist &buffer) {
+  if (!cluster->is_connected() || !io_ctx_created) {
+    return -1;
+  }
   librados::bufferlist librados_buffer;
   librados_buffer.append(buffer);
   return io_ctx_wrapper->write_full(oid,librados_buffer);
 }
 int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter){
+  if (!cluster->is_connected() || !io_ctx_created) {
+    return -1;
+  }
   
   int ret=0;
   int stat_err = 0;
@@ -155,11 +160,8 @@ int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,
   if(ret < 0 || ret == -ETIMEDOUT){
     return ret;
   }
-  
   mail->set_mail_size((const int)psize);
   mail->set_rados_save_date(&save_date);
-  
-  
   return ret;
 }
 int RadosStorageImpl::delete_mail(RadosMail *mail) {
@@ -552,7 +554,6 @@ bool RadosStorageImpl::save_mail(librados::ObjectWriteOperation *write_op_xattr,
   } 
   return ret == 0;
 }
-
 
 bool  RadosStorageImpl::save_mail(RadosMail *current_object){
   

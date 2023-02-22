@@ -21,7 +21,6 @@
 #include "rados-mail.h"
 #include "rados-types.h"
 
-
 namespace librmb {
 /** class RadosStorage
  *  brief an abstract Rados Storage
@@ -35,7 +34,7 @@ class RadosStorage {
   /*!
    * if connected, return the valid ioCtx
    */
-  virtual librados::IoCtx& get_io_ctx() = 0;
+  virtual librados::IoCtx &get_io_ctx() = 0;
 
   /*!
    * if connected, return the valid ioCtx for recovery index
@@ -96,15 +95,6 @@ underTest.ceph_index_add("dkfkjdf")
    * @return <0 in case of failure
    */
   virtual int delete_mail(const std::string &oid) = 0;
-  /*! asynchron execution of a write operation
-   *
-   * @param[in] io_ctx valid io context
-   * @param[in] oid object identifier
-   * @param[in] c valid pointer to a completion.
-   * @param[in] op the prepared write operation
-   * */
-  // virtual int aio_operate(librados::IoCtx *io_ctx_, const std::string &oid, librados::AioCompletion *c,
-  //                         librados::ObjectWriteOperation *op) = 0;
   /*! search for mails based on given Filter
    * @param[in] attr a list of filter attributes
    *

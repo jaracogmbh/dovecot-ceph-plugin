@@ -10,7 +10,7 @@ namespace librmb{
 class RboxIoCtx{
     public:
       virtual ~RboxIoCtx() {}
-      virtual int aio_stat(const std::string& oid,librados::AioCompletion *c,uint64_t *psize,time_t *pmtime)=0;
+      virtual int aio_stat(const std::string& oid,librados::AioCompletion *aio_complete,uint64_t *psize,time_t *pmtime)=0;
       virtual int omap_get_vals_by_keys(const std::string& oid,const std::set<std::string>& keys,
                                           std::map<std::string, librados::bufferlist> *vals)=0;
       virtual int omap_rm_keys(const std::string& oid,const std::set<std::string>& keys)=0;
@@ -21,7 +21,7 @@ class RboxIoCtx{
       virtual librados::NObjectIterator nobjects_begin(const librados::bufferlist& filter)=0;
       virtual void set_namespace(const std::string& nspace)=0;
       virtual int stat(const std::string& oid, uint64_t *psize, time_t *pmtime)=0;
-      virtual int aio_operate(const std::string& oid, librados::AioCompletion *c, librados::ObjectWriteOperation *op)=0;
+      virtual int aio_operate(const std::string& oid, librados::AioCompletion *aio_complete, librados::ObjectWriteOperation *op)=0;
       virtual int remove(const std::string& oid)=0;
       virtual int write_full(const std::string& oid, librados::bufferlist& bl)=0;
       virtual void set_Io_Ctx(librados::IoCtx& io_ctx_)=0;

@@ -63,7 +63,6 @@ extern struct mailbox_vfuncs rbox_mailbox_vfuncs;
 struct mail_storage *rbox_storage_alloc(void) {
   FUNC_START();
   
-  
   struct rbox_storage *r_storage;
   pool_t pool;
   pool = pool_alloconly_create("rbox storage", 512 + 256);
@@ -478,8 +477,6 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
   }
   
   if (ret < 0) {
-
-    i_debug("it is still working there is no prblem before here");
     i_error(
         "Open rados connection. Error(%d,%s) (pool_name(%s), cluster_name(%s), rados_user_name(%s), "
         "alt_storage(%d), "

@@ -32,23 +32,18 @@ using ::testing::Return;
  *
  */
 TEST(librmb, split_write_operation) {
-  /***SARA::max_size=3 is intended to test split method when buffer size is larger than chunk size
-   * in the new method  there is no chunk size as input
-   *  as a solution I create a random string longer than  get_max_write_size_bytes()***/
-  // uint64_t max_size = 3;
-
   librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
-  std::string longer_max_write_size_bytes="";
+  std::string splitable_buffer="";
   for(int i=0;i<storage.get_max_write_size_bytes();i++){
-    longer_max_write_size_bytes.append("Sara");
+    splitable_buffer.append("Sara");
   }
+  std::cout <<"splitable_buffer.size()::"<< splitable_buffer.size()<< std::endl;
   librmb::RadosMail obj;
   librados::bufferlist buffer;
   obj.set_mail_buffer(&buffer);
-  obj.get_mail_buffer()->append(longer_max_write_size_bytes);
-  std::cout <<"longer_max_write_size_bytes.size()::"<< longer_max_write_size_bytes.size()<< std::endl;
+  obj.get_mail_buffer()->append(splitable_buffer);
   int buffer_length = obj.get_mail_buffer()->length();
   std::cout <<"buffer_length::"<< buffer_length << std::endl;
   obj.set_mail_size(buffer_length);
@@ -57,17 +52,13 @@ TEST(librmb, split_write_operation) {
   std::cout <<"get_max_write_size_bytes()::"<< storage.get_max_write_size_bytes() << std::endl;
   obj.set_oid("test_oid");
   librados::IoCtx io_ctx;
-
   std::string pool_name("test");
   std::string ns("t");
   std::cout << "open" << std::endl;
   int open_connection = storage.open_connection(pool_name);
-  std::cout << "pok" << std::endl;
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
-  std::cout << "accccc" << std::endl;
   bool ret_storage=storage.save_mail(&obj);
-  std::cout << "lsdlslslss" << std::endl;
 
   // stat the object
   uint64_t size;
