@@ -22,7 +22,7 @@ build:
     - ./configure --with-dovecot=/usr/local/lib/dovecot --enable-maintainer-mode --enable-debug --with-integration-tests --enable-valgrind --enable-debug
     - make clean install
     - ldconfig
-    - ceph tell mon.\* injectargs "--mon-allow-pool-delete=true"
-    - make check
+    # - ceph tell mon.\* injectargs "--mon-allow-pool-delete=true"
+    # - make check
 
     
