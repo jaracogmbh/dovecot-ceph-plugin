@@ -62,7 +62,7 @@ extern struct mailbox_vfuncs rbox_mailbox_vfuncs;
 
 struct mail_storage *rbox_storage_alloc(void) {
   FUNC_START();
-
+  
   struct rbox_storage *r_storage;
   pool_t pool;
   pool = pool_alloconly_create("rbox storage", 512 + 256);

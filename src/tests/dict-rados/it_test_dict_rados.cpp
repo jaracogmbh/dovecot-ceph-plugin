@@ -26,7 +26,6 @@ extern "C" {
 #include "dict.h"
 #include "dict-private.h"
 #include "ioloop.h"
-
 #include "libdict-rados-plugin.h"
 }
 
@@ -94,6 +93,7 @@ TEST_F(DictTest, iterate) {
   ASSERT_EQ(dict_transaction_commit(&ctx, &error_r), 1);
 
   struct dict_iterate_context *iter = dict_iterate_init_multiple(target, OMAP_ITERATE_KEY, dict_iterate_flags(0));
+  
 
   i = 0;
   const char *kr;

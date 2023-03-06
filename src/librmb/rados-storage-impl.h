@@ -24,17 +24,23 @@
 #include <rados/librados.hpp>
 
 #include "rados-mail.h"
+#include "rbox-io-ctx.h"
 #include "rados-storage.h"
+#include "rbox-io-ctx-impl.h"
 namespace librmb {
-
 class RadosStorageImpl : public RadosStorage {
  public:
   explicit RadosStorageImpl(RadosCluster *cluster);
   virtual ~RadosStorageImpl();
-
   librados::IoCtx &get_io_ctx() override;
-  librados::IoCtx &get_recovery_io_ctx() override;
-
+  void set_io_ctx(librmb::RboxIoCtx* io_ctx_){
+    if(io_ctx_wrapper!=nullptr){
+      delete io_ctx_wrapper;
+      io_ctx_wrapper=io_ctx_;
+    }
+  }
+  
+  
   int stat_mail(const std::string &oid, uint64_t *psize, time_t *pmtime) override;
   void set_namespace(const std::string &_nspace) override;
   std::string get_namespace() override { return nspace; }
@@ -45,15 +51,13 @@ class RadosStorageImpl : public RadosStorage {
   int get_max_write_size_bytes() override { return max_write_size * 1024 * 1024; }
   int get_max_object_size() override {return max_object_size;}
 
-  int split_buffer_and_exec_op(RadosMail *current_object, librados::ObjectWriteOperation *write_op_xattr,
-                               const uint64_t &max_write) override;
+
 
   int delete_mail(RadosMail *mail) override;
   int delete_mail(const std::string &oid) override;
 
-  int aio_operate(librados::IoCtx *io_ctx_, const std::string &oid, librados::AioCompletion *c,
-                  librados::ObjectWriteOperation *op) override;
-  librados::NObjectIterator find_mails(const RadosMetadata *attr) override;
+
+  std::set<std::string> find_mails(const RadosMetadata *attr) override;
   
   std::set<std::string> find_mails_async(const RadosMetadata *attr, std::string &pool_name, int num_threads, void (*ptr)(std::string&)) override;
 
@@ -67,12 +71,8 @@ class RadosStorageImpl : public RadosStorage {
   int open_connection(const std::string &poolname, const std::string &clustername,
                       const std::string &rados_username) override;
   void close_connection() override;
-  bool wait_for_write_operations_complete(librados::AioCompletion *completion,
-                                          librados::ObjectWriteOperation *write_operation) override;
-
-  bool wait_for_rados_operations(const std::list<librmb::RadosMail *> &object_list) override;
-
-  int read_mail(const std::string &oid, librados::bufferlist *buffer) override;
+  // int read_mail(const std::string &oid, librados::bufferlist *buffer) override;
+  int read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter) override;
   int move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
            std::list<RadosMetadata> &to_update, bool delete_source) override;
   int copy(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
@@ -92,17 +92,26 @@ class RadosStorageImpl : public RadosStorage {
   std::set<std::string> ceph_index_read() override;
   int ceph_index_delete() override;
 
+  bool execute_operation(std::string &oid, librados::ObjectWriteOperation *write_op_xattr) override;
+  bool append_to_object(std::string &oid, librados::bufferlist &bufferlist, int length) override;
+  int read_operate(const std::string &oid, librados::ObjectReadOperation *read_operation, librados::bufferlist *bufferlist) override;
+
  private:
   int create_connection(const std::string &poolname,const std::string &index_pool);
-
+  librados::IoCtx &get_recovery_io_ctx();
+  int split_buffer_and_exec_op(RadosMail *current_object, librados::ObjectWriteOperation *write_op_xattr,
+                               const uint64_t &max_write);
+  int aio_operate(librados::IoCtx *io_ctx_, const std::string &oid, librados::AioCompletion *c,
+                  librados::ObjectWriteOperation *op);                             
+ 
  private:
   RadosCluster *cluster;
   int max_write_size;
   int max_object_size;
   std::string nspace;
-  librados::IoCtx io_ctx;
+  librmb::RboxIoCtx* io_ctx_wrapper;
   librados::IoCtx recovery_io_ctx;
-
+ 
   bool io_ctx_created;
   std::string pool_name;
   enum rbox_ceph_aio_wait_method wait_method;
