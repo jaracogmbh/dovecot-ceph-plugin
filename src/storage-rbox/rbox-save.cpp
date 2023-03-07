@@ -427,7 +427,7 @@ static void clean_up_failed(struct rbox_save_context *r_ctx, bool wait_for_opera
   // try to clean up!
   for (std::list<RadosMail *>::iterator it_cur_obj = r_ctx->rados_mails.begin(); it_cur_obj != r_ctx->rados_mails.end();
        ++it_cur_obj) {
-    int delete_ret = r_storage->s->delete_mail(*it_cur_obj);
+    int delete_ret = r_storage->s->delete_mail(*(*it_cur_obj)->get_oid());
     if (delete_ret < 0 && delete_ret != -ENOENT) {
       i_error("Librados obj: %s, could not be removed", (*it_cur_obj)->get_oid()->c_str());
     }
@@ -466,88 +466,6 @@ static void clean_up_write_finish(struct mail_save_context *_ctx) {
   index_save_context_free(_ctx);
 
   FUNC_END();
-}
-
-
-int save_mail_write_append(RadosStorage *rados_storage,
-                             RadosMail *current_object,
-                             librados::ObjectWriteOperation *write_op_xattr,
-                             const uint64_t &max_write) {
-
-  int ret_val = 0;
-  uint64_t write_buffer_size = current_object->get_mail_size();
-
-  assert(max_write > 0);
-
-  if (write_buffer_size == 0 || max_write <= 0) {
-    ret_val = -1;
-    i_debug("write_buffer_size == 0 or max_write <=0 < -1" );
-    return ret_val;
-  }
-
-  ret_val = rados_storage->execute_operation(*current_object->get_oid(), write_op_xattr);
-
-  if(ret_val< 0){
-    i_debug("write metadata did not work: %d",ret_val);
-    ret_val = -1;
-    return ret_val;
-  }
-
-  uint64_t rest = write_buffer_size % max_write;
-  int div = write_buffer_size / max_write + (rest > 0 ? 1 : 0);
-  for (int i = 0; i < div; ++i) {
-
-    // split the buffer.
-    librados::bufferlist tmp_buffer;
-
-    librados::ObjectWriteOperation write_op;
-
-    int offset = i * max_write;
-
-    uint64_t length = max_write;
-    if (write_buffer_size < ((i + 1) * length)) {
-      length = rest;
-    }
-
-    if (div == 1) {
-      write_op.write(0, *current_object->get_mail_buffer());
-      ret_val = rados_storage->execute_operation(*current_object->get_oid(), &write_op) ? 0 : -1;
-    } else {
-      i_debug("write chunk size %d, offset=%d,lenght=%d",write_buffer_size,offset,length);      
-      if(offset + length > write_buffer_size){
-        i_error("offset and length (%d) is bigger then write_buffer size (%d)", (offset+length), write_buffer_size);
-        return -1;
-      }else{
-        i_debug("trying to get substring of : mailsize %d, offset: %d, length %d",
-            current_object->get_mail_buffer()->length(), offset, length );        
-        if(offset + length > current_object->get_mail_buffer()->length() ){
-           i_debug("new offset : %d",current_object->get_mail_buffer()->length()-offset);
-           tmp_buffer.substr_of(*current_object->get_mail_buffer(), offset,current_object->get_mail_buffer()->length() - offset );
-        }else{
-          tmp_buffer.substr_of(*current_object->get_mail_buffer(), offset, length);
-        }
-       
-      }      
-      i_debug("tmp_buffer %d ",tmp_buffer.length());
-      ret_val = rados_storage->append_to_object(*current_object->get_oid(), tmp_buffer, length) ? 0 : -1; 
-    }
-    i_debug("append mail (append) return value: %d",ret_val);
-    if(ret_val < 0){
-      ret_val = -1;
-      break;
-    }
-  }
-  // deprecated unused
-  current_object->set_write_operation(nullptr);
-  current_object->set_completion(nullptr);
-  current_object->set_active_op(0);
-  
-  i_debug("freeing mailbuffer");
-  // free mail's buffer cause we don't need it anymore
-  librados::bufferlist *mail_buffer = current_object->get_mail_buffer();
-  delete mail_buffer;
-
-  return ret_val;
 }
 
 int rbox_save_finish(struct mail_save_context *_ctx) {

@@ -464,7 +464,7 @@ int RmbCommands::load_objects(librmb::RadosStorageMetadataModule *ms, std::list<
   // load all objects metadata into memory
   std::set<std::string> mail_list=storage->find_mails(nullptr);
   std::set<std::string>::iterator mail_iter;
-  for (mail_iter=mail_list.begin();mail_iter!=mail_list.end();++mail_iter) {
+  for (mail_iter=mail_list.begin();mail_iter!=mail_list.end();mail_iter++) {
     librmb::RadosMail *mail = new librmb::RadosMail();
     AioStat *stat = new AioStat();
     stat->mail = mail;
@@ -473,7 +473,7 @@ int RmbCommands::load_objects(librmb::RadosStorageMetadataModule *ms, std::list<
     stat->ms = ms;
     std::string oid = *mail_iter;
     stat->completion = librados::Rados::aio_create_completion(static_cast<void *>(stat), aio_cb, NULL);
-    int ret = storage->get_io_ctx().aio_stat(oid, stat->completion, &stat->object_size, &stat->save_date_rados);
+    int ret = storage->get_io_ctx_wrapper().aio_stat(oid, stat->completion, &stat->object_size, &stat->save_date_rados);
     if (ret != 0) {
       std::cout << " object '" << oid << "' is not a valid mail object, size = 0, ret code: " << ret << std::endl;
       delete mail;
@@ -612,9 +612,9 @@ RadosStorageMetadataModule *RmbCommands::init_metadata_storage_module(librmb::Ra
   // decide metadata storage!
   std::string storage_module_name = ceph_cfg.get_metadata_storage_module();
   if (storage_module_name.compare(librmb::RadosMetadataStorageIma::module_name) == 0) {
-    ms = new librmb::RadosMetadataStorageIma(&storage->get_io_ctx(), &cfg);
+    ms = new librmb::RadosMetadataStorageIma(&storage->get_io_ctx_wrapper().get_io_ctx(), &cfg);
   } else {
-    ms = new librmb::RadosMetadataStorageDefault(&storage->get_io_ctx());
+    ms = new librmb::RadosMetadataStorageDefault(&storage->get_io_ctx_wrapper().get_io_ctx());
   }
   if (!(*opts)["namespace"].empty()) {
     *uid = (*opts)["namespace"] + cfg.get_user_suffix();

@@ -72,7 +72,7 @@ struct mail_storage *rbox_storage_alloc(void) {
   r_storage->storage.pool = pool;
   r_storage->cluster = new librmb::RadosClusterImpl();
   r_storage->s = new librmb::RadosStorageImpl(r_storage->cluster);
-  r_storage->config = new librmb::RadosDovecotCephCfgImpl(&r_storage->s->get_io_ctx());
+  r_storage->config = new librmb::RadosDovecotCephCfgImpl(&r_storage->s->get_io_ctx_wrapper().get_io_ctx());
   r_storage->ns_mgr = new librmb::RadosNamespaceManager(r_storage->config);
   r_storage->ms = new librmb::RadosMetadataStorageImpl();
   r_storage->alt = new librmb::RadosStorageImpl(r_storage->cluster);
@@ -498,7 +498,7 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
     assert(ret == 0);
     return ret;
   }
-  rbox->storage->ms->create_metadata_storage(&rbox->storage->s->get_io_ctx(), rbox->storage->config);
+  rbox->storage->ms->create_metadata_storage(&rbox->storage->s->get_io_ctx_wrapper().get_io_ctx(), rbox->storage->config);
 
   std::string uid;
   if (box->list->ns->owner != nullptr) {

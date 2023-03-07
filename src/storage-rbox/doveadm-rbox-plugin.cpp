@@ -67,7 +67,7 @@ class RboxDoveadmPlugin {
   RboxDoveadmPlugin() {
     this->cluster = new librmb::RadosClusterImpl();
     this->storage = new librmb::RadosStorageImpl(cluster);
-    this->config = new librmb::RadosDovecotCephCfgImpl(&storage->get_io_ctx());
+    this->config = new librmb::RadosDovecotCephCfgImpl(&storage->get_io_ctx_wrapper().get_io_ctx());
   }
 
   ~RboxDoveadmPlugin() {
@@ -765,7 +765,7 @@ static int cmd_rmb_check_indices_run(struct doveadm_mail_cmd_context *ctx, struc
     std::cout << mo->to_string("  ") << std::endl;
     if (open >= 0 && ctx_->delete_not_referenced_objects && !mo->is_index_ref()) {
       std::cout << "mail object: " << mo->get_oid()->c_str()
-                << " deleted: " << (plugin.storage->delete_mail(mo) < 0 ? " FALSE " : " TRUE") << std::endl;
+                << " deleted: " << (plugin.storage->delete_mail(*mo->get_oid()) < 0 ? " FALSE " : " TRUE") << std::endl;
       ctx->exit_code = 2;
     }
     delete mo;

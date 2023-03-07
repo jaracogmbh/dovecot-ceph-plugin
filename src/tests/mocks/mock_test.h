@@ -39,6 +39,7 @@ class RboxIoCtxMock : public RboxIoCtx{
     MOCK_METHOD2(omap_set,void(const std::string& oid,const std::map<std::string, librados::bufferlist>& map));
     MOCK_METHOD2(getxattrs,int(const std::string& oid,std::map<std::string, librados::bufferlist>& attrset));
     MOCK_METHOD3(setxattr,int(const std::string& oid,const char *name, librados::bufferlist& bl));
+    MOCK_METHOD0(nobjects_end,const librados::NObjectIterator& ());
     MOCK_METHOD0(nobjects_begin,librados::NObjectIterator());
     MOCK_METHOD1(nobjects_begin,librados::NObjectIterator(const librados::bufferlist& filter));
     MOCK_METHOD1(set_namespace,void(const std::string& nspace));
@@ -47,16 +48,17 @@ class RboxIoCtxMock : public RboxIoCtx{
     MOCK_METHOD1(remove,int(const std::string& oid));
     MOCK_METHOD2(write_full,int(const std::string& oid, librados::bufferlist& bl));
     MOCK_METHOD1(set_Io_Ctx,void(librados::IoCtx& io_ctx_));
-    MOCK_METHOD0(get_Io_Ctx,librados::IoCtx& ());
+    MOCK_METHOD0(get_io_ctx,librados::IoCtx& ());
     MOCK_METHOD4(read,int(const std::string& oid, librados::bufferlist& bl, size_t len, uint64_t off));
     MOCK_METHOD2(operate,int(const std::string& oid, librados::ObjectWriteOperation* write_op_xattr));
     MOCK_METHOD3(append,bool(const std::string& oid, librados::bufferlist& bufferlist, int length));
     MOCK_METHOD3(operate,int(const std::string& oid,librados::ObjectReadOperation* read_op,librados::bufferlist* buffer));
+    MOCK_METHOD0(get_last_version,uint64_t());
 };
 
 class RadosStorageMock : public RadosStorage {
  public:
-  MOCK_METHOD0(get_io_ctx, librados::IoCtx& ());
+  MOCK_METHOD0(get_io_ctx_wrapper,librmb::RboxIoCtx& ());
   MOCK_METHOD3(stat_mail, int(const std::string &oid, uint64_t *psize, time_t *pmtime));
   MOCK_METHOD1(set_namespace, void(const std::string &nspace));
   MOCK_METHOD0(get_namespace, std::string());
@@ -64,14 +66,10 @@ class RadosStorageMock : public RadosStorage {
   MOCK_METHOD0(get_max_write_size, int());
   MOCK_METHOD0(get_max_write_size_bytes, int());
   MOCK_METHOD0(get_max_object_size, int());
-  MOCK_METHOD2(execute_operation, bool(std::string &oid, librados::ObjectWriteOperation *write_op_xattr));
-  MOCK_METHOD3(append_to_object, bool(std::string &oid, librados::bufferlist &bufferlist, int length));
-  MOCK_METHOD1(delete_mail, int(RadosMail *mail));
   MOCK_METHOD1(delete_mail, int(const std::string &oid));
   MOCK_METHOD1(find_mails, std::set<std::string>(const RadosMetadata *attr));
   MOCK_METHOD1(open_connection, int(const std::string &poolname));
   MOCK_METHOD2(open_connection, int(const std::string &poolname, const std::string &index_pool));
-  MOCK_METHOD3(read_operate, int(const std::string &oid, librados::ObjectReadOperation *read_operation,librados::bufferlist *bufferlist));
   MOCK_METHOD4(find_mails_async, std::set<std::string>(const RadosMetadata *attr, std::string &pool_name,int num_threads, void (*ptr)(std::string&)));
 
   MOCK_METHOD4(open_connection,
@@ -91,7 +89,6 @@ class RadosStorageMock : public RadosStorage {
 
   MOCK_METHOD2(save_mail, int(const std::string &oid, librados::bufferlist& bufferlist));
   MOCK_METHOD1(save_mail, bool(RadosMail *mail));
-  MOCK_METHOD2(save_mail, bool(librados::ObjectWriteOperation *write_op, RadosMail *mail));
   MOCK_METHOD0(alloc_rados_mail, librmb::RadosMail *());
   MOCK_METHOD1(free_rados_mail, void(librmb::RadosMail *mail));
   MOCK_METHOD0(create_anker, int());

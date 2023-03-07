@@ -221,8 +221,8 @@ TEST_F(StorageTest, mail_save_to_inbox_with_flags) {
   }
   i_stream_unref(&input);
 
-  librados::NObjectIterator iter(r_storage->s->get_io_ctx().nobjects_begin());
-  while (iter != r_storage->s->get_io_ctx().nobjects_end()) {
+  librados::NObjectIterator iter(r_storage->s->get_io_ctx_wrapper().nobjects_begin());
+  while (iter != r_storage->s->get_io_ctx_wrapper().nobjects_end()) {
     if (test_oid.compare((*iter).get_oid()) == 0) {
       librmb::RadosMail obj;
       obj.set_oid((*iter).get_oid());

@@ -131,9 +131,9 @@ TEST_F(StorageTest, mail_doveadm_backup_copy_mail_in_inbox) {
   }
 
   struct rbox_storage *r_storage = (struct rbox_storage *)box->storage;
-  librados::NObjectIterator iter(r_storage->s->get_io_ctx().nobjects_begin());
+  librados::NObjectIterator iter(r_storage->s->get_io_ctx_wrapper().nobjects_begin());
   std::vector<librmb::RadosMail *> objects;
-  while (iter != r_storage->s->get_io_ctx().nobjects_end()) {
+  while (iter != r_storage->s->get_io_ctx_wrapper().nobjects_end()) {
     librmb::RadosMail *obj = new librmb::RadosMail();
     obj->set_oid((*iter).get_oid());
     r_storage->ms->get_storage()->load_metadata(obj);

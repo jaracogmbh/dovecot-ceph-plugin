@@ -27,7 +27,8 @@
 #include "encoding.h"
 #include "limits.h"
 #include "rados-metadata-storage-impl.h"
-
+#include "rbox-io-ctx.h"
+#include "rbox-io-ctx-impl.h"
 using std::pair;
 using std::string;
 
@@ -52,7 +53,9 @@ RadosStorageImpl::~RadosStorageImpl() {
   delete io_ctx_wrapper;
   io_ctx_wrapper=nullptr;
 }
-
+librmb::RboxIoCtx& RadosStorageImpl::get_io_ctx_wrapper(){
+  return *io_ctx_wrapper;
+}
 //DEPRECATED!!!!! -> moved to rbox-save.cpp
 int RadosStorageImpl::split_buffer_and_exec_op(RadosMail *current_object,
                                                librados::ObjectWriteOperation *write_op_xattr,
@@ -164,14 +167,6 @@ int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,
   mail->set_rados_save_date(&save_date);
   return ret;
 }
-int RadosStorageImpl::delete_mail(RadosMail *mail) {
-  int ret = -1;
-
-  if (cluster->is_connected() && io_ctx_created && mail != nullptr) {
-    ret = delete_mail(*mail->get_oid());
-  }
-  return ret;
-}
 int RadosStorageImpl::delete_mail(const std::string &oid) {
   if (!cluster->is_connected() || oid.empty() || !io_ctx_created) {
     return -1;
@@ -192,13 +187,6 @@ bool RadosStorageImpl::append_to_object(std::string &oid, librados::bufferlist &
   }
   return io_ctx_wrapper->append(oid, bufferlist, length) >=0 ? true : false;
 }
-int RadosStorageImpl::read_operate(const std::string &oid, librados::ObjectReadOperation *read_operation, librados::bufferlist *bufferlist) {
-if (!cluster->is_connected() || !io_ctx_created) {
-    return -1;
-  }
-  return io_ctx_wrapper->operate(oid, read_operation, bufferlist);
-}
-
 int RadosStorageImpl::aio_operate(librados::IoCtx *io_ctx_, const std::string &oid, librados::AioCompletion *c,
                                   librados::ObjectWriteOperation *op) {
   if (!cluster->is_connected() || !io_ctx_created) {
@@ -334,7 +322,7 @@ std::set<std::string> RadosStorageImpl::find_mails_async(const RadosMetadata *at
     }   
     return oid_list;
 }
-librados::IoCtx& RadosStorageImpl::get_io_ctx() { return io_ctx_wrapper->get_Io_Ctx(); }
+librados::IoCtx& RadosStorageImpl::get_io_ctx() { return io_ctx_wrapper->get_io_ctx(); }
 librados::IoCtx& RadosStorageImpl::get_recovery_io_ctx() { return recovery_io_ctx; }
 
 int RadosStorageImpl::open_connection(const std::string &poolname, const std::string &index_pool,
@@ -530,29 +518,6 @@ int RadosStorageImpl::copy(std::string &src_oid, const char *src_ns, std::string
   // reset io_ctx
   dest_io_ctx.set_namespace(dest_ns);
   return ret;
-}
-
-// DEPRECATED => MOVED to rbox-save.cpp
-// if save_async = true, don't forget to call wait_for_rados_operations e.g. wait_for_write_operations_complete
-// to wait for completion and free resources.
-bool RadosStorageImpl::save_mail(librados::ObjectWriteOperation *write_op_xattr, 
-                                 RadosMail *mail) {
-                                   
-  if (!cluster->is_connected() || !io_ctx_created) {
-    return false;
-  }
-  if (write_op_xattr == nullptr || mail == nullptr) {
-    return false;
-  }
-  time_t save_date = mail->get_rados_save_date();
-  write_op_xattr->mtime(&save_date);  
-  uint32_t max_op_size = get_max_write_size_bytes() - 1024;
-  //TODO: make this configurable
-  int ret = split_buffer_and_exec_op(mail, write_op_xattr, 10240);
-  if (ret != 0) {
-    mail->set_active_op(0);
-  } 
-  return ret == 0;
 }
 
 bool  RadosStorageImpl::save_mail(RadosMail *current_object){
