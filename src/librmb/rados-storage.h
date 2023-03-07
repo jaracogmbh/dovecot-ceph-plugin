@@ -20,6 +20,7 @@
 #include "rados-cluster.h"
 #include "rados-mail.h"
 #include "rados-types.h"
+#include "rbox-io-ctx.h"
 
 namespace librmb {
 /** class RadosStorage
@@ -34,13 +35,7 @@ class RadosStorage {
   /*!
    * if connected, return the valid ioCtx
    */
-  virtual librados::IoCtx &get_io_ctx() = 0;
-
-  /*!
-   * if connected, return the valid ioCtx for recovery index
-   */
-
-
+  virtual librmb::RboxIoCtx& get_io_ctx_wrapper() = 0;
   /*! get the object size and object save date
    * @param[in] oid unique ident for the object
    * @param[out] psize size of the object
@@ -57,16 +52,6 @@ class RadosStorage {
   /*! get the pool name
    * @return copy of the current p
 
-TEST_F(StorageTest, scanForPg) {
-  
-librmbtest::RadosClusterMock mock_test = librmbtest::RadosClusterMock();
-mock.
-librmb::RadosStorageImpl underTest = librmbtest::RadosStorageImpl(mock_test);
-
-underTest.ceph_index_append()
-underTest.ceph_index_add("dkfkjdf")
-
-}
  ool name
    * */
   virtual std::string get_pool_name() = 0;
@@ -84,11 +69,6 @@ underTest.ceph_index_add("dkfkjdf")
   /*! get the max ceph object size 
    */
   virtual int get_max_object_size() = 0;
-  /*! deletes a mail object from rados
-   * @param[in] mail pointer to valid mail object
-   *
-   * @return <0 in case of failure. */
-  virtual int delete_mail(RadosMail *mail) = 0;
   /*! delete object with given oid
    * @param[in] object identifier.
    *
@@ -196,15 +176,6 @@ underTest.ceph_index_add("dkfkjdf")
   // virtual int read_mail(const std::string &oid, librados::bufferlist *buffer) = 0;
   virtual int read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter)=0;
 
-  /*! read the complete mail object into bufferlist
-   *
-   * @param[in] oid unique object identifier
-   * @param[in] read_operation read operation
-   * @param[out] buffer valid ptr to bufferlist.
-   * @return linux errorcode or 0 if successful
-   * */
-  virtual int read_operate(const std::string &oid, librados::ObjectReadOperation *read_operation, librados::bufferlist *bufferlist) = 0;
-
   /*! move a object from the given namespace to the other, updates the metadata given in to_update list
    *
    * @param[in] src_oid unique identifier of source object
@@ -233,19 +204,7 @@ underTest.ceph_index_add("dkfkjdf")
    * @return false in case of error
    * */
   virtual bool save_mail(RadosMail *mail) = 0;
-  /*!
-   * save the mail
-   * @param[in] write_op_xattr write operation to use
-   * @param[in] mail valid mail object   
-   * @return false in case of error.
-   *
-   */
-  virtual bool save_mail(librados::ObjectWriteOperation *write_op_xattr, RadosMail *mail) = 0;
-
-  virtual bool execute_operation(std::string &oid, librados::ObjectWriteOperation *write_op_xattr) = 0;
-
-  virtual bool append_to_object(std::string &oid, librados::bufferlist &bufferlist, int length) = 0;
-
+ 
   /*! create a new RadosMail
    * create new rados Mail Object.
    *  return pointer to mail object or nullptr

@@ -132,9 +132,9 @@ static int rbox_mail_metadata_get(struct rbox_mail *rmail, enum rbox_metadata_ke
   
   // update metadata storage io_ctx and load metadata
   if (alt_storage) {
-    r_storage->ms->get_storage()->set_io_ctx(&r_storage->alt->get_io_ctx());
+    r_storage->ms->get_storage()->set_io_ctx(&r_storage->alt->get_io_ctx_wrapper().get_io_ctx());
   } else {
-    r_storage->ms->get_storage()->set_io_ctx(&r_storage->s->get_io_ctx());
+    r_storage->ms->get_storage()->set_io_ctx(&r_storage->s->get_io_ctx_wrapper().get_io_ctx());
   }
 
   /*#283: virtual mailbox needs this (different initialisation path)*/

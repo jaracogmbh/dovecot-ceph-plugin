@@ -13,7 +13,7 @@
 #include "gmock/gmock.h"
 #include <rados/librados.hpp>
 #include "../../librmb/rados-util.h"
-
+#include"../../librmb/rbox-io-ctx-impl.h"
 #include "../../librmb/rados-cluster-impl.h"
 #include "../../librmb/rados-mail.h"
 #include "../../librmb/rados-storage-impl.h"
@@ -149,10 +149,10 @@ TEST(rmb1, rmb_commands_no_objects_found) {
   std::list<librmb::RadosMail *> mails;
   std::string search_string = "uid";
   std::set<std::string> mail_list;
-  librados::IoCtx test_ioctx;
+  librmb::RboxIoCtxImpl test_ioctx;
 
   EXPECT_CALL(storage_mock, find_mails(nullptr)).WillRepeatedly(Return(mail_list));
-  EXPECT_CALL(storage_mock, get_io_ctx()).WillRepeatedly(ReturnRef(test_ioctx));
+  EXPECT_CALL(storage_mock,get_io_ctx_wrapper()).WillRepeatedly(ReturnRef(test_ioctx));
   EXPECT_CALL(storage_mock, stat_mail(_, _, _)).WillRepeatedly(Return(0));
   int ret = rmb_cmd.load_objects(&ms_module_mock, mails, search_string);
   EXPECT_EQ(ret, 0);

@@ -214,11 +214,11 @@ TEST_F(StorageTest,true_cluster_connection){
   EXPECT_CALL(*cluster_mock, get_config_option(_ , _)).Times(2).WillRepeatedly(Return(0));
 
   librmbtest::RboxIoCtxMock *io_ctx_mock=new librmbtest::RboxIoCtxMock();
-  under_test.set_io_ctx(io_ctx_mock);
+  under_test.set_io_ctx_wrapper(io_ctx_mock);
   librados::IoCtx io_ctx;
   EXPECT_CALL(*io_ctx_mock,append(_,_,_)).Times(0);
   EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(1).WillOnce(Return(0));
-  ON_CALL(*io_ctx_mock,get_Io_Ctx()).WillByDefault(ReturnRef(io_ctx)); 
+  ON_CALL(*io_ctx_mock,get_io_ctx()).WillByDefault(ReturnRef(io_ctx)); 
 
   std::string pool_name("test");
   /*create_connection is invoked by open_connection method*/
@@ -250,11 +250,11 @@ TEST_F(StorageTest,split_buffer){
   librmb::RadosStorageImpl under_test(cluster_mock);
 
   NiceMock<librmbtest::RboxIoCtxMock>* io_ctx_mock=new librmbtest::RboxIoCtxMock();
-  under_test.set_io_ctx(io_ctx_mock);
+  under_test.set_io_ctx_wrapper(io_ctx_mock);
   librados::IoCtx io_ctx;
   EXPECT_CALL(*io_ctx_mock,append(_,_,_)).Times(4).WillRepeatedly(Return(true));
   EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(1).WillOnce(Return(0));
-  ON_CALL(*io_ctx_mock,get_Io_Ctx()).WillByDefault(ReturnRef(io_ctx)); 
+  ON_CALL(*io_ctx_mock,get_io_ctx()).WillByDefault(ReturnRef(io_ctx)); 
   
   EXPECT_CALL(*cluster_mock, init()).Times(1).WillOnce(Return(0));
   EXPECT_CALL(*cluster_mock, io_ctx_create(_ , _)).Times(1).WillOnce(Return(0));
@@ -303,9 +303,9 @@ TEST_F(StorageTest,true_first_read){
   mail.set_mail_buffer(new librados::bufferlist);
 
   librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
-  storage.set_io_ctx(io_ctx_mock);
+  storage.set_io_ctx_wrapper(io_ctx_mock);
   librados::IoCtx io_ctx;
-  ON_CALL(*io_ctx_mock,get_Io_Ctx()).WillByDefault(ReturnRef(io_ctx));
+  ON_CALL(*io_ctx_mock,get_io_ctx()).WillByDefault(ReturnRef(io_ctx));
   EXPECT_CALL(*io_ctx_mock,operate(_,_,_)).Times(1).WillOnce(Return(0));
   int ret=storage.read_mail(oid,&mail,0);
   EXPECT_EQ(0,ret);
@@ -331,9 +331,9 @@ TEST_F(StorageTest,true_repeated_read){
   mail.set_mail_buffer(new librados::bufferlist);
 
   librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
-  storage.set_io_ctx(io_ctx_mock);
+  storage.set_io_ctx_wrapper(io_ctx_mock);
   librados::IoCtx io_ctx;
-  ON_CALL(*io_ctx_mock,get_Io_Ctx()).WillByDefault(ReturnRef(io_ctx));
+  ON_CALL(*io_ctx_mock,get_io_ctx()).WillByDefault(ReturnRef(io_ctx));
   EXPECT_CALL(*io_ctx_mock,operate(_,_,_)).Times(4).WillOnce(Return(-ETIMEDOUT))
                                                    .WillOnce(Return(-ETIMEDOUT))
                                                    .WillOnce(Return(-ETIMEDOUT))
@@ -362,9 +362,9 @@ TEST_F(StorageTest,false_read){
   mail.set_mail_buffer(new librados::bufferlist);
 
   librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
-  storage.set_io_ctx(io_ctx_mock);
+  storage.set_io_ctx_wrapper(io_ctx_mock);
   librados::IoCtx io_ctx;
-  ON_CALL(*io_ctx_mock,get_Io_Ctx()).WillByDefault(ReturnRef(io_ctx));
+  ON_CALL(*io_ctx_mock,get_io_ctx()).WillByDefault(ReturnRef(io_ctx));
   EXPECT_CALL(*io_ctx_mock,operate(_,_,_)).Times(11).WillRepeatedly(Return(-ETIMEDOUT));
   int ret=storage.read_mail(oid,&mail,0);
   EXPECT_NE(0,ret);

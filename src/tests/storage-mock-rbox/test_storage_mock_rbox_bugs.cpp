@@ -12,6 +12,7 @@
 #include "../storage-mock-rbox/TestCase.h"
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include"../../librmb/rbox-io-ctx-impl.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"           // turn off warnings for Dovecot :-(
@@ -101,21 +102,17 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
   librmbtest::RadosStorageMock *storage_mock = new librmbtest::RadosStorageMock();
 
 
-  librados::IoCtx test_ioctx;
-  EXPECT_CALL(*storage_mock, get_io_ctx()).WillRepeatedly(ReturnRef(test_ioctx));
+  librmb::RboxIoCtxImpl test_ioctx;
+  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(ReturnRef(test_ioctx));
 
   EXPECT_CALL(*storage_mock, set_ceph_wait_method(_)).Times(1);
 
   EXPECT_CALL(*storage_mock, set_namespace(_)).Times(1);
   EXPECT_CALL(*storage_mock, get_namespace()).Times(0);
 
-  EXPECT_CALL(*storage_mock, delete_mail(Matcher<librmb::RadosMail*>(_))).Times(1);
+  EXPECT_CALL(*storage_mock, delete_mail(_)).Times(1);
 
   EXPECT_CALL(*storage_mock, close_connection()).Times(0);
-
-  EXPECT_CALL(*storage_mock, execute_operation(_,_)).WillRepeatedly(Return(false));
-  EXPECT_CALL(*storage_mock, append_to_object(_,_,_)).WillRepeatedly(Return(false));
-
 
   EXPECT_CALL(*storage_mock, open_connection("mail_storage",_, "ceph", "client.admin"))
       .Times(AtLeast(1))
@@ -250,18 +247,16 @@ TEST_F(StorageTest, save_mail_success) {
 
   librmbtest::RadosStorageMock *storage_mock = new librmbtest::RadosStorageMock();
 
-  librados::IoCtx io_ctx;
-  EXPECT_CALL(*storage_mock, execute_operation(_,_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(*storage_mock, append_to_object(_,_,_)).WillRepeatedly(Return(true));
+  librmb::RboxIoCtxImpl io_ctx;
 
-  EXPECT_CALL(*storage_mock, get_io_ctx()).WillRepeatedly(ReturnRef(io_ctx));
+  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(ReturnRef(io_ctx));
 
   EXPECT_CALL(*storage_mock, set_ceph_wait_method(_)).Times(1);
 
   EXPECT_CALL(*storage_mock, set_namespace(_)).Times(1);
   EXPECT_CALL(*storage_mock, get_namespace()).Times(0);
 
-  EXPECT_CALL(*storage_mock, delete_mail(Matcher<librmb::RadosMail*>(_))).Times(0);
+  EXPECT_CALL(*storage_mock, delete_mail(_)).Times(0);
 
   EXPECT_CALL(*storage_mock, close_connection()).Times(1);
 

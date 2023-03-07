@@ -26,14 +26,16 @@
 #include "rados-mail.h"
 #include "rbox-io-ctx.h"
 #include "rados-storage.h"
-#include "rbox-io-ctx-impl.h"
+#include "rbox-io-ctx.h"
+
 namespace librmb {
 class RadosStorageImpl : public RadosStorage {
  public:
   explicit RadosStorageImpl(RadosCluster *cluster);
   virtual ~RadosStorageImpl();
-  librados::IoCtx &get_io_ctx() override;
-  void set_io_ctx(librmb::RboxIoCtx* io_ctx_){
+  librados::IoCtx &get_io_ctx();
+  librmb::RboxIoCtx& get_io_ctx_wrapper()override;
+  void set_io_ctx_wrapper(librmb::RboxIoCtx* io_ctx_){
     if(io_ctx_wrapper!=nullptr){
       delete io_ctx_wrapper;
       io_ctx_wrapper=io_ctx_;
@@ -51,9 +53,6 @@ class RadosStorageImpl : public RadosStorage {
   int get_max_write_size_bytes() override { return max_write_size * 1024 * 1024; }
   int get_max_object_size() override {return max_object_size;}
 
-
-
-  int delete_mail(RadosMail *mail) override;
   int delete_mail(const std::string &oid) override;
 
 
@@ -80,7 +79,6 @@ class RadosStorageImpl : public RadosStorage {
 
   int save_mail(const std::string &oid, librados::bufferlist &buffer) override;
   bool save_mail(RadosMail *mail) override;
-  bool save_mail(librados::ObjectWriteOperation *write_op_xattr, RadosMail *mail) override;
   librmb::RadosMail *alloc_rados_mail() override;
 
   void free_rados_mail(librmb::RadosMail *mail) override;
@@ -92,9 +90,8 @@ class RadosStorageImpl : public RadosStorage {
   std::set<std::string> ceph_index_read() override;
   int ceph_index_delete() override;
 
-  bool execute_operation(std::string &oid, librados::ObjectWriteOperation *write_op_xattr) override;
-  bool append_to_object(std::string &oid, librados::bufferlist &bufferlist, int length) override;
-  int read_operate(const std::string &oid, librados::ObjectReadOperation *read_operation, librados::bufferlist *bufferlist) override;
+  bool execute_operation(std::string &oid, librados::ObjectWriteOperation *write_op_xattr);
+  bool append_to_object(std::string &oid, librados::bufferlist &bufferlist, int length);
 
  private:
   int create_connection(const std::string &poolname,const std::string &index_pool);

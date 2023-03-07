@@ -150,10 +150,10 @@ TEST_F(StorageTest, move_mail_from_alt_storage) {
     FAIL() << "sync failed";
   }
 
-  librados::NObjectIterator iter(r_storage->alt->get_io_ctx().nobjects_begin());
-  r_storage->ms->get_storage()->set_io_ctx(&r_storage->alt->get_io_ctx());
+  librados::NObjectIterator iter(r_storage->alt->get_io_ctx_wrapper().nobjects_begin());
+  r_storage->ms->get_storage()->set_io_ctx(&r_storage->alt->get_io_ctx_wrapper().get_io_ctx());
   std::vector<librmb::RadosMail *> objects;
-  while (iter != r_storage->alt->get_io_ctx().nobjects_end()) {
+  while (iter != r_storage->alt->get_io_ctx_wrapper().nobjects_end()) {
     librmb::RadosMail *obj = new librmb::RadosMail();
     obj->set_oid((*iter).get_oid());
     r_storage->ms->get_storage()->load_metadata(obj);
@@ -190,7 +190,7 @@ TEST_F(StorageTest, move_mail_from_alt_storage) {
   ASSERT_STRNE(val, val2);
 
   ASSERT_EQ(1, (int)box->index->map->hdr.messages_count);
-  r_storage->alt->delete_mail(mail1);
+  r_storage->alt->delete_mail(*mail1->get_oid);
   delete mail1;
   mailbox_free(&box);
 }
