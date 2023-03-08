@@ -1253,7 +1253,7 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file) {
   obj.set_mail_size(buffer_length);
   int max_size = buffer_length;
  
-  obj.set_oid("test_oid");
+  obj.set_oid("abc");
   storage.save_mail(&obj);
 
   std::map<std::string, std::list<librmb::RadosSaveLogEntry>> moved_items;

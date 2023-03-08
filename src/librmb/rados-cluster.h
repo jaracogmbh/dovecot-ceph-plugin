@@ -15,7 +15,7 @@
 #include <string>
 
 #include <rados/librados.hpp>
-
+#include"rbox-io-ctx.h"
 namespace librmb {
 /** class RadosDictionary
  *  brief an abstract Rados Cluster
@@ -52,7 +52,7 @@ class RadosCluster {
    * @praam[in] valid io_ctx.
    * @return linux errror code or 0 if successful
    * */
-  virtual int io_ctx_create(const std::string &pool, librados::IoCtx *io_ctx) = 0;
+  virtual int io_ctx_create(const std::string &pool, librmb::RboxIoCtx &io_ctx_wrapper) = 0;
   /*!
    * read ceph configuration
    * @param[in] option option name as described in the ceph documentation
@@ -64,7 +64,7 @@ class RadosCluster {
   /**
    * creates or returns the recovery index io ctx
   */
-  virtual int recovery_index_io_ctx(const std::string &pool,librados::IoCtx *io_ctx) = 0;
+  virtual int recovery_index_io_ctx(const std::string &pool,librmb::RboxIoCtx &io_ctx_wrapper) = 0;
 
   virtual int get_config_option(const char *option, std::string *value) = 0;
 

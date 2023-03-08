@@ -33,6 +33,9 @@ using librmb::RboxIoCtx;
 
 class RboxIoCtxMock : public RboxIoCtx{
   public:
+    MOCK_METHOD1(set_io_ctx,void(librados::IoCtx& io_ctx_));
+    MOCK_METHOD0(get_io_ctx,librados::IoCtx& ());
+    MOCK_METHOD0(get_recovery_io_ctx,librados::IoCtx& ());
     MOCK_METHOD4(aio_stat,int(const std::string& oid,librados::AioCompletion *aio_complete,uint64_t *psize,time_t *pmtime));
     MOCK_METHOD3(omap_get_vals_by_keys,int(const std::string& oid,const std::set<std::string>& keys,std::map<std::string, librados::bufferlist> *vals));
     MOCK_METHOD2(omap_rm_keys,int(const std::string& oid,const std::set<std::string>& keys));
@@ -44,16 +47,20 @@ class RboxIoCtxMock : public RboxIoCtx{
     MOCK_METHOD1(nobjects_begin,librados::NObjectIterator(const librados::bufferlist& filter));
     MOCK_METHOD1(set_namespace,void(const std::string& nspace));
     MOCK_METHOD3(stat,int(const std::string& oid, uint64_t *psize, time_t *pmtime));
-    MOCK_METHOD3(aio_operate,int(const std::string& oid, librados::AioCompletion *aio_complete, librados::ObjectWriteOperation *op));
+    MOCK_METHOD4(aio_operate,int(const std::string& oid, librados::AioCompletion *aio_completion,
+		    librados::ObjectReadOperation *read_op, librados::bufferlist *pbl));
+    MOCK_METHOD5(aio_operate,int(const std::string& oid, librados::AioCompletion *aio_completion,
+		    librados::ObjectReadOperation *read_op, int flags,librados::bufferlist *pbl));
+    MOCK_METHOD3(aio_operate,int(const std::string& oid, librados::AioCompletion *aio_complete, librados::ObjectWriteOperation *write_op));
     MOCK_METHOD1(remove,int(const std::string& oid));
     MOCK_METHOD2(write_full,int(const std::string& oid, librados::bufferlist& bl));
-    MOCK_METHOD1(set_Io_Ctx,void(librados::IoCtx& io_ctx_));
-    MOCK_METHOD0(get_io_ctx,librados::IoCtx& ());
     MOCK_METHOD4(read,int(const std::string& oid, librados::bufferlist& bl, size_t len, uint64_t off));
     MOCK_METHOD2(operate,int(const std::string& oid, librados::ObjectWriteOperation* write_op_xattr));
     MOCK_METHOD3(append,bool(const std::string& oid, librados::bufferlist& bufferlist, int length));
     MOCK_METHOD3(operate,int(const std::string& oid,librados::ObjectReadOperation* read_op,librados::bufferlist* buffer));
     MOCK_METHOD0(get_last_version,uint64_t());
+    MOCK_METHOD0(get_remove_completion,librados::AioCompletion&());
+    MOCK_METHOD0(get_push_back_completion,librados::AioCompletion&());
 };
 
 class RadosStorageMock : public RadosStorage {
@@ -139,9 +146,12 @@ class RadosDictionaryMock : public RadosDictionary {
   MOCK_METHOD0(get_private_oid, const std::string());
   MOCK_METHOD0(get_oid, const std::string &());
   MOCK_METHOD0(get_username, const std::string &());
-  MOCK_METHOD0(get_io_ctx, librados::IoCtx &());
-  MOCK_METHOD1(remove_completion, void(librados::AioCompletion *c));
-  MOCK_METHOD1(push_back_completion, void(librados::AioCompletion *c));
+  MOCK_METHOD0(get_io_ctx_wrapper, librmb::RboxIoCtx &());
+  MOCK_METHOD0(get_poolname,const std::string& ());
+  MOCK_METHOD0(get_shared_io_ctx_wrapper,librmb::RboxIoCtx& ());
+  MOCK_METHOD0(get_private_io_ctx_wrapper,librmb::RboxIoCtx& ());
+  MOCK_METHOD1(remove_completion, void(librmb::RboxIoCtx &remove_completion_wrapper));
+  MOCK_METHOD1(push_back_completion, void(librmb::RboxIoCtx &push_back_completion_wrapper));
   MOCK_METHOD0(wait_for_completions, void());
   MOCK_METHOD2(get, int(const std::string &key, std::string *value_r));
 };
@@ -155,9 +165,9 @@ class RadosClusterMock : public RadosCluster {
 
   MOCK_METHOD0(deinit, void());
   MOCK_METHOD1(pool_create, int(const std::string &pool));
-  MOCK_METHOD2(recovery_index_io_ctx, int(const std::string &pool,librados::IoCtx *io_ctx));
+  MOCK_METHOD2(recovery_index_io_ctx, int(const std::string &pool,librmb::RboxIoCtx &io_ctx_wrapper));
 
-  MOCK_METHOD2(io_ctx_create, int(const std::string &pool, librados::IoCtx *io_ctx));
+  MOCK_METHOD2(io_ctx_create,int (const std::string &pool, librmb::RboxIoCtx &io_ctx_wrapper));
   MOCK_METHOD2(get_config_option, int(const char *option, std::string *value));
   MOCK_METHOD0(is_connected, bool());
   MOCK_METHOD2(set_config_option, void(const char *option, const char *value));

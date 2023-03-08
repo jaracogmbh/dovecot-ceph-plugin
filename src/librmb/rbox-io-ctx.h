@@ -5,11 +5,15 @@
 
 #include <string>
 #include <rados/librados.hpp>
+using librados::AioCompletion;
 
 namespace librmb{
 class RboxIoCtx{
     public:
       virtual ~RboxIoCtx() {}
+      virtual void set_io_ctx(librados::IoCtx& io_ctx_)=0;
+      virtual librados::IoCtx& get_io_ctx()=0;
+      virtual librados::IoCtx& get_recovery_io_ctx()=0;
       virtual int aio_stat(const std::string& oid,librados::AioCompletion *aio_complete,uint64_t *psize,time_t *pmtime)=0;
       virtual int omap_get_vals_by_keys(const std::string& oid,const std::set<std::string>& keys,
                                           std::map<std::string, librados::bufferlist> *vals)=0;
@@ -22,16 +26,20 @@ class RboxIoCtx{
       virtual librados::NObjectIterator nobjects_begin(const librados::bufferlist& filter)=0;
       virtual void set_namespace(const std::string& nspace)=0;
       virtual int stat(const std::string& oid, uint64_t *psize, time_t *pmtime)=0;
-      virtual int aio_operate(const std::string& oid, librados::AioCompletion *aio_complete, librados::ObjectWriteOperation *op)=0;
+      virtual int aio_operate(const std::string& oid, librados::AioCompletion *aio_completion,
+		    librados::ObjectReadOperation *read_op, librados::bufferlist *pbl)=0;
+      virtual int aio_operate(const std::string& oid, librados::AioCompletion *aio_completion,
+		    librados::ObjectReadOperation *read_op, int flags,librados::bufferlist *pbl)=0;
+      virtual int aio_operate(const std::string& oid, librados::AioCompletion *aio_complete, librados::ObjectWriteOperation *write_op)=0;
       virtual int remove(const std::string& oid)=0;
       virtual int write_full(const std::string& oid, librados::bufferlist& bl)=0;
-      virtual void set_Io_Ctx(librados::IoCtx& io_ctx_)=0;
-      virtual librados::IoCtx& get_io_ctx()=0;
       virtual int read(const std::string& oid, librados::bufferlist& bl, size_t len, uint64_t off)=0;
       virtual int operate(const std::string& oid, librados::ObjectWriteOperation* write_op_xattr)=0;
       virtual bool append(const std::string& oid, librados::bufferlist& bufferlist, int length)=0;
       virtual int operate(const std::string& oid,librados::ObjectReadOperation* read_op,librados::bufferlist* buffer)=0;
       virtual uint64_t get_last_version()=0;
+      virtual librados::AioCompletion& get_remove_completion()=0;
+      virtual librados::AioCompletion& get_push_back_completion()=0;
   };
 }  
 #endif  // SRC_LIBRMB_INTERFACE_RBOX_IO_CTX_H_ 

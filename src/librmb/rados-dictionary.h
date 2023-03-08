@@ -13,7 +13,7 @@
 #define SRC_LIBRMB_INTERFACES_RADOS_DICTIONARY_INTERFACE_H_
 
 #include <string>
-
+#include "rbox-io-ctx.h"
 #include <rados/librados.hpp>
 
 namespace librmb {
@@ -35,15 +35,17 @@ class RadosDictionary {
   virtual const std::string& get_username() = 0;
   virtual const std::string& get_poolname() = 0;
 
-  virtual librados::IoCtx& get_io_ctx(const std::string& key) = 0;
-  virtual librados::IoCtx& get_shared_io_ctx() = 0;
-  virtual librados::IoCtx& get_private_io_ctx() = 0;
+  virtual librmb::RboxIoCtx& get_io_ctx_wrapper(const std::string& key) = 0;
+  virtual librmb::RboxIoCtx& get_shared_io_ctx_wrapper() = 0;
+  virtual librmb::RboxIoCtx& get_private_io_ctx_wrapper() = 0;
 
-  virtual void remove_completion(librados::AioCompletion* c) = 0;
-  virtual void push_back_completion(librados::AioCompletion* c) = 0;
+  virtual void remove_completion(librmb::RboxIoCtx &remove_completion_wrapper) = 0;
+  virtual void push_back_completion(librmb::RboxIoCtx &push_back_completion_wrapper) = 0;
   virtual void wait_for_completions() = 0;
 
   virtual int get(const std::string& key, std::string* value_r) = 0;
+  static librmb::RboxIoCtx* remove_completion_wrapper; 
+  static librmb::RboxIoCtx* push_back_completion_wrapper;
 };
 }  // namespace librmb
 

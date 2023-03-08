@@ -107,7 +107,6 @@ class RadosStorageImpl : public RadosStorage {
   int max_object_size;
   std::string nspace;
   librmb::RboxIoCtx* io_ctx_wrapper;
-  librados::IoCtx recovery_io_ctx;
  
   bool io_ctx_created;
   std::string pool_name;
