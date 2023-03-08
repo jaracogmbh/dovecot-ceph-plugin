@@ -59,7 +59,9 @@ class RboxIoCtxMock : public RboxIoCtx{
     MOCK_METHOD3(append,bool(const std::string& oid, librados::bufferlist& bufferlist, int length));
     MOCK_METHOD3(operate,int(const std::string& oid,librados::ObjectReadOperation* read_op,librados::bufferlist* buffer));
     MOCK_METHOD0(get_last_version,uint64_t());
+    MOCK_METHOD1(set_remove_completion,void(librados::AioCompletion &aio_commepletion));
     MOCK_METHOD0(get_remove_completion,librados::AioCompletion&());
+    MOCK_METHOD1(set_push_back_completion,void(librados::AioCompletion &aio_commepletion));
     MOCK_METHOD0(get_push_back_completion,librados::AioCompletion&());
 };
 

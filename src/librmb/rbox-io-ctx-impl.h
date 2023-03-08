@@ -98,17 +98,23 @@ class RboxIoCtxImpl:public RboxIoCtx{
     uint64_t get_last_version()override{
         return get_io_ctx().get_last_version();
     }
+    void set_remove_completion(librados::AioCompletion &aio_commepletion)override{
+        this->remove_completion=&aio_commepletion;
+    }
     librados::AioCompletion& get_remove_completion()override{
-        return remove_completion;
+        return *remove_completion;
+    }
+    void set_push_back_completion(librados::AioCompletion &aio_commepletion)override{
+        this->remove_completion=&aio_commepletion;
     }
     librados::AioCompletion& get_push_back_completion()override{
-        return push_back_completion;
+        return *push_back_completion;
     }
     private:
     librados::IoCtx io_ctx;
     librados::IoCtx recovery_io_ctx;
-    librados::AioCompletion remove_completion;
-    librados::AioCompletion push_back_completion;
+    librados::AioCompletion *remove_completion;
+    librados::AioCompletion *push_back_completion;
 };    
 }
 #endif  // SRC_LIBRMB_RBOX_IO_CTX_IMPL_H_

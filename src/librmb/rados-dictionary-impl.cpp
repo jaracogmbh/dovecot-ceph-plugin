@@ -223,7 +223,7 @@ void RadosDictionaryImpl::wait_for_completions() {
   while (!completions.empty()) {
     auto c = completions.front();
     c->wait_for_complete_and_cb();
-    remove_completion_wrapper->get_remove_completion()=*c;
+    remove_completion_wrapper->set_remove_completion(*c);
     remove_completion(*remove_completion_wrapper);
     c->release();
   }

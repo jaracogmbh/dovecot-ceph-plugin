@@ -38,7 +38,9 @@ class RboxIoCtx{
       virtual bool append(const std::string& oid, librados::bufferlist& bufferlist, int length)=0;
       virtual int operate(const std::string& oid,librados::ObjectReadOperation* read_op,librados::bufferlist* buffer)=0;
       virtual uint64_t get_last_version()=0;
+      virtual void set_remove_completion(librados::AioCompletion &aio_commepletion)=0;
       virtual librados::AioCompletion& get_remove_completion()=0;
+      virtual void set_push_back_completion(librados::AioCompletion &aio_commepletion)=0;
       virtual librados::AioCompletion& get_push_back_completion()=0;
   };
 }  

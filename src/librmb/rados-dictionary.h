@@ -44,6 +44,7 @@ class RadosDictionary {
   virtual void wait_for_completions() = 0;
 
   virtual int get(const std::string& key, std::string* value_r) = 0;
+  
   static librmb::RboxIoCtx* remove_completion_wrapper; 
   static librmb::RboxIoCtx* push_back_completion_wrapper;
 };

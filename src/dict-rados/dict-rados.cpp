@@ -303,9 +303,8 @@ void rados_dict_lookup_async(struct dict *_dict, const char *key, dict_lookup_ca
     delete lc;
     lc = nullptr;
   } else {
-    librmb::RboxIoCtx *wrapper;
-    // d->push_back_completion_wrapper->get_push_back_completion()=*lc->completion;
-    d->push_back_completion(*wrapper);
+    d->push_back_completion_wrapper->set_push_back_completion(*lc->completion);
+    d->push_back_completion(*d->push_back_completion_wrapper);
   }
 }
 

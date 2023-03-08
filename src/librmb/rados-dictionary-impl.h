@@ -52,10 +52,12 @@ class RadosDictionaryImpl : public RadosDictionary {
   void wait_for_completions() override;
 
   int get(const std::string& key, std::string* value_r) override;
+    
+  librmb::RboxIoCtx* RadosDictionary::remove_completion_wrapper;
+  librmb::RboxIoCtx* RadosDictionary::push_back_completion_wrapper;
 
  private:
   bool load_configuration(librados::IoCtx* io_ctx);
-
   bool lookup_namespace(std::string& username_, librmb::RadosDovecotCephCfg* cfg_, std::string* ns);
 
  private:
