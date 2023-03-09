@@ -110,7 +110,7 @@ std::map<std::string, std::list<librmb::RadosMail>> load_rados_mail_metadata(
     mail_object.set_oid((*it));
   
     if (alt_storage) {
-      r_storage->ms->get_storage()->set_io_ctx(&r_storage->alt->get_io_ctx_wrapper().get_io_ctx());
+      r_storage->ms->get_storage()->set_io_ctx(r_storage->alt->get_io_ctx_wrapper());
     }
 
     int load_metadata_ret = r_storage->ms->get_storage()->load_metadata(&mail_object); 

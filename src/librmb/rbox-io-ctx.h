@@ -14,6 +14,7 @@ class RboxIoCtx{
       virtual int omap_get_vals_by_keys(const std::string& oid,const std::set<std::string>& keys,
                                           std::map<std::string, librados::bufferlist> *vals)=0;
       virtual int omap_rm_keys(const std::string& oid,const std::set<std::string>& keys)=0;
+      virtual int omap_set(const std::map<std::string, librados::bufferlist>& map,const std::string& oid)=0;
       virtual void omap_set(const std::string& oid,const std::map<std::string, librados::bufferlist>& map)=0;
       virtual int getxattrs(const std::string& oid,std::map<std::string, librados::bufferlist>& attrset)=0;
       virtual int setxattr(const std::string& oid,const char *name, librados::bufferlist& bl)=0;

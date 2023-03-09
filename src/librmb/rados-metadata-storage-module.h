@@ -15,23 +15,20 @@
 #include <rados/librados.hpp>
 
 #include "rados-mail.h"
+#include "rbox-io-ctx.h"
 
 namespace librmb {
 class RadosStorageMetadataModule {
  public:
   virtual ~RadosStorageMetadataModule(){};
   /* update io_ctx */
-  virtual void set_io_ctx(librados::IoCtx *io_ctx){};
+  virtual void set_io_ctx(librmb::RboxIoCtx &io_ctx_wrapper){};
   /* load the metadta into RadosMail */
   virtual int load_metadata(RadosMail *mail) = 0;
   /* set a new metadata attribute to a mail object */
   virtual int set_metadata(RadosMail *mail, RadosMetadata &xattr) = 0;
-  /* set a new metadata attribute to a mail object */
-  virtual int set_metadata(RadosMail *mail, RadosMetadata &xattr, librados::ObjectWriteOperation *write_op) = 0;
   /* update the given metadata attributes */
   virtual bool update_metadata(const std::string &oid, std::list<RadosMetadata> &to_update) = 0;
-  /* add all metadata of RadosMail to write_operation */
-  virtual void save_metadata(librados::ObjectWriteOperation *write_op, RadosMail *mail) = 0;
   /* manage keywords */
   virtual int update_keyword_metadata(const std::string &oid, RadosMetadata *metadata) = 0;
   virtual int remove_keyword_metadata(const std::string &oid, std::string &key) = 0;
