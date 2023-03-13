@@ -209,7 +209,7 @@ class RadosDovecotCephCfgMock : public RadosDovecotCephCfg {
   MOCK_METHOD1(set_rbox_cfg_object_name, void(const std::string &value));
 
   // ceph configuration
-  MOCK_METHOD1(set_io_ctx, void(librados::IoCtx *io_ctx));
+  MOCK_METHOD1(set_io_ctx_wrapper,void(librmb::RboxIoCtx &io_ctx_wrapper));
   MOCK_METHOD0(load_rados_config, int());
   MOCK_METHOD0(save_default_rados_config, int());
 
@@ -224,8 +224,8 @@ class RadosDovecotCephCfgMock : public RadosDovecotCephCfg {
   MOCK_METHOD1(update_mail_attributes, void(const std::string &mail_attributes));
 
   MOCK_METHOD1(update_updatable_attributes, void(const std::string &updateable_attributes));
-  MOCK_METHOD2(save_object, int(const std::string &oid, librados::bufferlist &buffer));
-  MOCK_METHOD2(read_object, int(const std::string &oid, librados::bufferlist *buffer));
+  MOCK_METHOD2(save_object, int(const std::string &oid, std::istream &stream_buffer));
+  MOCK_METHOD2(read_object, int(const std::string &oid, std::ostream &stream_buffer));
   MOCK_METHOD1(set_io_ctx_namespace, void(const std::string &namespace_));
   MOCK_METHOD0(get_metadata_storage_module, std::string &());
   MOCK_METHOD0(get_metadata_storage_attribute, std::string &());

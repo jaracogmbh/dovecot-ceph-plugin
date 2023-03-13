@@ -65,7 +65,7 @@ class RadosDovecotCephCfgImpl : public RadosDovecotCephCfg {
   void set_rbox_cfg_object_name(const std::string &value) override { dovecot_cfg.set_rbox_cfg_object_name(value); }
 
   std::map<std::string, std::string> *get_config() override { return dovecot_cfg.get_config(); }
-  void set_io_ctx(librados::IoCtx *io_ctx_) override { rados_cfg.set_io_ctx(io_ctx_); }
+  void set_io_ctx_wrapper(librmb::RboxIoCtx &io_ctx_wrapper) override { rados_cfg.set_io_ctx(&io_ctx_wrapper.get_io_ctx()); }
   int load_rados_config() override {
     //  return dovecot_cfg.is_config_valid() ? rados_cfg.load_cfg() : -1;
     return rados_cfg.load_cfg();
@@ -101,10 +101,14 @@ class RadosDovecotCephCfgImpl : public RadosDovecotCephCfg {
   void update_updatable_attributes(const std::string &updateable_attributes) {
     rados_cfg.update_updateable_attribute(updateable_attributes.c_str());
   }
-  int save_object(const std::string &oid, librados::bufferlist &buffer) override {
-    return rados_cfg.save_object(oid, buffer);
+  int save_object(const std::string &oid, std::istream &stream_buffer) override {
+    ceph::bufferlist buffer;
+    buffer.append(stream_buffer);
+    return rados_cfg.save_object(oid,buffer);
   }
-  int read_object(const std::string &oid, librados::bufferlist *buffer) override {
+  int read_object(const std::string &oid,std::ostream &stream_buffer) override {
+    ceph::bufferlist *buffer;
+    buffer->append(stream_buffer);
     return rados_cfg.read_object(oid, buffer);
   }
   void set_io_ctx_namespace(const std::string &namespace_) override { rados_cfg.set_io_ctx_namespace(namespace_); }
