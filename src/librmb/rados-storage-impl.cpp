@@ -323,7 +323,7 @@ std::set<std::string> RadosStorageImpl::find_mails_async(const RadosMetadata *at
     return oid_list;
 }
 librados::IoCtx& RadosStorageImpl::get_io_ctx() { return io_ctx_wrapper->get_io_ctx(); }
-librados::IoCtx& RadosStorageImpl::get_recovery_io_ctx() { return recovery_io_ctx; }
+librados::IoCtx& RadosStorageImpl::get_recovery_io_ctx() { return io_ctx_wrapper->get_recovery_io_ctx(); }
 
 int RadosStorageImpl::open_connection(const std::string &poolname, const std::string &index_pool,
                                       const std::string &clustername,
@@ -366,12 +366,12 @@ int RadosStorageImpl::open_connection(const string &poolname) {
 
 int RadosStorageImpl::create_connection(const std::string &poolname, const std::string &index_pool){
   // pool exists? else create
-  int err = cluster->io_ctx_create(poolname,&get_io_ctx());
+  int err = cluster->io_ctx_create(poolname,*io_ctx_wrapper);
   if (err < 0) {
     return err;
   }
 
-  err = cluster->recovery_index_io_ctx(index_pool, &recovery_io_ctx);
+  err = cluster->recovery_index_io_ctx(index_pool,*io_ctx_wrapper);
   if (err < 0) {
     return err;
   }
