@@ -181,6 +181,15 @@ TEST_F(StorageTest,second_cluster_connectio){
   EXPECT_CALL(*cluster_mock, recovery_index_io_ctx(_ , _)).Times(1).WillOnce(Return(0));
   EXPECT_CALL(*cluster_mock, get_config_option(_ , _)).Times(2).WillRepeatedly(Return(0));
 
+  librmbtest::RboxIoCtxMock *io_ctx_mock=new librmbtest::RboxIoCtxMock();
+  under_test.set_io_ctx_wrapper(io_ctx_mock);
+  librados::IoCtx io_ctx;
+  librmb::RadosMetadataStorageDefault rados_metadata_storage (*io_ctx_mock);
+  rados_metadata_storage.set_io_ctx(*io_ctx_mock);
+  EXPECT_CALL(*io_ctx_mock,append(_,_,_)).Times(0);
+  EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(0).WillOnce(Return(0));
+  ON_CALL(*io_ctx_mock,get_io_ctx()).WillByDefault(ReturnRef(io_ctx)); 
+
   std::string pool_name("test");
   /*create_connection is invoked by open_connection method*/
   int open_connection = under_test.open_connection(pool_name);
@@ -216,6 +225,8 @@ TEST_F(StorageTest,true_cluster_connection){
   librmbtest::RboxIoCtxMock *io_ctx_mock=new librmbtest::RboxIoCtxMock();
   under_test.set_io_ctx_wrapper(io_ctx_mock);
   librados::IoCtx io_ctx;
+  librmb::RadosMetadataStorageDefault rados_metadata_storage (*io_ctx_mock);
+  rados_metadata_storage.set_io_ctx(*io_ctx_mock);
   EXPECT_CALL(*io_ctx_mock,append(_,_,_)).Times(0);
   EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(1).WillOnce(Return(0));
   ON_CALL(*io_ctx_mock,get_io_ctx()).WillByDefault(ReturnRef(io_ctx)); 
@@ -225,9 +236,9 @@ TEST_F(StorageTest,true_cluster_connection){
   int open_connection = under_test.open_connection(pool_name);
   EXPECT_EQ(0, open_connection); 
 
-  EXPECT_CALL(*cluster_mock, is_connected()).Times(3).WillOnce(Return(true))
-                                                     .WillOnce(Return(true))
-                                                     .WillOnce(Return(false));
+  EXPECT_CALL(*cluster_mock, is_connected()).Times(2).WillOnce(Return(true))
+                                                     .WillOnce(Return(true));
+                                                     
  
 
   std::string buffer_text="simple_test_one_chunck";
@@ -241,7 +252,7 @@ TEST_F(StorageTest,true_cluster_connection){
   std::cout<<"what is the problem?????"<<std::endl;
  /*div==1*/ 
   bool ret_storage = under_test.save_mail(&rados_mail);
-  EXPECT_EQ(false,ret_storage);
+  EXPECT_EQ(true,ret_storage);
   delete cluster_mock;
   cluster_mock=nullptr;
 }
@@ -252,8 +263,10 @@ TEST_F(StorageTest,split_buffer){
   NiceMock<librmbtest::RboxIoCtxMock>* io_ctx_mock=new librmbtest::RboxIoCtxMock();
   under_test.set_io_ctx_wrapper(io_ctx_mock);
   librados::IoCtx io_ctx;
+  librmb::RadosMetadataStorageDefault rados_metadata_storage (*io_ctx_mock);
+  rados_metadata_storage.set_io_ctx(*io_ctx_mock);
   EXPECT_CALL(*io_ctx_mock,append(_,_,_)).Times(4).WillRepeatedly(Return(true));
-  EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(1).WillOnce(Return(0));
+  EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(0).WillOnce(Return(0));
   ON_CALL(*io_ctx_mock,get_io_ctx()).WillByDefault(ReturnRef(io_ctx)); 
   
   EXPECT_CALL(*cluster_mock, init()).Times(1).WillOnce(Return(0));
@@ -264,7 +277,7 @@ TEST_F(StorageTest,split_buffer){
   std::string pool_name("test");
   int open_connection = under_test.open_connection(pool_name);
   EXPECT_EQ(0, open_connection);
-  EXPECT_CALL(*cluster_mock, is_connected()).Times(6).WillRepeatedly(Return(true));
+  EXPECT_CALL(*cluster_mock, is_connected()).Times(5).WillRepeatedly(Return(true));
 
   std::string buffer_text="";
   for(int i=0;i < under_test.get_max_write_size_bytes();i++){

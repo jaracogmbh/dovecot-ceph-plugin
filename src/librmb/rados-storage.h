@@ -124,17 +124,6 @@ class RadosStorage {
    * close the connection. (clean up structures to allow reconnect)
    */
   virtual void close_connection() = 0;
-
-
-  /*! save the mail object
-   *
-   * @param[in] oid unique object identifier
-   * @param[in] buffer the objects data
-   *
-   * @return linux errorcode or 0 if successful
-   * */
-  virtual int save_mail(const std::string &oid, librados::bufferlist &buffer) = 0;
-
   /**
    * append oid to index object
   */

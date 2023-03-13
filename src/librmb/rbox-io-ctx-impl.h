@@ -41,6 +41,9 @@ class RboxIoCtxImpl:public RboxIoCtx{
     int omap_rm_keys(const std::string& oid,const std::set<std::string>& keys)override{
         return get_io_ctx().omap_rm_keys(oid,keys);
     }
+    int  omap_set(const std::map<std::string, librados::bufferlist>& map,const std::string& oid)override{
+        get_io_ctx().omap_set(oid,map);
+    }
     void omap_set(const std::string& oid,const std::map<std::string, librados::bufferlist>& map)override{
         get_io_ctx().omap_set(oid,map);
     }

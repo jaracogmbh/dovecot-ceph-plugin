@@ -612,9 +612,9 @@ RadosStorageMetadataModule *RmbCommands::init_metadata_storage_module(librmb::Ra
   // decide metadata storage!
   std::string storage_module_name = ceph_cfg.get_metadata_storage_module();
   if (storage_module_name.compare(librmb::RadosMetadataStorageIma::module_name) == 0) {
-    ms = new librmb::RadosMetadataStorageIma(&storage->get_io_ctx_wrapper().get_io_ctx(), &cfg);
+    ms = new librmb::RadosMetadataStorageIma(storage->get_io_ctx_wrapper(), &cfg);
   } else {
-    ms = new librmb::RadosMetadataStorageDefault(&storage->get_io_ctx_wrapper().get_io_ctx());
+    ms = new librmb::RadosMetadataStorageDefault(storage->get_io_ctx_wrapper());
   }
   if (!(*opts)["namespace"].empty()) {
     *uid = (*opts)["namespace"] + cfg.get_user_suffix();

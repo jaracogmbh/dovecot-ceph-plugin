@@ -498,7 +498,7 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
     assert(ret == 0);
     return ret;
   }
-  rbox->storage->ms->create_metadata_storage(&rbox->storage->s->get_io_ctx_wrapper().get_io_ctx(), rbox->storage->config);
+  rbox->storage->ms->create_metadata_storage(rbox->storage->s->get_io_ctx_wrapper(), rbox->storage->config);
 
   std::string uid;
   if (box->list->ns->owner != nullptr) {
