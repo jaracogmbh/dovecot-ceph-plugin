@@ -24,9 +24,6 @@ using librmb::RadosMail;
 
 RadosMail::RadosMail()
     : object_size(-1),
-      completion(nullptr),
-      write_operation(nullptr),
-      active_op(0),
       mail_buffer(nullptr),
       save_date_rados(-1),
       valid(true),
