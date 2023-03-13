@@ -76,8 +76,6 @@ class RadosStorageImpl : public RadosStorage {
            std::list<RadosMetadata> &to_update, bool delete_source) override;
   int copy(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
            std::list<RadosMetadata> &to_update) override;
-
-  int save_mail(const std::string &oid, librados::bufferlist &buffer) override;
   bool save_mail(RadosMail *mail) override;
   librmb::RadosMail *alloc_rados_mail() override;
 
@@ -107,7 +105,6 @@ class RadosStorageImpl : public RadosStorage {
   int max_object_size;
   std::string nspace;
   librmb::RboxIoCtx* io_ctx_wrapper;
-  librados::IoCtx recovery_io_ctx;
  
   bool io_ctx_created;
   std::string pool_name;

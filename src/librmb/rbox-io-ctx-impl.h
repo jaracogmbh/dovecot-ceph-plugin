@@ -17,12 +17,21 @@
 #include <rados/librados.hpp>
 
 #include "rbox-io-ctx.h"
-
 namespace librmb{
 class RboxIoCtxImpl:public RboxIoCtx{
     public:
     virtual ~RboxIoCtxImpl(){}
     RboxIoCtxImpl(){}
+
+    void set_io_ctx(librados::IoCtx& io_ctx_) override{
+        io_ctx=io_ctx_;
+    }
+    librados::IoCtx& get_io_ctx() override{
+        return io_ctx;
+    }
+    librados::IoCtx& get_recovery_io_ctx() override{
+        return recovery_io_ctx;
+    }
     int aio_stat(const std::string& oid,librados::AioCompletion *aio_complete,uint64_t *psize,time_t *pmtime) override{
         return get_io_ctx().aio_stat(oid,aio_complete,psize,pmtime);
     }
@@ -31,6 +40,9 @@ class RboxIoCtxImpl:public RboxIoCtx{
     }
     int omap_rm_keys(const std::string& oid,const std::set<std::string>& keys)override{
         return get_io_ctx().omap_rm_keys(oid,keys);
+    }
+    int  omap_set(const std::map<std::string, librados::bufferlist>& map,const std::string& oid)override{
+        get_io_ctx().omap_set(oid,map);
     }
     void omap_set(const std::string& oid,const std::map<std::string, librados::bufferlist>& map)override{
         get_io_ctx().omap_set(oid,map);
@@ -56,20 +68,22 @@ class RboxIoCtxImpl:public RboxIoCtx{
     int stat(const std::string& oid, uint64_t *psize, time_t *pmtime)override{
         return get_io_ctx().stat(oid,psize,pmtime);
     }
-    int aio_operate(const std::string& oid, librados::AioCompletion *aio_complete, librados::ObjectWriteOperation *op)override{
-        return get_io_ctx().aio_operate(oid,aio_complete,op);
+    int aio_operate(const std::string& oid, librados::AioCompletion *aio_completion,
+		    librados::ObjectReadOperation *read_op, librados::bufferlist *pbl)override{
+                return get_io_ctx().aio_operate(oid,aio_completion,read_op,pbl);
+            }
+    int aio_operate(const std::string& oid, librados::AioCompletion *aio_completion,
+		    librados::ObjectReadOperation *read_op, int flags,librados::bufferlist *pbl)override{
+                return get_io_ctx().aio_operate(oid,aio_completion,read_op,flags,pbl);
+            }
+    int aio_operate(const std::string& oid, librados::AioCompletion *aio_complete, librados::ObjectWriteOperation *write_op)override{
+        return get_io_ctx().aio_operate(oid,aio_complete,write_op);
     }
     int remove(const std::string& oid){
         return get_io_ctx().remove(oid);
     }
     int  write_full(const std::string& oid, librados::bufferlist& bl) override{
         return get_io_ctx().write_full(oid,bl);
-    }
-    void set_Io_Ctx(librados::IoCtx& io_ctx_) override{
-        io_ctx=io_ctx_;
-    }
-    librados::IoCtx& get_io_ctx() override{
-        return io_ctx;
     }
     int read(const std::string& oid, librados::bufferlist& bl, size_t len, uint64_t off) override{
         return get_io_ctx().read(oid,bl,len,0);
@@ -84,11 +98,26 @@ class RboxIoCtxImpl:public RboxIoCtx{
         const std::string& oid,librados::ObjectReadOperation* read_op,librados::bufferlist* buffer) override{
         return get_io_ctx().operate(oid,read_op,buffer);
     }
-    uint64_t get_last_version(){
+    uint64_t get_last_version()override{
         return get_io_ctx().get_last_version();
+    }
+    void set_remove_completion(librados::AioCompletion &aio_commepletion)override{
+        this->remove_completion=&aio_commepletion;
+    }
+    librados::AioCompletion& get_remove_completion()override{
+        return *remove_completion;
+    }
+    void set_push_back_completion(librados::AioCompletion &aio_commepletion)override{
+        this->remove_completion=&aio_commepletion;
+    }
+    librados::AioCompletion& get_push_back_completion()override{
+        return *push_back_completion;
     }
     private:
     librados::IoCtx io_ctx;
+    librados::IoCtx recovery_io_ctx;
+    librados::AioCompletion *remove_completion;
+    librados::AioCompletion *push_back_completion;
 };    
 }
 #endif  // SRC_LIBRMB_RBOX_IO_CTX_IMPL_H_

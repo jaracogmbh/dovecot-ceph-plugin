@@ -19,8 +19,8 @@ std::string librmb::RadosMetadataStorageIma::module_name = "ima";
 std::string librmb::RadosMetadataStorageIma::keyword_key = "K";
 namespace librmb {
 
-RadosMetadataStorageIma::RadosMetadataStorageIma(librados::IoCtx *io_ctx_, RadosDovecotCephCfg *cfg_) {
-  this->io_ctx = io_ctx_;
+RadosMetadataStorageIma::RadosMetadataStorageIma(librmb::RboxIoCtx &io_ctx_wrapper_, RadosDovecotCephCfg *cfg_) {
+  this->io_ctx_wrapper = &io_ctx_wrapper_;
   this->cfg = cfg_;
 }
 
@@ -70,7 +70,7 @@ int RadosMetadataStorageIma::load_metadata(RadosMail *mail) {
   int max_retry = 10;
   int ret = -1;
   for(int i=0;i<max_retry;i++){
-    ret = io_ctx->getxattrs(*mail->get_oid(), attr);
+    ret = io_ctx_wrapper->getxattrs(*mail->get_oid(), attr);
     if(ret >= 0){      
       break;
     }
@@ -101,7 +101,7 @@ int RadosMetadataStorageIma::load_metadata(RadosMail *mail) {
 
   // load other omap values.
   if (cfg->is_updateable_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS)) {
-    ret = RadosUtils::get_all_keys_and_values(io_ctx, *mail->get_oid(), mail->get_extended_metadata());
+    ret = RadosUtils::get_all_keys_and_values(&io_ctx_wrapper->get_io_ctx(), *mail->get_oid(), mail->get_extended_metadata());
   }
 
   return ret;
@@ -114,12 +114,11 @@ int RadosMetadataStorageIma::set_metadata(RadosMail *mail, RadosMetadata &xattr)
     mail->add_metadata(xattr);
     librados::ObjectWriteOperation op;
     save_metadata(&op, mail);
-    return io_ctx->operate(*mail->get_oid(), &op);
+    return io_ctx_wrapper->operate(*mail->get_oid(), &op);
   } else {
-    return io_ctx->setxattr(*mail->get_oid(), xattr.key.c_str(), xattr.bl);
+    return io_ctx_wrapper->setxattr(*mail->get_oid(), xattr.key.c_str(), xattr.bl);
   }
 }
- // namespace librmb
 void RadosMetadataStorageIma::save_metadata(librados::ObjectWriteOperation *write_op, RadosMail *mail) {
   char *s = NULL;
   json_t *root = json_object();
@@ -179,7 +178,7 @@ bool RadosMetadataStorageIma::update_metadata(const std::string &oid, std::list<
   librados::AioCompletion *completion = librados::Rados::aio_create_completion();
   
   //TODO: do we need a retry mechanism here?
-  int ret = io_ctx->aio_operate(oid, completion, &write_op);
+  int ret = io_ctx_wrapper->aio_operate(oid, completion, &write_op);
   completion->wait_for_complete();
   completion->release();
   return ret == 0;
@@ -191,7 +190,7 @@ int RadosMetadataStorageIma::update_keyword_metadata(const std::string &oid, Rad
     } else {
       std::map<std::string, librados::bufferlist> map;
       map.insert(std::pair<string, librados::bufferlist>(metadata->key, metadata->bl));
-      ret = io_ctx->omap_set(oid, map);
+      ret = io_ctx_wrapper->omap_set(map,oid);
     }
   }
   return ret;
@@ -199,12 +198,12 @@ int RadosMetadataStorageIma::update_keyword_metadata(const std::string &oid, Rad
 int RadosMetadataStorageIma::remove_keyword_metadata(const std::string &oid, std::string &key) {
   std::set<std::string> keys;
   keys.insert(key);
-  return io_ctx->omap_rm_keys(oid, keys);
+  return io_ctx_wrapper->omap_rm_keys(oid, keys);
 }
 
 int RadosMetadataStorageIma::load_keyword_metadata(const std::string &oid, std::set<std::string> &keys,
                                                    std::map<std::string, ceph::bufferlist> *metadata) {
-  return io_ctx->omap_get_vals_by_keys(oid, keys, metadata);
+  return io_ctx_wrapper->omap_get_vals_by_keys(oid, keys, metadata);
 }
 
 } /* namespace librmb */

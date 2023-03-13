@@ -16,7 +16,7 @@
 #include <string>
 #include <cstdint>
 #include <mutex>  // NOLINT
-
+#include "rbox-io-ctx.h"
 #include <rados/librados.hpp>
 #include "rados-cluster.h"
 #include "rados-dictionary.h"
@@ -24,6 +24,7 @@
 #include "rados-dovecot-ceph-cfg-impl.h"
 #include "rados-namespace-manager.h"
 #include "rados-guid-generator.h"
+
 
 namespace librmb {
 
@@ -42,19 +43,21 @@ class RadosDictionaryImpl : public RadosDictionary {
   const std::string& get_username() override { return username; }
   const std::string& get_poolname() override { return poolname; }
 
-  librados::IoCtx& get_io_ctx(const std::string& key) override;
-  librados::IoCtx& get_shared_io_ctx() override;
-  librados::IoCtx& get_private_io_ctx() override;
+  librmb::RboxIoCtx& get_io_ctx_wrapper(const std::string& key) override;
+  librmb::RboxIoCtx& get_shared_io_ctx_wrapper() override;
+  librmb::RboxIoCtx& get_private_io_ctx_wrapper() override;
 
-  void remove_completion(librados::AioCompletion* c) override;
-  void push_back_completion(librados::AioCompletion* c) override;
+  void remove_completion(librmb::RboxIoCtx &remove_completion_wrapper) override;
+  void push_back_completion(librmb::RboxIoCtx &push_back_completion_wrapper) override;
   void wait_for_completions() override;
 
   int get(const std::string& key, std::string* value_r) override;
+    
+  librmb::RboxIoCtx* RadosDictionary::remove_completion_wrapper;
+  librmb::RboxIoCtx* RadosDictionary::push_back_completion_wrapper;
 
  private:
   bool load_configuration(librados::IoCtx* io_ctx);
-
   bool lookup_namespace(std::string& username_, librmb::RadosDovecotCephCfg* cfg_, std::string* ns);
 
  private:
@@ -65,10 +68,12 @@ class RadosDictionaryImpl : public RadosDictionary {
 
   std::string shared_oid;
   librados::IoCtx shared_io_ctx;
+  librmb::RboxIoCtx* shared_io_ctx_wrapper;
   bool shared_io_ctx_created;
 
   std::string private_oid;
   librados::IoCtx private_io_ctx;
+  librmb::RboxIoCtx* private_io_ctx_wrapper;
   bool private_io_ctx_created;
 
   std::list<librados::AioCompletion*> completions;

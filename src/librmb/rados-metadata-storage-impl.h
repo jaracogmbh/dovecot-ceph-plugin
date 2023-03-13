@@ -23,7 +23,7 @@ class RadosMetadataStorageImpl : public RadosMetadataStorage {
  public:
   RadosMetadataStorageImpl() {
     storage = nullptr;
-    io_ctx = nullptr;
+    io_ctx_wrapper = nullptr;
     cfg = nullptr;
   }
   virtual ~RadosMetadataStorageImpl() {
@@ -33,16 +33,16 @@ class RadosMetadataStorageImpl : public RadosMetadataStorage {
     }
   }
 
-  RadosStorageMetadataModule *create_metadata_storage(librados::IoCtx *io_ctx_, RadosDovecotCephCfg *cfg_) override {
-    this->io_ctx = io_ctx_;
+  RadosStorageMetadataModule *create_metadata_storage(librmb::RboxIoCtx &io_ctx_wrapper_, RadosDovecotCephCfg *cfg_) override {
+    this->io_ctx_wrapper = &io_ctx_wrapper_;
     this->cfg = cfg_;
     if (storage == nullptr) {
       // decide metadata storage!
       std::string storage_module_name = cfg_->get_metadata_storage_module();
       if (storage_module_name.compare(librmb::RadosMetadataStorageIma::module_name) == 0) {
-        storage = new librmb::RadosMetadataStorageIma(io_ctx, cfg_);
+        storage = new librmb::RadosMetadataStorageIma(*io_ctx_wrapper, cfg_);
       } else {
-        storage = new librmb::RadosMetadataStorageDefault(io_ctx);
+        storage = new librmb::RadosMetadataStorageDefault(*io_ctx_wrapper);
       }
     }
     return storage;
@@ -54,7 +54,7 @@ class RadosMetadataStorageImpl : public RadosMetadataStorage {
   }
 
  private:
-  librados::IoCtx *io_ctx;
+  librmb::RboxIoCtx *io_ctx_wrapper;
   RadosDovecotCephCfg *cfg;
   RadosStorageMetadataModule *storage;
 };

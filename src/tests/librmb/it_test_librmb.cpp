@@ -63,7 +63,9 @@ TEST(librmb, split_write_operation) {
   // stat the object
   uint64_t size;
   time_t save_date;
+  std::cout<<"stat_mail is invoked"<<std::endl;
   int ret_stat = storage.stat_mail(*obj.get_oid(), &size, &save_date);
+  std::cout<<"stat_mailhas been invoked "<<std::endl;
 
   // remove it
   int ret_remove = storage.delete_mail(*obj.get_oid());
@@ -224,7 +226,7 @@ TEST(librmb, load_metadata) {
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
 
-  librmb::RadosMetadataStorageDefault ms(&storage.get_io_ctx());
+  librmb::RadosMetadataStorageDefault ms(storage.get_io_ctx_wrapper());
 
   // ceph::bufferlist bl;
   // bl.append("xyz\0");
@@ -292,7 +294,7 @@ TEST(librmb, AttributeVersions) {
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
 
-  librmb::RadosMetadataStorageDefault ms(&storage.get_io_ctx());
+  librmb::RadosMetadataStorageDefault ms(storage.get_io_ctx_wrapper());
 
   // ceph::bufferlist bl;
   // bl.append("xyz\0");
@@ -359,7 +361,7 @@ TEST(librmb, json_ima) {
   librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
 
   // cfg.update_updatable_attributes("");
-  librmb::RadosMetadataStorageIma ms(&storage.get_io_ctx(), &cfg);
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), &cfg);
 
   librmb::RadosMail obj;
   librados::bufferlist buffer;
@@ -427,7 +429,7 @@ TEST(librmb, json_ima_2) {
 
   cfg.set_update_attributes("true");
   cfg.update_updatable_attributes("F");
-  librmb::RadosMetadataStorageIma ms(&storage.get_io_ctx(), &cfg);
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), &cfg);
 
   librmb::RadosMail obj;
   librados::bufferlist buffer;
@@ -496,7 +498,7 @@ TEST(librmb, json_ima_3) {
   librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
   cfg.set_update_attributes("true");
   cfg.update_updatable_attributes("FK");
-  librmb::RadosMetadataStorageIma ms(&storage.get_io_ctx(), &cfg);
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), &cfg);
 
   librmb::RadosMail obj;
   librados::bufferlist buffer;
@@ -577,7 +579,7 @@ TEST(librmb, test_default_metadata_load_attributes) {
   librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
   cfg.set_update_attributes("true");
   cfg.update_updatable_attributes("FK");
-  librmb::RadosMetadataStorageDefault ms(&storage.get_io_ctx());
+  librmb::RadosMetadataStorageDefault ms(storage.get_io_ctx_wrapper());
 
   librmb::RadosMail obj;
   librados::bufferlist buffer;
@@ -638,7 +640,7 @@ TEST(librmb, test_default_metadata_load_attributes_obj_no_longer_exist) {
   librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
   cfg.set_update_attributes("true");
   cfg.update_updatable_attributes("FK");
-  librmb::RadosMetadataStorageDefault ms(&storage.get_io_ctx());
+  librmb::RadosMetadataStorageDefault ms(storage.get_io_ctx_wrapper());
 
   librmb::RadosMail obj2;
   obj2.set_oid("test_ima1");
@@ -668,7 +670,7 @@ TEST(librmb, test_default_metadata_load_attributes_obj_no_longer_exist_ima) {
   librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
   cfg.set_update_attributes("true");
   cfg.update_updatable_attributes("FK");
-  librmb::RadosMetadataStorageIma ms(&storage.get_io_ctx(), &cfg);
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), &cfg);
 
   librmb::RadosMail obj2;
   obj2.set_oid("test_ima1");
@@ -1058,7 +1060,8 @@ TEST(librmb, rmb_load_objects_valid_metadata) {
     obj2.add_metadata(m);
   }
   // convert metadata to xattr. and add to write_op
-  ms->save_metadata(&write_op, &obj2);
+ librmb::RadosMetadata *xattr=new librmb::RadosMetadata();
+  ms->set_metadata(&obj2,*xattr);
   
   // save complete mail.
   EXPECT_EQ(true, storage.save_mail(&obj2));
@@ -1075,7 +1078,7 @@ TEST(librmb, rmb_load_objects_valid_metadata) {
     delete obj;
   }
   delete ms;
-
+  delete xattr;
   mail_objects.clear();
   // tear down
   cluster.deinit();
@@ -1199,7 +1202,8 @@ TEST(librmb, rmb_load_objects_invalid_metadata) {
     obj2.add_metadata(m);
   }
   // convert metadata to xattr. and add to write_op
-  ms->save_metadata(&write_op, &obj2);
+  librmb::RadosMetadata *xattr=new librmb::RadosMetadata();
+  ms->set_metadata(&obj2,*xattr);
   // save complete mail.
   EXPECT_EQ(true, storage.save_mail(&obj2));
 
@@ -1218,6 +1222,7 @@ TEST(librmb, rmb_load_objects_invalid_metadata) {
   storage.delete_mail(*obj2.get_oid());
   storage.delete_mail(ceph_cfg.get_cfg_object_name());
   delete ms;
+  delete xattr;
   mail_objects.clear();
   // tear down
   cluster.deinit();
