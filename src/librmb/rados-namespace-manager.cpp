@@ -41,15 +41,16 @@ bool RadosNamespaceManager::lookup_key(const std::string &uid, std::string *valu
     return true;
   }
 
-  ceph::bufferlist bl;
+ 
+  std::ostringstream stream_buffer;
   bool retval = false;
 
   // temporarily set storage namespace to config namespace
   config->set_io_ctx_namespace(config->get_user_ns());
   // storage->set_namespace(config->get_user_ns());
-  int err = config->read_object(uid, &bl);
-  if (err >= 0 && !bl.to_str().empty()) {
-    *value = bl.to_str();
+  int err = config->read_object(uid,stream_buffer);
+  if (err >= 0 && !stream_buffer.str().empty()) {
+    *value = stream_buffer.str();
     cache[uid] = *value;
     retval = true;
   }
@@ -74,12 +75,11 @@ bool RadosNamespaceManager::add_namespace_entry(const std::string &uid, std::str
   guid_generator_->generate_guid(value);
   // temporarily set storage namespace to config namespace
   config->set_io_ctx_namespace(config->get_user_ns());
-
-  ceph::bufferlist bl;
-  bl.append(*value);
   bool retval = false;
-  if (config->save_object(uid, bl) >= 0) {
-    cache[uid] = *value;
+  
+  std::istringstream i_value(*value);
+  if (config->save_object(uid,i_value) >= 0) {
+    cache[uid] = i_value.str();
     retval = true;
   }
   // reset namespace

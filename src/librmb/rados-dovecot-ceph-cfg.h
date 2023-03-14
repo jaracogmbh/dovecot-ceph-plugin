@@ -69,7 +69,7 @@ class RadosDovecotCephCfg {
 
   virtual std::string &get_key_prefix_keywords() = 0;
 
-  virtual void set_io_ctx(librados::IoCtx *io_ctx) = 0;
+  virtual void set_io_ctx_wrapper(librmb::RboxIoCtx &io_ctx_wrapper) = 0;
   virtual int load_rados_config() = 0;
   virtual int save_default_rados_config() = 0;
   virtual void set_user_mapping(bool value_) = 0;
@@ -86,14 +86,14 @@ class RadosDovecotCephCfg {
    * @param[in] buffer configuration object
    * * @return linux error codes or 0 if successful
    */
-  virtual int save_object(const std::string &oid, librados::bufferlist &buffer) = 0;
+  virtual int save_object(const std::string &oid, std::istream &stream_buffer) = 0;
   /*!
    * read configuration from object
    * @param[in] unique ident
    * @param[out] valid pointer to buffer.
    * @return linux error codes or 0 if successful
    */
-  virtual int read_object(const std::string &oid, librados::bufferlist *buffer) = 0;
+  virtual int read_object(const std::string &oid, std::ostream &stream_buffer) = 0;
   /*!
    * set rados configuration namespace
    */
