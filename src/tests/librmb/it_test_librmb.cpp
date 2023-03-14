@@ -77,7 +77,6 @@ TEST(librmb, split_write_operation) {
   EXPECT_EQ(true, ret_storage);
   EXPECT_EQ(0, ret_stat);
   EXPECT_EQ(0, ret_remove);
-  EXPECT_EQ(0, (int)obj.get_num_active_op());
 }
 /**
  * Test object split operation
@@ -124,7 +123,6 @@ TEST(librmb1, split_write_operation_1) {
   EXPECT_EQ(true, ret_storage);
   EXPECT_EQ(0, ret_stat);
   EXPECT_EQ(0, ret_remove);
-  EXPECT_EQ(0, (int)obj.get_num_active_op());
 }
 /**
  * Test Rados Metadata type conversion
@@ -254,7 +252,6 @@ TEST(librmb, load_metadata) {
   EXPECT_EQ(buffer_length, size);
   EXPECT_EQ(true, ret_storage);
   EXPECT_EQ(0, ret_stat);
-  EXPECT_EQ(0, (int)obj.get_num_active_op());
   EXPECT_EQ(2, (int)obj.get_metadata()->size());
   std::cout << " load with null" << std::endl;
   int i = ms.load_metadata(nullptr);

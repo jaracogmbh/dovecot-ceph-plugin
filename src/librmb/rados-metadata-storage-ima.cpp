@@ -119,7 +119,6 @@ int RadosMetadataStorageIma::set_metadata(RadosMail *mail, RadosMetadata &xattr)
     return io_ctx_wrapper->setxattr(*mail->get_oid(), xattr.key.c_str(), xattr.bl);
   }
 }
-
 void RadosMetadataStorageIma::save_metadata(librados::ObjectWriteOperation *write_op, RadosMail *mail) {
   char *s = NULL;
   json_t *root = json_object();

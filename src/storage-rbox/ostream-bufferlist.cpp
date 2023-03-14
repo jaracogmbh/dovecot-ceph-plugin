@@ -95,10 +95,6 @@ struct ostream *o_stream_create_bufferlist(librmb::RadosMail *rados_mail, librmb
   bstream->rados_storage = rados_storage;
   bstream->rados_mail = rados_mail;
   bstream->execute_write_ops = execute_write_ops;
-  if (execute_write_ops) {
-    rados_mail->set_completion(librados::Rados::aio_create_completion());
-    rados_mail->set_active_op(1);
-  }
   output = o_stream_create(&bstream->ostream, NULL, -1);
   o_stream_set_name(output, "(buffer)");
   return output;

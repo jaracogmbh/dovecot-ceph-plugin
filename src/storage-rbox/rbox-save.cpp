@@ -588,7 +588,7 @@ static int rbox_save_assign_uids(struct rbox_save_context *r_ctx, const ARRAY_TY
       i_assert(ret);
       if (r_storage->config->is_mail_attribute(rbox_metadata_key::RBOX_METADATA_MAIL_UID)) {
         metadata.convert(rbox_metadata_key::RBOX_METADATA_MAIL_UID, uid);
-        if (r_storage->ms->get_storage()->set_metadata(r_ctx->rados_mail, metadata) < 0) {
+        if(r_storage->ms->get_storage()->set_metadata(r_ctx->rados_mail, metadata) < 0) {
           return -1;
         }
       }

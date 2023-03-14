@@ -33,7 +33,6 @@ int RadosMetadataStorageDefault::load_metadata(RadosMail *mail) {
   if (ret >= 0) {
     ret = RadosUtils::get_all_keys_and_values(&io_ctx_wrapper->get_io_ctx(), *mail->get_oid(), mail->get_extended_metadata());
   }
-
   return ret;
 }
 int RadosMetadataStorageDefault::set_metadata(RadosMail *mail, RadosMetadata &xattr) {
