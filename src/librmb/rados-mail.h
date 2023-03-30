@@ -50,7 +50,7 @@ class RadosMail {
   //librados::bufferlist* get_mail_buffer() { return this->mail_buffer; }
   //void set_mail_buffer(librados::bufferlist* buffer) { this->mail_buffer = buffer; }
 
-  void set_mail_buffer(char* buffer) { this->mail_buffer = buffer; }
+  void set_mail_buffer(void* buffer) { this->mail_buffer = buffer; }
   void* get_mail_buffer() { return this_mail_buffer; };
 
   map<string, ceph::bufferlist>* get_metadata() { return &this->attrset; }
