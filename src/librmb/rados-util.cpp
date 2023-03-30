@@ -264,7 +264,7 @@ namespace librmb {
       metadata->get_storage()->set_io_ctx(primary->get_io_ctx_wrapper());
       return ret;
     }
-    mail->set_mail_size(mail->get_mail_buffer()->length());
+    mail->set_mail_size(((librados::bufferlist*)mail->get_mail_buffer())->length());
 
     // load the metadata;
     ret = metadata->get_storage()->load_metadata(mail);
