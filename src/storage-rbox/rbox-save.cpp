@@ -200,7 +200,7 @@ void init_output_stream(mail_save_context *_ctx) {
   }
 
   // create buffer ( delete is in wait_for_write_operations)
-  r_ctx->rados_mail->set_mail_buffer(new librados::bufferlist());
+  r_ctx->rados_mail->set_mail_buffer(new std::stringstream());
   r_ctx->output_stream =
       o_stream_create_bufferlist(r_ctx->rados_mail, &r_ctx->rados_storage, rbox->storage->config->is_write_chunks());
   o_stream_cork(r_ctx->output_stream);

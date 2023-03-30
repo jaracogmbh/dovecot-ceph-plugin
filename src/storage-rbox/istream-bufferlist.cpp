@@ -17,10 +17,10 @@ extern "C" {
 
 #include "istream-bufferlist.h"
 #include <rados/librados.hpp>
-
+#include<sstream>
 struct bufferlist_istream {
   struct istream_private istream;
-  librados::bufferlist *bl;
+  std::stringstream *bl;
 };
 static ssize_t i_stream_data_read(struct istream_private *stream) {
   stream->istream.eof = TRUE;  // all in!
@@ -38,12 +38,12 @@ static void rbox_istream_destroy(struct iostream_private *stream) {
   struct bufferlist_istream *bstream = (struct bufferlist_istream *)stream;
   delete bstream->bl;
 }
-struct istream *i_stream_create_from_bufferlist(librados::bufferlist *data, const size_t &size) {
+struct istream *i_stream_create_from_bufferlist(std::stringstream *data, const size_t &size) {
   struct bufferlist_istream *bstream;
 
   bstream = i_new(struct bufferlist_istream, 1);
   // use unsigned char* for binary data!
-  bstream->istream.buffer = reinterpret_cast<unsigned char *>(data->c_str());
+  bstream->istream.buffer = reinterpret_cast<const unsigned char *>(data->str().c_str());
   bstream->istream.pos = size;
   bstream->istream.max_buffer_size = (size_t)-1;
 

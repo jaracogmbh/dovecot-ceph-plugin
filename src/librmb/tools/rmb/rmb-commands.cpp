@@ -534,8 +534,8 @@ int RmbCommands::print_mail(std::map<std::string, librmb::RadosMailBox *> *mailb
     for (std::list<librmb::RadosMail *>::iterator it_mail = it->second->get_mails().begin();
          it_mail != it->second->get_mails().end(); ++it_mail) {
       const std::string oid = *(*it_mail)->get_oid();
-      librados::bufferlist bl;
-      (*it_mail)->set_mail_buffer(&bl);
+      std::stringstream stringstream_buff;
+      (*it_mail)->set_mail_buffer(&stringstream_buff);
       if (storage->read_mail(oid,*it_mail,0) > 0) {
         if (tools.save_mail((*it_mail)) < 0) {
           std::cout << " error saving mail : " << oid << " to " << tools.get_mailbox_path() << std::endl;
