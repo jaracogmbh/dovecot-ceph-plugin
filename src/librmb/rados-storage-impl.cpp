@@ -85,8 +85,7 @@ int RadosStorageImpl::split_buffer_and_exec_op(RadosMail *current_object,
 
   uint64_t rest = write_buffer_size % max_write;
   int div = write_buffer_size / max_write + (rest > 0 ? 1 : 0);
-  librados::bufferlist rados_buffer;
-  rados_buffer.append(current_object->get_mail_buffer()->str());
+  librados::bufferlist* mail_buffer = (librados::bufferlist*) current_object->get_mail_buffer();
   for (int i = 0; i < div; ++i) {
 
     // split the buffer.
@@ -106,10 +105,10 @@ int RadosStorageImpl::split_buffer_and_exec_op(RadosMail *current_object,
     write_op.set_alloc_hint(write_buffer_size, length);
 #endif
     if (div == 1) {
-      write_op.write(0, rados_buffer);
+      write_op.write(0, *mail_buffer);
     } else {
       tmp_buffer.clear();
-      tmp_buffer.substr_of(rados_buffer, offset, length);
+      tmp_buffer.substr_of(*mail_buffer, offset, length);
       write_op.write(offset, tmp_buffer);
     }
     
@@ -120,7 +119,6 @@ int RadosStorageImpl::split_buffer_and_exec_op(RadosMail *current_object,
     }
   }
   // free mail's buffer cause we don't need it anymore
-  std::stringstream *mail_buffer = current_object->get_mail_buffer();
   delete mail_buffer;
 
   return ret_val;
@@ -135,12 +133,11 @@ int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,
   int read_err = 0;
   uint64_t psize;
   time_t save_date;
-  librados::bufferlist rados_buffer;
+  librados::bufferlist* buffer = (librados::bufferlist*) mail->get_mail_buffer();
   librados::ObjectReadOperation read_op;
-  read_op.read(0, INT_MAX, &rados_buffer, &read_err);
+  read_op.read(0, INT_MAX, buffer, &read_err);
   read_op.stat(&psize, &save_date, &stat_err);
-  ret=io_ctx_wrapper->operate(oid, &read_op,&rados_buffer);
-  mail->get_mail_buffer()->str(rados_buffer.to_str());
+  ret=io_ctx_wrapper->operate(oid, &read_op, buffer);
   if(ret == -ETIMEDOUT) {
     int max_retry = 10; //TODO FIX 
     if(try_counter < max_retry){
@@ -529,8 +526,7 @@ bool  RadosStorageImpl::save_mail(RadosMail *current_object){
   int max_write=get_max_write_size_bytes();
   uint64_t rest = object_size % max_write;
   int div = object_size / max_write + (rest > 0 ? 1 : 0);
-  librados::bufferlist rados_buffer;
-  rados_buffer.append(current_object->get_mail_buffer()->str());
+  librados::bufferlist *mail_buffer = (librados::bufferlist*) current_object->get_mail_buffer();
   for (int i = 0; i < div; ++i) {
 
     librados::bufferlist tmp_buffer;
@@ -542,18 +538,18 @@ bool  RadosStorageImpl::save_mail(RadosMail *current_object){
     }
 
     if (div == 1) {
-      librados::ObjectWriteOperation write_op;
-      write_op.write(0,rados_buffer);
+      librados::ObjectWriteOperation write_op;      
+      write_op.write(0,*mail_buffer);
       ret_val=execute_operation(*current_object->get_oid(), &write_op);
     }
     else {
       if(offset + length >object_size){
         return false;
       }else{
-        if(offset + length > current_object->get_mail_buffer()->str().length() ){
-          tmp_buffer.substr_of(rados_buffer, offset,current_object->get_mail_buffer()->str().length() - offset );
+        if(offset + length > mail_buffer->length() ){
+          tmp_buffer.substr_of(*mail_buffer, offset,mail_buffer->length() - offset );
         }else{  
-          tmp_buffer.substr_of(rados_buffer, offset, length);
+          tmp_buffer.substr_of(*mail_buffer, offset, length);
         }
       }      
       ret_val = append_to_object(*current_object->get_oid(), tmp_buffer, length); 
@@ -568,8 +564,8 @@ bool  RadosStorageImpl::save_mail(RadosMail *current_object){
 }
   
 librmb::RadosMail *RadosStorageImpl::alloc_rados_mail() {
-  librmb::RadosMail * mail=new librmb::RadosMail(); 
-  mail->set_mail_buffer(new std::stringstream());
+  librmb::RadosMail * mail=new librmb::RadosMail();
+  mail->set_mail_buffer((void*)new librados::bufferlist());
   return mail;
 }
 
@@ -625,4 +621,11 @@ std::set<std::string> RadosStorageImpl::ceph_index_read() {
 int RadosStorageImpl::ceph_index_delete() {
   return get_recovery_io_ctx().remove(get_namespace());
 }
-
+void RadosStorageImpl::free_mail_buffer(void* mail_buffer){
+  librados::bufferlist *buffer=(librados::bufferlist*)mail_buffer;
+  delete buffer;
+  mail_buffer=nullptr;
+}
+void RadosStorageImpl::append_to_buffer(void *buff,const unsigned char * chunk, size_t size){
+  ((librados::bufferlist*)buff)->append(chunk,size);
+}

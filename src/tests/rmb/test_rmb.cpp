@@ -104,11 +104,11 @@ TEST(rmb1, save_mail) {
   bl.append(attr_val.c_str(), attr_val.length() + 1);
   (*mail.get_metadata())["U"] = bl;
   std::string mail_guid = "defg";
-  std::stringstream buffer;
-  mail.set_mail_buffer(&buffer);
-  mail.get_mail_buffer()->str("hallo welt\nbababababa\n");
+  void *buffer=(void*)new librados::bufferlist();
+  mail.set_mail_buffer(buffer);
+  ((librados::bufferlist*)mail.get_mail_buffer())->append("hallo welt\nbababababa\n");
   mail.set_oid(mail_guid);
-  mail.set_mail_size(mail.get_mail_buffer()->str().length() - 1);
+  mail.set_mail_size(((librados::bufferlist*)mail.get_mail_buffer())->length() - 1);
   int save = tools.save_mail(&mail);
   EXPECT_EQ(0, save);
 
@@ -116,6 +116,7 @@ TEST(rmb1, save_mail) {
   int ret_rm_dir = tools.delete_mailbox_dir();
   EXPECT_EQ(0, ret);
   EXPECT_EQ(0, ret_rm_dir);
+  delete buffer;
 }
 /**
  * Test mailbox Tools constructor

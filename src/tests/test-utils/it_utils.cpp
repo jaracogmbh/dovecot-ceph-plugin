@@ -46,11 +46,12 @@ void ItUtils::add_mail(const char *message, const char *mailbox, struct mail_nam
   struct mailbox *box = mailbox_alloc(ns->list, mailbox, (mailbox_flags)0);
   ASSERT_NE(box, nullptr);
   ASSERT_GE(mailbox_open(box), 0);
-
-  std::stringstream *i_stream_buffer = new std::stringstream();
-  i_stream_buffer->str(message);
-  struct istream *input = i_stream_create_from_bufferlist(i_stream_buffer, i_stream_buffer->str().length());
-
+  std::stringstream i_stream_buffer;
+  i_stream_buffer<<message;
+  void *message_buff=(void*)new librados::bufferlist();
+  storage_impl->append_to_buffer(message_buff,message,i_stream_buffer.str().length());
+  struct istream *input = i_stream_create_from_bufferlist(message_buff, i_stream_buffer.str().length());
+  
 #ifdef DOVECOT_CEPH_PLUGIN_HAVE_MAIL_STORAGE_TRANSACTION_OLD_SIGNATURE
   struct mailbox_transaction_context *trans = mailbox_transaction_begin(box, MAILBOX_TRANSACTION_FLAG_EXTERNAL);
 #else
@@ -102,10 +103,12 @@ void ItUtils::add_mail(const char *message, const char *mailbox, struct mail_nam
   struct mailbox *box = mailbox_alloc(ns->list, mailbox, (mailbox_flags)0);
   ASSERT_NE(box, nullptr);
   ASSERT_GE(mailbox_open(box), 0);
-  std::stringstream *i_stream_buffer = new std::stringstream();
-  i_stream_buffer->str(message);
-  struct istream *input = i_stream_create_from_bufferlist(i_stream_buffer, i_stream_buffer->str().length());
-
+  struct rbox_storage *storage = (struct rbox_storage *)box->storage;
+  std::stringstream i_stream_buffer;
+  i_stream_buffer<<message;
+  void *message_buff=(void*)new librados::bufferlist();
+  storage->s->append_to_buffer(message_buff,message,i_stream_buffer.str().length());
+  struct istream *input = i_stream_create_from_bufferlist(message_buff,i_stream_buffer.str().length());
 #ifdef DOVECOT_CEPH_PLUGIN_HAVE_MAIL_STORAGE_TRANSACTION_OLD_SIGNATURE
   struct mailbox_transaction_context *trans = mailbox_transaction_begin(box, MAILBOX_TRANSACTION_FLAG_EXTERNAL);
 #else
@@ -114,9 +117,7 @@ void ItUtils::add_mail(const char *message, const char *mailbox, struct mail_nam
   struct mailbox_transaction_context *trans = mailbox_transaction_begin(box, MAILBOX_TRANSACTION_FLAG_EXTERNAL, reason);
 #endif
   struct mail_save_context *save_ctx = mailbox_save_alloc(trans);
-
   ItUtils::add_mail(save_ctx, input, box, trans);
-
   i_stream_unref(&input);
   mailbox_free(&box);
 }
@@ -124,7 +125,6 @@ void ItUtils::add_mail(const char *message, const char *mailbox, struct mail_nam
 void ItUtils::add_mail(struct mail_save_context *save_ctx, struct istream *input, struct mailbox *box,
                        struct mailbox_transaction_context *trans) {
   bool save_failed = FALSE;
-
   if (mailbox_save_begin(&save_ctx, input) < 0) {
     i_error("Saving failed: %s", mailbox_get_last_internal_error(box, NULL));
     mailbox_transaction_rollback(&trans);

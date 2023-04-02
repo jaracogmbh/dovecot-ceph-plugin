@@ -482,14 +482,14 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
                   rmail->rados_mail->get_oid()->c_str(), rados_storage->get_namespace().c_str(), getpid(), alt_storage);
         rbox_mail_set_expunged(rmail);
         FUNC_END_RET("ret == -1");
-        delete rmail->rados_mail->get_mail_buffer();
+        rados_storage->free_mail_buffer(rmail->rados_mail->get_mail_buffer());
         return -1;
       } 
       else {
         i_error("reading mail return code(%d), oid(%s),namespace(%s), alt_storage(%d)", ret,
                 rmail->rados_mail->get_oid()->c_str(), rados_storage->get_namespace().c_str(), alt_storage);
-        FUNC_END_RET("ret == -1");
-        delete rmail->rados_mail->get_mail_buffer();
+        FUNC_END_RET("ret == -1");        
+        rados_storage->free_mail_buffer(rmail->rados_mail->get_mail_buffer());
         return -1;
       }
     }
@@ -503,39 +503,40 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
           "expunging mail ",
           rmail->rados_mail->get_oid()->c_str(), rados_storage->get_namespace().c_str(), alt_storage, _mail->uid);
       FUNC_END_RET("ret == 0");
-      rbox_mail_set_expunged(rmail);
-      delete rmail->rados_mail->get_mail_buffer();
+      rbox_mail_set_expunged(rmail);      
+      rados_storage->free_mail_buffer(rmail->rados_mail->get_mail_buffer());
       return -1;
     } else if (physical_size == INT_MAX) {
       i_error("trying to read a mail with INT_MAX size. (uid=%d,oid=%s,namespace=%s,alt_storage=%d)", _mail->uid,
               rmail->rados_mail->get_oid()->c_str(), rados_storage->get_namespace().c_str(), alt_storage);
       FUNC_END_RET("ret == -1");
-      delete rmail->rados_mail->get_mail_buffer();
+      rados_storage->free_mail_buffer(rmail->rados_mail->get_mail_buffer());
       return -1;
     }
-
+    librados::bufferlist *rados_mail_buff= (librados::bufferlist*) rmail->rados_mail->get_mail_buffer();
     i_debug("reading stream for oid: %s, phy: %d, buffer: %d", rmail->rados_mail->get_oid()->c_str(),
                                                                physical_size, 
-                                                               rmail->rados_mail->get_mail_buffer()->str().length()); 
-    bool isGzip = check_is_zlib( rmail->rados_mail->get_mail_buffer()->str().c_str());
+                                                               rados_mail_buff->length()); 
+                                                              
+    bool isGzip = check_is_zlib(rados_mail_buff->c_str());
     if(isGzip) {
 
-      uint32_t result = zlib_trailer_msg_length(rmail->rados_mail->get_mail_buffer()->str().c_str(),physical_size);
+      uint32_t result = zlib_trailer_msg_length(rados_mail_buff->c_str(),physical_size);
       
       // get mails real physical size and compare against trailer length
       uoff_t real_physical_size;
       rbox_mail_get_physical_size(_mail, &real_physical_size);
       // in case we have corrupt trailer, 
-      if(result-real_physical_size > zlib_header_length(rmail->rados_mail->get_mail_buffer()->str().c_str())) {
+      if(result-real_physical_size > zlib_header_length(rados_mail_buff->c_str())){
           i_warning("zlib size check failed %d trailer not as expected, fixing by adding 0x00 to msb",(result-real_physical_size));
-          *rmail->rados_mail->get_mail_buffer()<<0x00;
+          rados_mail_buff->append("0x00");
           physical_size+=1;                 
       }
     }                                                       
     // validates if object is in zlib format (first 2 byte)
     if (get_mail_stream(rmail, physical_size, &input) < 0) {
       FUNC_END_RET("ret == -1");
-      delete rmail->rados_mail->get_mail_buffer();
+      rados_storage->free_mail_buffer(rmail->rados_mail->get_mail_buffer());;
       return -1;
     }
     data->stream = input;

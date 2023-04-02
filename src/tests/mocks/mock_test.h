@@ -106,6 +106,8 @@ class RadosStorageMock : public RadosStorage {
   MOCK_METHOD1(ceph_index_overwrite,int(const std::set<std::string> &oids));
   MOCK_METHOD0(ceph_index_read,std::set<std::string>());
   MOCK_METHOD0(ceph_index_delete,int());
+  MOCK_METHOD1(free_mail_buffer,void(void *mail_buffer));
+  MOCK_METHOD3(append_to_buffer,void(void *buff,const unsigned char * chunk, size_t size));
 };
 
 class RadosStorageMetadataMock : public RadosStorageMetadataModule {
