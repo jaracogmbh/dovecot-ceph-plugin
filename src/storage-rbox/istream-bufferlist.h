@@ -19,6 +19,6 @@
  * @param[in] data valid pointer to bufferlist which is avail while istream is avail.
  * @param[in] size size of initial buffer.
  */
-struct istream *i_stream_create_from_bufferlist(void *data, const size_t &size);
+struct istream *i_stream_create_from_bufferlist(void *data,const char *mail_buff, const size_t &size);
 
 #endif /* SRC_STORAGE_RBOX_ISTREAM_BUFFERLIST_H_ */

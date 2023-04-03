@@ -38,12 +38,12 @@ static void rbox_istream_destroy(struct iostream_private *stream) {
   struct bufferlist_istream *bstream = (struct bufferlist_istream *)stream;
   delete bstream->bl;
 }
-struct istream *i_stream_create_from_bufferlist(void *data, const size_t &size) {
+struct istream *i_stream_create_from_bufferlist(void *data,const char *mail_buff, const size_t &size) {
   struct bufferlist_istream *bstream;
 
   bstream = i_new(struct bufferlist_istream, 1);
   // use unsigned char* for binary data!
-  bstream->istream.buffer = reinterpret_cast<unsigned char *>(((librados::bufferlist*)data)->c_str());
+  bstream->istream.buffer = reinterpret_cast<const unsigned char *>(mail_buff);
   bstream->istream.pos = size;
   bstream->istream.max_buffer_size = (size_t)-1;
 

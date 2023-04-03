@@ -50,7 +50,7 @@ void ItUtils::add_mail(const char *message, const char *mailbox, struct mail_nam
   i_stream_buffer<<message;
   void *message_buff=(void*)new librados::bufferlist();
   storage_impl->append_to_buffer(message_buff,message,i_stream_buffer.str().length());
-  struct istream *input = i_stream_create_from_bufferlist(message_buff, i_stream_buffer.str().length());
+  struct istream *input = i_stream_create_from_bufferlist(message_buff,message,i_stream_buffer.str().length());
   
 #ifdef DOVECOT_CEPH_PLUGIN_HAVE_MAIL_STORAGE_TRANSACTION_OLD_SIGNATURE
   struct mailbox_transaction_context *trans = mailbox_transaction_begin(box, MAILBOX_TRANSACTION_FLAG_EXTERNAL);
@@ -108,7 +108,7 @@ void ItUtils::add_mail(const char *message, const char *mailbox, struct mail_nam
   i_stream_buffer<<message;
   void *message_buff=(void*)new librados::bufferlist();
   storage->s->append_to_buffer(message_buff,message,i_stream_buffer.str().length());
-  struct istream *input = i_stream_create_from_bufferlist(message_buff,i_stream_buffer.str().length());
+  struct istream *input = i_stream_create_from_bufferlist(message_buff,message,i_stream_buffer.str().length());
 #ifdef DOVECOT_CEPH_PLUGIN_HAVE_MAIL_STORAGE_TRANSACTION_OLD_SIGNATURE
   struct mailbox_transaction_context *trans = mailbox_transaction_begin(box, MAILBOX_TRANSACTION_FLAG_EXTERNAL);
 #else

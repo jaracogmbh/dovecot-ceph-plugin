@@ -59,17 +59,12 @@ static ssize_t o_stream_buffer_sendv(struct ostream_private *stream, const struc
   unsigned int i;
   uint64_t val = stream->ostream.offset;
   if (bstream->execute_write_ops) {
-    ((librados::bufferlist*)bstream->buf)->clear();
+    bstream->rados_storage->free_mail_buffer(bstream->buf);
   }
-  librados::bufferlist iovec_buff;
   for (i = 0; i < iov_count; i++) {
     bstream->rados_storage->append_to_buffer(bstream->buf,reinterpret_cast<const unsigned char *>(iov[i].iov_base), iov[i].iov_len);
     stream->ostream.offset += iov[i].iov_len;
     ret += iov[i].iov_len;
-  }
-  if (bstream->execute_write_ops) {
-    librados::ObjectWriteOperation write_op;
-    write_op.write(val,*((librados::bufferlist*)bstream->buf));
   }
   return ret;
 }

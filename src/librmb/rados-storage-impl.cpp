@@ -621,10 +621,19 @@ std::set<std::string> RadosStorageImpl::ceph_index_read() {
 int RadosStorageImpl::ceph_index_delete() {
   return get_recovery_io_ctx().remove(get_namespace());
 }
-void RadosStorageImpl::free_mail_buffer(void* mail_buffer){
-  librados::bufferlist *buffer=(librados::bufferlist*)mail_buffer;
-  delete buffer;
-  mail_buffer=nullptr;
+void* RadosStorageImpl::alloc_mail_buffer(){
+  return (void*)new librados::bufferlist();
+}
+const char* RadosStorageImpl::get_mail_buffer(void *buffer,int *mail_buff_size){
+  *mail_buff_size=((librados::bufferlist*)buffer)->length();
+  return ((librados::bufferlist*)buffer)->c_str();
+}
+void RadosStorageImpl::free_mail_buffer(void* mail_buffer_){
+  if(mail_buffer_!=nullptr){
+    librados::bufferlist *buffer=(librados::bufferlist*)mail_buffer_;
+    delete buffer;
+    mail_buffer_=nullptr;
+  }
 }
 void RadosStorageImpl::append_to_buffer(void *buff,const unsigned char * chunk, size_t size){
   ((librados::bufferlist*)buff)->append(chunk,size);

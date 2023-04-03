@@ -114,6 +114,8 @@ class RadosStorageImpl : public RadosStorage {
 
   static const char *CFG_OSD_MAX_WRITE_SIZE;
   static const char *CFG_OSD_MAX_OBJECT_SIZE;
+
+  // void *mail_buffer;
 };
   
 
