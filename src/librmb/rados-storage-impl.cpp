@@ -53,6 +53,7 @@ RadosStorageImpl::~RadosStorageImpl() {
   delete io_ctx_wrapper;
   io_ctx_wrapper=nullptr;
 }
+
 librmb::RboxIoCtx& RadosStorageImpl::get_io_ctx_wrapper(){
   return *io_ctx_wrapper;
 }
@@ -123,6 +124,7 @@ int RadosStorageImpl::split_buffer_and_exec_op(RadosMail *current_object,
 
   return ret_val;
 }
+
 int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter){
   if (!cluster->is_connected() || !io_ctx_created) {
     return -1;
@@ -153,6 +155,7 @@ int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,
   mail->set_rados_save_date(&save_date);
   return ret;
 }
+
 int RadosStorageImpl::delete_mail(const std::string &oid) {
   if (!cluster->is_connected() || oid.empty() || !io_ctx_created) {
     return -1;
@@ -173,6 +176,7 @@ bool RadosStorageImpl::append_to_object(std::string &oid, librados::bufferlist &
   }
   return io_ctx_wrapper->append(oid, bufferlist, length) >=0 ? true : false;
 }
+
 int RadosStorageImpl::aio_operate(librados::IoCtx *io_ctx_, const std::string &oid, librados::AioCompletion *c,
                                   librados::ObjectWriteOperation *op) {
   if (!cluster->is_connected() || !io_ctx_created) {
@@ -309,6 +313,7 @@ std::set<std::string> RadosStorageImpl::find_mails_async(const RadosMetadata *at
     return oid_list;
 }
 librados::IoCtx& RadosStorageImpl::get_io_ctx() { return io_ctx_wrapper->get_io_ctx(); }
+
 librados::IoCtx& RadosStorageImpl::get_recovery_io_ctx() { return io_ctx_wrapper->get_recovery_io_ctx(); }
 
 int RadosStorageImpl::open_connection(const std::string &poolname, const std::string &index_pool,
@@ -324,6 +329,7 @@ int RadosStorageImpl::open_connection(const std::string &poolname, const std::st
   }
   return create_connection(poolname, index_pool);
 }
+
 int RadosStorageImpl::open_connection(const std::string &poolname,
                                       const std::string &clustername,
                                       const std::string &rados_username) {
@@ -337,12 +343,14 @@ int RadosStorageImpl::open_connection(const std::string &poolname,
   }
   return create_connection(poolname, poolname);
 }
+
 int RadosStorageImpl::open_connection(const string &poolname, const string &index_pool) {
   if (cluster->init() < 0) {
     return -1;
   }
   return create_connection(poolname, index_pool);
 }
+
 int RadosStorageImpl::open_connection(const string &poolname) {
   if (cluster->init() < 0) {
     return -1;
@@ -594,11 +602,13 @@ int RadosStorageImpl::ceph_index_append(const std::set<std::string> &oids) {
   bl.append(RadosUtils::convert_to_ceph_index(oids));
   return get_recovery_io_ctx().append( get_namespace(),bl, bl.length());
 }
+
 int RadosStorageImpl::ceph_index_overwrite(const std::set<std::string> &oids) {
   librados::bufferlist bl;
   bl.append(RadosUtils::convert_to_ceph_index(oids));
   return get_recovery_io_ctx().write_full( get_namespace(),bl);
 }
+
 std::set<std::string> RadosStorageImpl::ceph_index_read() {
   std::set<std::string> index;
   librados::bufferlist bl;
@@ -610,24 +620,26 @@ std::set<std::string> RadosStorageImpl::ceph_index_read() {
     return index;
   }
   int ret = get_recovery_io_ctx().read(get_namespace(),bl, max,0);
-
-
   if(ret < 0){
     return index;
   }
   index = RadosUtils::ceph_index_to_set(bl.c_str());
   return index;
 }
+
 int RadosStorageImpl::ceph_index_delete() {
   return get_recovery_io_ctx().remove(get_namespace());
 }
+
 void* RadosStorageImpl::alloc_mail_buffer(){
   return (void*)new librados::bufferlist();
 }
+
 const char* RadosStorageImpl::get_mail_buffer(void *buffer,int *mail_buff_size){
   *mail_buff_size=((librados::bufferlist*)buffer)->length();
   return ((librados::bufferlist*)buffer)->c_str();
 }
+
 void RadosStorageImpl::free_mail_buffer(void* mail_buffer_){
   if(mail_buffer_!=nullptr){
     librados::bufferlist *buffer=(librados::bufferlist*)mail_buffer_;
@@ -635,6 +647,7 @@ void RadosStorageImpl::free_mail_buffer(void* mail_buffer_){
     mail_buffer_=nullptr;
   }
 }
+
 void RadosStorageImpl::append_to_buffer(void *buff,const unsigned char * chunk, size_t size){
   ((librados::bufferlist*)buff)->append(chunk,size);
 }

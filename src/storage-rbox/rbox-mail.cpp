@@ -513,12 +513,13 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
       rados_storage->free_mail_buffer(rmail->rados_mail->get_mail_buffer());
       return -1;
     }
-    int   mail_buff_size=0;
+    int mail_buff_size=2;
     const char *mail_buff_char=rados_storage->get_mail_buffer(rmail->rados_mail->get_mail_buffer(),&mail_buff_size);
     i_debug("reading stream for oid: %s, phy: %d, buffer: %d", rmail->rados_mail->get_oid()->c_str(),
                                                                physical_size, 
                                                                mail_buff_size); 
-                                                              
+                                                           
+    // validates if object is in zlib format (first 2 byte)                                                          
     bool isGzip = check_is_zlib(mail_buff_char);
     if(isGzip) {
 
@@ -535,8 +536,7 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
           rados_storage->append_to_buffer(rmail->rados_mail->get_mail_buffer(),appended_zero.str().c_str(),1);
           physical_size+=1;                 
       }
-    }                                                       
-    // validates if object is in zlib format (first 2 byte)
+    }
     if (get_mail_stream(rmail,mail_buff_char, physical_size, &input) < 0) {
       FUNC_END_RET("ret == -1");
       rados_storage->free_mail_buffer(rmail->rados_mail->get_mail_buffer());;
