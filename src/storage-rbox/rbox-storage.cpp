@@ -69,13 +69,18 @@ struct mail_storage *rbox_storage_alloc(void) {
   i_zero(r_storage);
   r_storage->storage = rbox_storage;
   r_storage->storage.pool = pool;
-   r_storage->cluster =
-   rbox::StorageBackendFactory::create_cluster(rbox::StorageBackendFactory::CEPH);
-  r_storage->s =rbox::StorageBackendFactory::create_storage(rbox::StorageBackendFactory::CEPH,r_storage->cluster);
-  r_storage->config =rbox::StorageBackendFactory::create_dovecot_ceph_cfg(rbox::StorageBackendFactory::CEPH,r_storage->s);
-  r_storage->ns_mgr = rbox::StorageBackendFactory::create_namespace_manager(rbox::StorageBackendFactory::CEPH,r_storage->config);
-  r_storage->ms =rbox::StorageBackendFactory::create_metadata_storage(rbox::StorageBackendFactory::CEPH);
-  r_storage->alt = rbox::StorageBackendFactory::create_storage(rbox::StorageBackendFactory::CEPH,r_storage->cluster);
+  r_storage->cluster =
+    rbox::StorageBackendFactory::get_instance().create_cluster(rbox::StorageBackendFactory::CEPH);
+  r_storage->s =
+    rbox::StorageBackendFactory::get_instance().create_storage(rbox::StorageBackendFactory::CEPH,r_storage->cluster);
+  r_storage->config =
+    rbox::StorageBackendFactory::get_instance().create_dovecot_ceph_cfg(rbox::StorageBackendFactory::CEPH,r_storage->s);
+  r_storage->ns_mgr =
+    rbox::StorageBackendFactory::get_instance().create_namespace_manager(rbox::StorageBackendFactory::CEPH,r_storage->config);
+  r_storage->ms =
+    rbox::StorageBackendFactory::get_instance().create_metadata_storage(rbox::StorageBackendFactory::CEPH);
+  r_storage->alt =
+    rbox::StorageBackendFactory::get_instance().create_storage(rbox::StorageBackendFactory::CEPH,r_storage->cluster);
 
   // logfile is set when 90-plugin.conf param rados_save_cfg is evaluated.
   r_storage->save_log = new librmb::RadosSaveLog();
