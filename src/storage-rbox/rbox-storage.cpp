@@ -45,9 +45,9 @@ extern "C" {
 #include "rbox-copy.h"
 #include "rbox-mail.h"
 #include "rados-types.h"
-
+#include "storage-backend-factory.h"
 using std::string;
-
+using rbox::StorageBackendFactory;
 class RboxGuidGenerator : public librmb::RadosGuidGenerator {
  public:
   void generate_guid(std::string *guid_) override {
@@ -62,7 +62,6 @@ extern struct mailbox_vfuncs rbox_mailbox_vfuncs;
 
 struct mail_storage *rbox_storage_alloc(void) {
   FUNC_START();
-  
   struct rbox_storage *r_storage;
   pool_t pool;
   pool = pool_alloconly_create("rbox storage", 512 + 256);
@@ -70,12 +69,13 @@ struct mail_storage *rbox_storage_alloc(void) {
   i_zero(r_storage);
   r_storage->storage = rbox_storage;
   r_storage->storage.pool = pool;
-  r_storage->cluster = new librmb::RadosClusterImpl();
-  r_storage->s = new librmb::RadosStorageImpl(r_storage->cluster);
-  r_storage->config = new librmb::RadosDovecotCephCfgImpl(&r_storage->s->get_io_ctx_wrapper().get_io_ctx());
-  r_storage->ns_mgr = new librmb::RadosNamespaceManager(r_storage->config);
-  r_storage->ms = new librmb::RadosMetadataStorageImpl();
-  r_storage->alt = new librmb::RadosStorageImpl(r_storage->cluster);
+   r_storage->cluster =
+   rbox::StorageBackendFactory::create_cluster(rbox::StorageBackendFactory::CEPH);
+  r_storage->s =rbox::StorageBackendFactory::create_storage(rbox::StorageBackendFactory::CEPH,r_storage->cluster);
+  r_storage->config =rbox::StorageBackendFactory::create_dovecot_ceph_cfg(rbox::StorageBackendFactory::CEPH,r_storage->s);
+  r_storage->ns_mgr = rbox::StorageBackendFactory::create_namespace_manager(rbox::StorageBackendFactory::CEPH,r_storage->config);
+  r_storage->ms =rbox::StorageBackendFactory::create_metadata_storage(rbox::StorageBackendFactory::CEPH);
+  r_storage->alt = rbox::StorageBackendFactory::create_storage(rbox::StorageBackendFactory::CEPH,r_storage->cluster);
 
   // logfile is set when 90-plugin.conf param rados_save_cfg is evaluated.
   r_storage->save_log = new librmb::RadosSaveLog();
