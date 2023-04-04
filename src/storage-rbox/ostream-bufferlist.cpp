@@ -20,7 +20,7 @@ extern "C" {
 
 struct bufferlist_ostream {
   struct ostream_private ostream;
-  librados::bufferlist *buf;
+  void *buf;
   bool seeked;
   librmb::RadosStorage *rados_storage;
   librmb::RadosMail *rados_mail;
@@ -59,18 +59,12 @@ static ssize_t o_stream_buffer_sendv(struct ostream_private *stream, const struc
   unsigned int i;
   uint64_t val = stream->ostream.offset;
   if (bstream->execute_write_ops) {
-    bstream->buf->clear();
+    bstream->rados_storage->free_mail_buffer(bstream->buf);
   }
   for (i = 0; i < iov_count; i++) {
-    // use unsigned char* for binary data!
-    bstream->buf->append(reinterpret_cast<const unsigned char *>(iov[i].iov_base), iov[i].iov_len);
+    bstream->rados_storage->append_to_buffer(bstream->buf,reinterpret_cast<const unsigned char *>(iov[i].iov_base), iov[i].iov_len);
     stream->ostream.offset += iov[i].iov_len;
     ret += iov[i].iov_len;
-  }
-
-  if (bstream->execute_write_ops) {
-    librados::ObjectWriteOperation write_op;
-    write_op.write(val, *bstream->buf);
   }
   return ret;
 }
