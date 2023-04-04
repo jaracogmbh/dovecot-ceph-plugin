@@ -42,7 +42,6 @@ class RadosStorageImpl : public RadosStorage {
     }
   }
   
-  
   int stat_mail(const std::string &oid, uint64_t *psize, time_t *pmtime) override;
   void set_namespace(const std::string &_nspace) override;
   std::string get_namespace() override { return nspace; }
@@ -87,6 +86,10 @@ class RadosStorageImpl : public RadosStorage {
   int ceph_index_overwrite(const std::set<std::string> &oids)  override;
   std::set<std::string> ceph_index_read() override;
   int ceph_index_delete() override;
+  void* alloc_mail_buffer() override;
+  const char* get_mail_buffer(void *buffer,int *mail_buff_size) override;
+  void free_mail_buffer(void* mail_buffer) override;
+  void append_to_buffer(void *buff,const unsigned char * chunk, size_t size) override;
 
   bool execute_operation(std::string &oid, librados::ObjectWriteOperation *write_op_xattr);
   bool append_to_object(std::string &oid, librados::bufferlist &bufferlist, int length);

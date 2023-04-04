@@ -159,10 +159,10 @@ TEST_F(StorageTest,first_cluster_connectio){
 
   std::string buffer_text="simple_test_one_chunck";
   librmb::RadosMail rados_mail;
-  librados::bufferlist buffer;
-  rados_mail.set_mail_buffer(&buffer);
-  rados_mail.get_mail_buffer()->append(buffer_text);
-  int buffer_length = rados_mail.get_mail_buffer()->length();
+  void *buffer=(void*)new librados::bufferlist();
+  rados_mail.set_mail_buffer(buffer);
+  ((librados::bufferlist*)rados_mail.get_mail_buffer())->append(buffer_text);
+  int buffer_length = ((librados::bufferlist*)rados_mail.get_mail_buffer())->length();
   rados_mail.set_mail_size(buffer_length);  
   rados_mail.set_oid("test_mail_id"); 
 
@@ -171,6 +171,7 @@ TEST_F(StorageTest,first_cluster_connectio){
   EXPECT_EQ(false,ret_storage);
   delete cluster_mock;
   cluster_mock=nullptr;
+  delete buffer;
 }
 TEST_F(StorageTest,second_cluster_connectio){
   librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
@@ -199,10 +200,10 @@ TEST_F(StorageTest,second_cluster_connectio){
 
   std::string buffer_text="simple_test_one_chunck";
   librmb::RadosMail rados_mail;
-  librados::bufferlist buffer;
-  rados_mail.set_mail_buffer(&buffer);
-  rados_mail.get_mail_buffer()->append(buffer_text);
-  int buffer_length = rados_mail.get_mail_buffer()->length();
+  void *buffer=(void*)new librados::bufferlist();
+  rados_mail.set_mail_buffer(buffer);
+  ((librados::bufferlist*)rados_mail.get_mail_buffer())->append(buffer_text);
+  int buffer_length =((librados::bufferlist*)rados_mail.get_mail_buffer())->length();
   rados_mail.set_mail_size(buffer_length);  
   rados_mail.set_oid("test_mail_id"); 
 
@@ -212,6 +213,7 @@ TEST_F(StorageTest,second_cluster_connectio){
   EXPECT_EQ(false,ret_storage);
   delete cluster_mock;
   cluster_mock=nullptr;
+  delete buffer;
 }
 TEST_F(StorageTest,true_cluster_connection){
 
@@ -243,18 +245,18 @@ TEST_F(StorageTest,true_cluster_connection){
 
   std::string buffer_text="simple_test_one_chunck";
   librmb::RadosMail rados_mail;
-  librados::bufferlist buffer;
-  rados_mail.set_mail_buffer(&buffer);
-  rados_mail.get_mail_buffer()->append(buffer_text);
-  int buffer_length = rados_mail.get_mail_buffer()->length();
+  void *buffer=(void*)new librados::bufferlist();
+  rados_mail.set_mail_buffer(buffer);
+  ((librados::bufferlist*)rados_mail.get_mail_buffer())->append(buffer_text);
+  int buffer_length = ((librados::bufferlist*)rados_mail.get_mail_buffer())->length();
   rados_mail.set_mail_size(buffer_length);  
   rados_mail.set_oid("test_mail_id"); 
-  std::cout<<"what is the problem?????"<<std::endl;
  /*div==1*/ 
   bool ret_storage = under_test.save_mail(&rados_mail);
   EXPECT_EQ(true,ret_storage);
   delete cluster_mock;
   cluster_mock=nullptr;
+  delete buffer;
 }
 TEST_F(StorageTest,split_buffer){
   librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
@@ -284,10 +286,10 @@ TEST_F(StorageTest,split_buffer){
       buffer_text.append("Sara");
   }
   librmb::RadosMail rados_mail;
-  librados::bufferlist buffer;
-  rados_mail.set_mail_buffer(&buffer);
-  rados_mail.get_mail_buffer()->append(buffer_text);
-  int buffer_length = rados_mail.get_mail_buffer()->length();
+  void *buffer=(void*)new librados::bufferlist();
+  rados_mail.set_mail_buffer(buffer);
+  ((librados::bufferlist*)rados_mail.get_mail_buffer())->append(buffer_text);
+  int buffer_length =((librados::bufferlist*)rados_mail.get_mail_buffer())->length();
   rados_mail.set_mail_size(buffer_length);  
   rados_mail.set_oid("test_mail_id"); 
 
@@ -296,6 +298,7 @@ TEST_F(StorageTest,split_buffer){
   EXPECT_EQ(true,ret_storage);
   delete cluster_mock;
   cluster_mock=nullptr;
+  delete buffer;
 }
 TEST_F(StorageTest,true_first_read){
   librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
@@ -313,7 +316,7 @@ TEST_F(StorageTest,true_first_read){
   librmb::RadosMail mail;
   const std::string& oid="read_test";
   mail.set_oid(oid);
-  mail.set_mail_buffer(new librados::bufferlist);
+  mail.set_mail_buffer(new std::stringstream);
 
   librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
   storage.set_io_ctx_wrapper(io_ctx_mock);
@@ -341,7 +344,7 @@ TEST_F(StorageTest,true_repeated_read){
   librmb::RadosMail mail;
   const std::string& oid="read_test";
   mail.set_oid(oid);
-  mail.set_mail_buffer(new librados::bufferlist);
+  mail.set_mail_buffer(new std::stringstream);
 
   librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
   storage.set_io_ctx_wrapper(io_ctx_mock);
@@ -372,7 +375,7 @@ TEST_F(StorageTest,false_read){
   librmb::RadosMail mail;
   const std::string& oid="read_test";
   mail.set_oid(oid);
-  mail.set_mail_buffer(new librados::bufferlist);
+  mail.set_mail_buffer(new std::stringstream);
 
   librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
   storage.set_io_ctx_wrapper(io_ctx_mock);

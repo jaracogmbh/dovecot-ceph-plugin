@@ -79,7 +79,6 @@ TEST_F(StorageTest, read_mail_test) {
 
   // testdata
   testutils::ItUtils::add_mail(message, mailbox, StorageTest::s_test_mail_user->namespaces);
-
   search_args = mail_search_build_init();
   sarg = mail_search_build_add(search_args, SEARCH_ALL);
   ASSERT_NE(sarg, nullptr);

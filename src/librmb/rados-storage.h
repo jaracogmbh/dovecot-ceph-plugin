@@ -204,6 +204,10 @@ class RadosStorage {
    * */
   virtual void free_rados_mail(librmb::RadosMail *mail) = 0;
 
+  virtual void* alloc_mail_buffer() = 0;
+  virtual const char* get_mail_buffer(void *buffer,int *mail_buff_size) = 0;
+  virtual void free_mail_buffer(void *mail_buffer) = 0;
+  virtual void append_to_buffer(void *buff,const unsigned char *chunk, size_t size) = 0;
 
 };
 

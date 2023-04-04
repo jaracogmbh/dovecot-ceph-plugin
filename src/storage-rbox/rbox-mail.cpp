@@ -419,12 +419,12 @@ static int rbox_mail_get_physical_size(struct mail *_mail, uoff_t *size_r) {
   return ret;
 }
 
-static int get_mail_stream(struct rbox_mail *mail, librados::bufferlist *buffer, const size_t physical_size,
+static int get_mail_stream(struct rbox_mail *mail,const char *mail_buff,const size_t physical_size,
                            struct istream **stream_r) {
   struct mail_private *pmail = &mail->imail.mail;
   int ret = 0;
 
-  struct istream *input = i_stream_create_from_bufferlist(buffer, physical_size);
+  struct istream *input = i_stream_create_from_bufferlist(mail->rados_mail->get_mail_buffer(),mail_buff,physical_size);
   i_stream_seek(input, 0);
 
   *stream_r = input;
@@ -482,14 +482,14 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
                   rmail->rados_mail->get_oid()->c_str(), rados_storage->get_namespace().c_str(), getpid(), alt_storage);
         rbox_mail_set_expunged(rmail);
         FUNC_END_RET("ret == -1");
-        delete rmail->rados_mail->get_mail_buffer();
+        rados_storage->free_mail_buffer(rmail->rados_mail->get_mail_buffer());
         return -1;
       } 
       else {
         i_error("reading mail return code(%d), oid(%s),namespace(%s), alt_storage(%d)", ret,
                 rmail->rados_mail->get_oid()->c_str(), rados_storage->get_namespace().c_str(), alt_storage);
-        FUNC_END_RET("ret == -1");
-        delete rmail->rados_mail->get_mail_buffer();
+        FUNC_END_RET("ret == -1");        
+        rados_storage->free_mail_buffer(rmail->rados_mail->get_mail_buffer());
         return -1;
       }
     }
@@ -503,24 +503,43 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
           "expunging mail ",
           rmail->rados_mail->get_oid()->c_str(), rados_storage->get_namespace().c_str(), alt_storage, _mail->uid);
       FUNC_END_RET("ret == 0");
-      rbox_mail_set_expunged(rmail);
-      delete rmail->rados_mail->get_mail_buffer();
+      rbox_mail_set_expunged(rmail);      
+      rados_storage->free_mail_buffer(rmail->rados_mail->get_mail_buffer());
       return -1;
     } else if (physical_size == INT_MAX) {
       i_error("trying to read a mail with INT_MAX size. (uid=%d,oid=%s,namespace=%s,alt_storage=%d)", _mail->uid,
               rmail->rados_mail->get_oid()->c_str(), rados_storage->get_namespace().c_str(), alt_storage);
       FUNC_END_RET("ret == -1");
-      delete rmail->rados_mail->get_mail_buffer();
+      rados_storage->free_mail_buffer(rmail->rados_mail->get_mail_buffer());
       return -1;
     }
-
+    int mail_buff_size=2;
+    const char *mail_buff_char=rados_storage->get_mail_buffer(rmail->rados_mail->get_mail_buffer(),&mail_buff_size);
     i_debug("reading stream for oid: %s, phy: %d, buffer: %d", rmail->rados_mail->get_oid()->c_str(),
                                                                physical_size, 
-                                                               rmail->rados_mail->get_mail_buffer()->length());                                                        
-    // validates if object is in zlib format (first 2 byte)
-    if (get_mail_stream(rmail, rmail->rados_mail->get_mail_buffer(), physical_size, &input) < 0) {
+                                                               mail_buff_size); 
+                                                           
+    // validates if object is in zlib format (first 2 byte)                                                          
+    bool isGzip = check_is_zlib(mail_buff_char);
+    if(isGzip) {
+
+      uint32_t result = zlib_trailer_msg_length(mail_buff_char,physical_size);
+      
+      // get mails real physical size and compare against trailer length
+      uoff_t real_physical_size;
+      rbox_mail_get_physical_size(_mail, &real_physical_size);
+      // in case we have corrupt trailer, 
+      if(result-real_physical_size > zlib_header_length(mail_buff_char)){
+          i_warning("zlib size check failed %d trailer not as expected, fixing by adding 0x00 to msb",(result-real_physical_size));
+          std::stringstream appended_zero;
+          appended_zero<<0x00;
+          rados_storage->append_to_buffer(rmail->rados_mail->get_mail_buffer(),appended_zero.str().c_str(),1);
+          physical_size+=1;                 
+      }
+    }
+    if (get_mail_stream(rmail,mail_buff_char, physical_size, &input) < 0) {
       FUNC_END_RET("ret == -1");
-      delete rmail->rados_mail->get_mail_buffer();
+      rados_storage->free_mail_buffer(rmail->rados_mail->get_mail_buffer());;
       return -1;
     }
     data->stream = input;
@@ -530,12 +549,12 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
   FUNC_END();
   return ret;
 }
-uint32_t zlib_trailer_msg_length(librados::bufferlist* mail_buffer, int physical_size) {
+uint32_t zlib_trailer_msg_length(char* mail_buff_char, int physical_size) {
     unsigned char gzip_size[] = {
-                        mail_buffer->c_str()[physical_size-1], 
-                        mail_buffer->c_str()[physical_size-2],
-                        mail_buffer->c_str()[physical_size-3],
-                        mail_buffer->c_str()[physical_size-4]
+                        mail_buff_char[physical_size-1], 
+                        mail_buff_char[physical_size-2],
+                        mail_buff_char[physical_size-3],
+                        mail_buff_char[physical_size-4]
                         };        
     uint32_t result = (gzip_size[0] << 24 | gzip_size[1] << 16 | gzip_size[2] << 8 | gzip_size[3]);
     
@@ -546,10 +565,10 @@ uint32_t zlib_trailer_msg_length(librados::bufferlist* mail_buffer, int physical
     return result;
 
 }
-bool check_is_zlib(librados::bufferlist* mail_buffer) {
+bool check_is_zlib(char* mail_buff_char) {
 
-    unsigned char magic1 = mail_buffer->c_str()[0];
-    unsigned char magic2 = mail_buffer->c_str()[1];
+    unsigned char magic1 = mail_buff_char[0];
+    unsigned char magic2 = mail_buff_char[1];
 
     i_debug("checking for z_lib header magic bytes check %x : %x compared to %x : %x",
         magic1,magic2,
@@ -563,10 +582,10 @@ bool check_is_zlib(librados::bufferlist* mail_buffer) {
     return false;
 }
 
-int zlib_header_length(librados::bufferlist* mail_buffer) {
+int zlib_header_length(char* mail_buff_char) {
     
     int header_length = 11;    
-    const unsigned char FLG=mail_buffer->c_str()[3];
+    const unsigned char FLG=mail_buff_char[3];
 
     switch (FLG){
         //ETEXT
@@ -578,13 +597,13 @@ int zlib_header_length(librados::bufferlist* mail_buffer) {
             break;
         //FXTERA
         case (unsigned char) 0x04:
-            header_length=header_extra_size(mail_buffer->c_str());
+            header_length=header_extra_size(mail_buff_char);
             break;
         case (unsigned char) 0x08:
-            header_length=header_dynamic_size(mail_buffer->c_str());
+            header_length=header_dynamic_size(mail_buff_char);
             break;
         case (unsigned char) 0x10:
-            header_length=header_dynamic_size(mail_buffer->c_str());
+            header_length=header_dynamic_size(mail_buff_char);
             break;
     default:
         break;
