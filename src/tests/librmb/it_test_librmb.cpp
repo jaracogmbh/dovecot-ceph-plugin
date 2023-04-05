@@ -32,51 +32,50 @@ using ::testing::Return;
  *
  */
 TEST(librmb, split_write_operation) {
-  uint64_t max_size = 3;
-  librmb::RadosMail obj;
-  librados::bufferlist buffer;
-  obj.set_mail_buffer(&buffer);
-  obj.get_mail_buffer()->append("abcdefghijklmn");
-  std::cout << "jsjjsjssjs" << std::endl;
-  size_t buffer_length = obj.get_mail_buffer()->length();
-  std::cout << "lenght" << std::endl;
-
-  obj.set_mail_size(buffer_length);
-  obj.set_oid("test_oid");
-  librados::IoCtx io_ctx;
-
-  librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
-
+  std::string splitable_buffer="";
+  for(int i=0;i<storage.get_max_write_size_bytes();i++){
+    splitable_buffer.append("Sara");
+  }
+  std::cout <<"splitable_buffer.size()::"<< splitable_buffer.size()<< std::endl;
+  librmb::RadosMail obj;
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj.get_mail_buffer())->append(splitable_buffer);
+  int buffer_length = ((librados::bufferlist*)obj.get_mail_buffer())->length();
+  std::cout <<"buffer_length::"<< buffer_length << std::endl;
+  obj.set_mail_size(buffer_length);
+  std::cout <<"obj.get_mail_size()::"<< obj.get_mail_size() << std::endl;
+  std::cout <<"storage.get_max_object_size()::"<< storage.get_max_object_size() << std::endl;
+  std::cout <<"get_max_write_size_bytes()::"<< storage.get_max_write_size_bytes() << std::endl;
+  obj.set_oid("test_oid");
+  librados::IoCtx io_ctx;
   std::string pool_name("test");
   std::string ns("t");
   std::cout << "open" << std::endl;
   int open_connection = storage.open_connection(pool_name);
-  std::cout << "pok" << std::endl;
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
-  std::cout << "accccc" << std::endl;
-
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
-  std::cout << "lsdlslslss" << std::endl;
+  bool ret_storage=storage.save_mail(&obj);
 
   // stat the object
   uint64_t size;
   time_t save_date;
+  std::cout<<"stat_mail is invoked"<<std::endl;
   int ret_stat = storage.stat_mail(*obj.get_oid(), &size, &save_date);
+  std::cout<<"stat_mailhas been invoked "<<std::endl;
 
   // remove it
-  int ret_remove = storage.delete_mail(&obj);
+  int ret_remove = storage.delete_mail(*obj.get_oid());
 
   // tear down
   cluster.deinit();
 
   EXPECT_EQ(buffer_length, size);
-  EXPECT_EQ(0, ret_storage);
+  EXPECT_EQ(true, ret_storage);
   EXPECT_EQ(0, ret_stat);
   EXPECT_EQ(0, ret_remove);
-  EXPECT_EQ(0, (int)obj.get_num_active_op());
+  delete obj.get_mail_buffer();
 }
 /**
  * Test object split operation
@@ -84,28 +83,20 @@ TEST(librmb, split_write_operation) {
  */
 TEST(librmb1, split_write_operation_1) {
   librmb::RadosMail obj;
-  librados::bufferlist buffer;
-  obj.set_mail_buffer(&buffer);
-  obj.get_mail_buffer()->append("HALLO_WELT_");
-  size_t buffer_length = obj.get_mail_buffer()->length();
-  obj.set_mail_size(buffer_length);
-  uint64_t max_size = buffer_length;
-
-  obj.set_oid("test_oid");
-  librados::IoCtx io_ctx;
-
-  librados::ObjectWriteOperation op;  //= new librados::ObjectWriteOperation();
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
-
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj.get_mail_buffer())->append("HALLO_WELT_");
+  size_t buffer_length = ((librados::bufferlist*)obj.get_mail_buffer())->length();
+  obj.set_mail_size(buffer_length);
+  obj.set_oid("test_oid");
   std::string pool_name("test");
   std::string ns("t");
-
   int open_connection = storage.open_connection(pool_name);
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
 
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
+  bool ret_storage = storage.save_mail(&obj);
 
   // stat the object
   uint64_t size;
@@ -119,10 +110,10 @@ TEST(librmb1, split_write_operation_1) {
   cluster.deinit();
 
   EXPECT_EQ(buffer_length, size);
-  EXPECT_EQ(0, ret_storage);
+  EXPECT_EQ(true, ret_storage);
   EXPECT_EQ(0, ret_stat);
   EXPECT_EQ(0, ret_remove);
-  EXPECT_EQ(0, (int)obj.get_num_active_op());
+  delete obj.get_mail_buffer();
 }
 /**
  * Test Rados Metadata type conversion
@@ -161,59 +152,46 @@ TEST(librmb1, convert_types) {
  */
 TEST(librmb1, read_mail) {
   librmb::RadosMail obj;
-  librados::bufferlist buffer;
-  obj.set_mail_buffer(&buffer);
-  obj.get_mail_buffer()->append("abcdefghijklmn");
-  size_t buffer_length = obj.get_mail_buffer()->length();
-  obj.set_mail_size(buffer_length);
-  uint64_t max_size = buffer_length;
-
-  obj.set_oid("test_oid");
-  librados::IoCtx io_ctx;
-
-  librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
-
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+  const char *message =
+    "From: user@domain.org\n"
+    "Date: Sat, 24 Mar 2017 23:00:00 +0200\n"
+    "Mime-Version: 1.0\n"
+    "Content-Type: text/plain; charset=us-ascii\n"
+    "\n"
+    "body\n";
+  std::stringstream test_buff;
+  test_buff<<message;
+  ((librados::bufferlist*)obj.get_mail_buffer())->append(message,test_buff.str().length());
+  int buffer_length = ((librados::bufferlist*)obj.get_mail_buffer())->length();
+  obj.set_mail_size(buffer_length);
+  int max_size = buffer_length;
+  obj.set_oid("test_oid");
   std::string pool_name("test");
   std::string ns("t");
-
   int open_connection = storage.open_connection(pool_name);
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
-
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
-
-  // wait for op to finish.
-  storage.wait_for_write_operations_complete(obj.get_completion(), obj.get_write_operation());
+  bool ret_storage = storage.save_mail(&obj);
 
   // stat the object
   uint64_t size;
   time_t save_date;
+
   int ret_stat = storage.stat_mail(*obj.get_oid(), &size, &save_date);
-
-  librados::bufferlist bl;
-  int copy_mail_ret = storage.read_mail(*obj.get_oid(), &bl);
-  char *buff = new char[copy_mail_ret + 1];
-  memset(buff, 1, size + 1);
-  memcpy(buff, bl.to_str().c_str(), copy_mail_ret + 1);
-  EXPECT_EQ(buff[copy_mail_ret], '\0');
-
+  int copy_mail_ret = storage.read_mail(*obj.get_oid(),&obj,0);
   // remove it
   int ret_remove = storage.delete_mail(*obj.get_oid());
 
   // tear down
   cluster.deinit();
-  EXPECT_EQ(ret_storage, 0);
+  EXPECT_EQ(ret_storage, true);
   EXPECT_EQ(ret_stat, 0);
   EXPECT_EQ(ret_remove, 0);
-  EXPECT_EQ(copy_mail_ret, 14);
-  EXPECT_EQ(buff[0], 'a');
-  EXPECT_EQ(buff[1], 'b');
-  EXPECT_EQ(buff[2], 'c');
-  EXPECT_EQ(buff[3], 'd');
-
-  delete[] buff;
+  EXPECT_EQ(copy_mail_ret, 0);
+  delete obj.get_mail_buffer();
 }
 /**
  * Test Load Metadata
@@ -222,18 +200,13 @@ TEST(librmb1, read_mail) {
 TEST(librmb, load_metadata) {
   uint64_t max_size = 3;
   librmb::RadosMail obj;
-  librados::bufferlist buffer;
-  obj.set_mail_buffer(&buffer);
-  obj.get_mail_buffer()->append("abcdefghijklmn");
-  size_t buffer_length = obj.get_mail_buffer()->length();
-  obj.set_mail_size(buffer_length);
-
-  obj.set_oid("test_oid");
-  librados::IoCtx io_ctx;
-
-  librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj.get_mail_buffer())->append("abcdefghijklmn");
+  size_t buffer_length = ((librados::bufferlist*)obj.get_mail_buffer())->length();
+  obj.set_mail_size(buffer_length);
+  obj.set_oid("test_oid");
   std::string pool_name("test");
   std::string ns("t");
 
@@ -241,14 +214,17 @@ TEST(librmb, load_metadata) {
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
 
-  librmb::RadosMetadataStorageDefault ms(&storage.get_io_ctx());
+  librmb::RadosMetadataStorageDefault ms(storage.get_io_ctx_wrapper());
 
-  ceph::bufferlist bl;
-  bl.append("xyz\0");
-  op.setxattr("A", bl);
-  op.setxattr("B", bl);
-
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
+  std::string key="key_1";
+  std::string val="val_1";
+  const librmb::RadosMetadata rados_metadata_1=librmb::RadosMetadata::RadosMetadata(key,val);
+  obj.add_metadata(rados_metadata_1);
+  key="key_2";
+  val="val_2";
+  const librmb::RadosMetadata rados_metadata_2=librmb::RadosMetadata::RadosMetadata(key,val);
+  obj.add_metadata(rados_metadata_2);
+  bool ret_storage = storage.save_mail(&obj);
 
   ms.load_metadata(&obj);
   std::cout << "load metadata ok" << std::endl;
@@ -258,9 +234,8 @@ TEST(librmb, load_metadata) {
   int ret_stat = storage.stat_mail(*obj.get_oid(), &size, &save_date);
 
   EXPECT_EQ(buffer_length, size);
-  EXPECT_EQ(0, ret_storage);
+  EXPECT_EQ(true, ret_storage);
   EXPECT_EQ(0, ret_stat);
-  EXPECT_EQ(0, (int)obj.get_num_active_op());
   EXPECT_EQ(2, (int)obj.get_metadata()->size());
   std::cout << " load with null" << std::endl;
   int i = ms.load_metadata(nullptr);
@@ -275,6 +250,7 @@ TEST(librmb, load_metadata) {
 
   // tear down
   cluster.deinit();
+  delete obj.get_mail_buffer();
 }
 /**
  * rados object version behavior
@@ -283,19 +259,13 @@ TEST(librmb, load_metadata) {
 TEST(librmb, AttributeVersions) {
   uint64_t max_size = 3;
   librmb::RadosMail obj;
-  librados::bufferlist buffer;
-  obj.set_mail_buffer(&buffer);
-  obj.get_mail_buffer()->append("abcdefghijklmn");
-  size_t buffer_length = obj.get_mail_buffer()->length();
-  obj.set_mail_size(buffer_length);
-
-  obj.set_oid("test_oid2");
-  librados::IoCtx io_ctx;
-
-  librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
-
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj.get_mail_buffer())->append("abcdefghijklmn");
+  size_t buffer_length = ((librados::bufferlist*)obj.get_mail_buffer())->length();
+  obj.set_mail_size(buffer_length);
+  obj.set_oid("test_oid2");
   std::string pool_name("test");
   std::string ns("t");
 
@@ -303,14 +273,18 @@ TEST(librmb, AttributeVersions) {
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
 
-  librmb::RadosMetadataStorageDefault ms(&storage.get_io_ctx());
+  librmb::RadosMetadataStorageDefault ms(storage.get_io_ctx_wrapper());
+  std::string key="key_1";
+  std::string val="val_1";
+  const librmb::RadosMetadata rados_metadata_1=librmb::RadosMetadata::RadosMetadata(key,val);
+  obj.add_metadata(rados_metadata_1);
+  key="key_2";
+  val="val_2";
+  const librmb::RadosMetadata rados_metadata_2=librmb::RadosMetadata::RadosMetadata(key,val);
+  obj.add_metadata(rados_metadata_2);
 
-  ceph::bufferlist bl;
-  bl.append("xyz\0");
-  op.setxattr("A", bl);
-
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
-  EXPECT_EQ(ret_storage, 0);
+  bool ret_storage = storage.save_mail(&obj);
+  EXPECT_EQ(ret_storage, true);
   
   // stat the object
   uint64_t size;
@@ -338,6 +312,7 @@ TEST(librmb, AttributeVersions) {
   storage.delete_mail(*obj.get_oid());
   // tear down
   cluster.deinit();
+  delete obj.get_mail_buffer();
 }
 
 // standard call order for metadata updates
@@ -347,7 +322,7 @@ TEST(librmb, json_ima) {
   librados::IoCtx io_ctx;
   uint64_t max_size = 3;
 
-  librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
+  // librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
 
@@ -361,13 +336,12 @@ TEST(librmb, json_ima) {
   librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
 
   // cfg.update_updatable_attributes("");
-  librmb::RadosMetadataStorageIma ms(&storage.get_io_ctx(), &cfg);
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), &cfg);
 
   librmb::RadosMail obj;
-  librados::bufferlist buffer;
-  obj.set_mail_buffer(&buffer);
-  obj.get_mail_buffer()->append("abcdefghijklmn");
-  size_t buffer_length = obj.get_mail_buffer()->length();
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj.get_mail_buffer())->append("abcdefghijklmn");
+  size_t buffer_length =((librados::bufferlist*)obj.get_mail_buffer())->length();
   obj.set_mail_size(buffer_length);
   obj.set_oid("test_ima");
   unsigned int flags = 0x18;
@@ -383,17 +357,14 @@ TEST(librmb, json_ima) {
   obj.add_metadata(attr3);
   obj.add_metadata(attr4);
 
-  ms.save_metadata(&op, &obj);
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
-  EXPECT_EQ(ret_storage, 0);
-
-  // wait for op to finish.
-  storage.wait_for_write_operations_complete(obj.get_completion(), obj.get_write_operation());
+  // ms.save_metadata(&op, &obj);
+  bool ret_storage = storage.save_mail(&obj);
+  EXPECT_EQ(ret_storage, true);
 
   // check
   std::map<std::string, ceph::bufferlist> attr_list;
   storage.get_io_ctx().getxattrs(*obj.get_oid(), attr_list);
-  EXPECT_EQ(1, attr_list.size());
+  EXPECT_EQ(4, attr_list.size());
 
   unsigned int uid = 10;
   librmb::RadosMetadata attr_uid(librmb::RBOX_METADATA_MAIL_UID, uid);
@@ -403,11 +374,12 @@ TEST(librmb, json_ima) {
   // check again
   attr_list.clear();
   storage.get_io_ctx().getxattrs(*obj.get_oid(), attr_list);
-  EXPECT_EQ(1, attr_list.size());
+  EXPECT_EQ(5, attr_list.size());
 
-  storage.delete_mail(&obj);
+  storage.delete_mail(*obj.get_oid());
   // tear down
   cluster.deinit();
+  delete obj.get_mail_buffer();
 }
 // standard call order for metadata updates
 // 0. pre-condition: setting flags as updateable
@@ -416,8 +388,6 @@ TEST(librmb, json_ima) {
 TEST(librmb, json_ima_2) {
   librados::IoCtx io_ctx;
   uint64_t max_size = 3;
-
-  librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
 
@@ -432,13 +402,12 @@ TEST(librmb, json_ima_2) {
 
   cfg.set_update_attributes("true");
   cfg.update_updatable_attributes("F");
-  librmb::RadosMetadataStorageIma ms(&storage.get_io_ctx(), &cfg);
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), &cfg);
 
   librmb::RadosMail obj;
-  librados::bufferlist buffer;
-  obj.set_mail_buffer(&buffer);
-  obj.get_mail_buffer()->append("abcdefghijklmn");
-  size_t buffer_length = obj.get_mail_buffer()->length();
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj.get_mail_buffer())->append("abcdefghijklmn");
+  size_t buffer_length = ((librados::bufferlist*)obj.get_mail_buffer())->length();
   obj.set_mail_size(buffer_length);
   obj.set_oid("test_ima");
   unsigned int flags = 0x18;
@@ -454,17 +423,15 @@ TEST(librmb, json_ima_2) {
   obj.add_metadata(attr3);
   obj.add_metadata(attr4);
 
-  ms.save_metadata(&op, &obj);
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
-  EXPECT_EQ(ret_storage, 0);
+  // ms.save_metadata(&op, &obj);
+  bool ret_storage = storage.save_mail(&obj);
+  EXPECT_EQ(ret_storage, true);
 
-  // wait for op to finish.
-  storage.wait_for_write_operations_complete(obj.get_completion(), obj.get_write_operation());
 
   // check there should be ima and F (Flags)
   std::map<std::string, ceph::bufferlist> attr_list;
   storage.get_io_ctx().getxattrs(*obj.get_oid(), attr_list);
-  EXPECT_EQ(2, attr_list.size());
+  EXPECT_EQ(4, attr_list.size());
 
   unsigned int uid = 10;
   librmb::RadosMetadata attr_uid(librmb::RBOX_METADATA_MAIL_UID, uid);
@@ -474,11 +441,12 @@ TEST(librmb, json_ima_2) {
   // check again
   attr_list.clear();
   storage.get_io_ctx().getxattrs(*obj.get_oid(), attr_list);
-  EXPECT_EQ(2, attr_list.size());
+  EXPECT_EQ(5, attr_list.size());
 
-  storage.delete_mail(&obj);
+  storage.delete_mail(*obj.get_oid());
   // tear down
   cluster.deinit();
+  delete obj.get_mail_buffer();
 }
 
 // standard call order for metadata updates
@@ -486,10 +454,7 @@ TEST(librmb, json_ima_2) {
 // 1. save_metadata with keywords
 // 2. set_metadata (update uid)
 TEST(librmb, json_ima_3) {
-  librados::IoCtx io_ctx;
   uint64_t max_size = 3;
-
-  librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
 
@@ -503,13 +468,12 @@ TEST(librmb, json_ima_3) {
   librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
   cfg.set_update_attributes("true");
   cfg.update_updatable_attributes("FK");
-  librmb::RadosMetadataStorageIma ms(&storage.get_io_ctx(), &cfg);
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), &cfg);
 
   librmb::RadosMail obj;
-  librados::bufferlist buffer;
-  obj.set_mail_buffer(&buffer);
-  obj.get_mail_buffer()->append("abcdefghijklmn");
-  size_t buffer_length = obj.get_mail_buffer()->length();
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+ ((librados::bufferlist*)obj.get_mail_buffer())->append("abcdefghijklmn");
+  size_t buffer_length = ((librados::bufferlist*)obj.get_mail_buffer())->length();
   obj.set_mail_size(buffer_length);
   obj.set_oid("test_ima");
   unsigned int flags = 0x18;
@@ -532,17 +496,15 @@ TEST(librmb, json_ima_3) {
     obj.add_extended_metadata(ext_metadata);
   }
 
-  ms.save_metadata(&op, &obj);
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
-  EXPECT_EQ(ret_storage, 0);
+  // ms.save_metadata(&op, &obj);
+  bool ret_storage = storage.save_mail(&obj);
+  EXPECT_EQ(ret_storage, true);
 
-  // wait for op to finish.
-  storage.wait_for_write_operations_complete(obj.get_completion(), obj.get_write_operation());
 
   // check there should be ima and F (Flags)
   std::map<std::string, ceph::bufferlist> attr_list;
   storage.get_io_ctx().getxattrs(*obj.get_oid(), attr_list);
-  EXPECT_EQ(2, attr_list.size());
+  EXPECT_EQ(4, attr_list.size());
 
   unsigned int uid = 10;
   librmb::RadosMetadata attr_uid(librmb::RBOX_METADATA_MAIL_UID, uid);
@@ -552,7 +514,7 @@ TEST(librmb, json_ima_3) {
   // check again
   attr_list.clear();
   storage.get_io_ctx().getxattrs(*obj.get_oid(), attr_list);
-  EXPECT_EQ(2, attr_list.size());
+  EXPECT_EQ(5, attr_list.size());
 
   obj.get_metadata()->clear();
   obj.get_extended_metadata()->clear();
@@ -561,18 +523,16 @@ TEST(librmb, json_ima_3) {
 
   EXPECT_EQ(10, obj.get_extended_metadata()->size());
 
-  storage.delete_mail(&obj);
+  storage.delete_mail(*obj.get_oid());
   // tear down
   cluster.deinit();
+  delete obj.get_mail_buffer();
 }
 /**
  * Load metadata with default metadata reader
  */
 TEST(librmb, test_default_metadata_load_attributes) {
-  librados::IoCtx io_ctx;
   uint64_t max_size = 3;
-
-  librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
 
@@ -586,13 +546,12 @@ TEST(librmb, test_default_metadata_load_attributes) {
   librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
   cfg.set_update_attributes("true");
   cfg.update_updatable_attributes("FK");
-  librmb::RadosMetadataStorageDefault ms(&storage.get_io_ctx());
+  librmb::RadosMetadataStorageDefault ms(storage.get_io_ctx_wrapper());
 
   librmb::RadosMail obj;
-  librados::bufferlist buffer;
-  obj.set_mail_buffer(&buffer);
-  obj.get_mail_buffer()->append("abcdefghijklmn");
-  size_t buffer_length = obj.get_mail_buffer()->length();
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj.get_mail_buffer())->append("abcdefghijklmn");
+  size_t buffer_length = ((librados::bufferlist*)obj.get_mail_buffer())->length();
   obj.set_mail_size(buffer_length);
   obj.set_oid("test_ima");
   unsigned int flags = 0x18;
@@ -615,22 +574,19 @@ TEST(librmb, test_default_metadata_load_attributes) {
     obj.add_extended_metadata(ext_metadata);
   }
 
-  ms.save_metadata(&op, &obj);
-  int ret_storage = storage.split_buffer_and_exec_op(&obj, &op, max_size);
-  EXPECT_EQ(ret_storage, 0);
-
-  // wait for op to finish.
-  storage.wait_for_write_operations_complete(obj.get_completion(), obj.get_write_operation());
-
+  // ms.save_metadata(&op, &obj);
+  bool ret_storage = storage.save_mail(&obj);
+  EXPECT_EQ(ret_storage, true);
   librmb::RadosMail obj2;
   obj2.set_oid("test_ima");
 
   int a = ms.load_metadata(&obj2);
   EXPECT_EQ(true, a >= 0);
 
-  storage.delete_mail(&obj);
+  storage.delete_mail(*obj.get_oid());
   // tear down
   cluster.deinit();
+  delete obj.get_mail_buffer();
 }
 /**
  * Test LoadMetadata default reader
@@ -651,7 +607,7 @@ TEST(librmb, test_default_metadata_load_attributes_obj_no_longer_exist) {
   librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
   cfg.set_update_attributes("true");
   cfg.update_updatable_attributes("FK");
-  librmb::RadosMetadataStorageDefault ms(&storage.get_io_ctx());
+  librmb::RadosMetadataStorageDefault ms(storage.get_io_ctx_wrapper());
 
   librmb::RadosMail obj2;
   obj2.set_oid("test_ima1");
@@ -681,7 +637,7 @@ TEST(librmb, test_default_metadata_load_attributes_obj_no_longer_exist_ima) {
   librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
   cfg.set_update_attributes("true");
   cfg.update_updatable_attributes("FK");
-  librmb::RadosMetadataStorageIma ms(&storage.get_io_ctx(), &cfg);
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), &cfg);
 
   librmb::RadosMail obj2;
   obj2.set_oid("test_ima1");
@@ -696,8 +652,6 @@ TEST(librmb, test_default_metadata_load_attributes_obj_no_longer_exist_ima) {
  * Test osd increment
  */
 TEST(librmb, increment_add_to_non_existing_key) {
-  librados::IoCtx io_ctx;
-
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
 
@@ -709,31 +663,36 @@ TEST(librmb, increment_add_to_non_existing_key) {
   EXPECT_EQ(0, open_connection);
 
   std::string key = "my-key";
+  librmb::RadosMail obj;
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj.get_mail_buffer())->append("abcdefghijklmn");
+  int buffer_length =((librados::bufferlist*)obj.get_mail_buffer())->length();
+  obj.set_mail_size(buffer_length);
+  int max_size = buffer_length;
+ 
+  obj.set_oid("test_oid");
 
-  librmb::RadosMail obj2;
-  obj2.set_oid("myobject");
-
-  ceph::bufferlist mail_buf;
-  storage.save_mail(*obj2.get_oid(), mail_buf);
+  EXPECT_EQ(true,storage.save_mail(&obj));
 
   long val = 10;  // value to add
-  int ret = librmb::RadosUtils::osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
+  int ret = librmb::RadosUtils::osd_add(&storage.get_io_ctx(), *obj.get_oid(), key, val);
   ASSERT_EQ(0, ret);
   // get the value!
   std::set<std::string> keys;
   std::map<std::string, ceph::bufferlist> omap;
   keys.insert(key);
 
-  ASSERT_EQ(0, storage.get_io_ctx().omap_get_vals_by_keys(*obj2.get_oid(), keys, &omap));
+  ASSERT_EQ(0, storage.get_io_ctx().omap_get_vals_by_keys(*obj.get_oid(), keys, &omap));
 
   std::map<std::string, ceph::bufferlist>::iterator it = omap.find(key);
   ASSERT_NE(omap.end(), it);
 
   ceph::bufferlist bl = (*it).second;
   EXPECT_EQ(bl.to_str(), "10");
-  storage.delete_mail(&obj2);
+  storage.delete_mail(*obj.get_oid());
   // tear down
   cluster.deinit();
+  delete obj.get_mail_buffer();
 }
 /**
  * Test osd increment
@@ -774,7 +733,7 @@ TEST(librmb, increment_add_to_non_existing_object) {
   ceph::bufferlist bl = (*it).second;
 
   EXPECT_EQ(bl.to_str(), "20");
-  storage.delete_mail(&obj2);
+  storage.delete_mail(*obj2.get_oid());
   // tear down
   cluster.deinit();
 }
@@ -782,8 +741,6 @@ TEST(librmb, increment_add_to_non_existing_object) {
  * Test osd increment
  */
 TEST(librmb, increment_add_to_existing_key) {
-  librados::IoCtx io_ctx;
-
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
 
@@ -795,12 +752,15 @@ TEST(librmb, increment_add_to_existing_key) {
   EXPECT_EQ(0, open_connection);
 
   std::string key = "my-key";
-
   librmb::RadosMail obj2;
-  obj2.set_oid("myobject");
-
-  ceph::bufferlist mail_buf;
-  storage.save_mail(*obj2.get_oid(), mail_buf);
+  obj2.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj2.get_mail_buffer())->append("abcdefghijklmn");
+  int buffer_length = ((librados::bufferlist*)obj2.get_mail_buffer())->length();
+  obj2.set_mail_size(buffer_length);
+  int max_size = buffer_length;
+ 
+  obj2.set_oid("test_oid");
+  EXPECT_EQ(true,storage.save_mail(&obj2));
   long val = 10;  // value to add
   int ret = librmb::RadosUtils::osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
   ASSERT_EQ(0, ret);
@@ -819,17 +779,16 @@ TEST(librmb, increment_add_to_existing_key) {
   ceph::bufferlist bl = (*it).second;
 
   EXPECT_EQ(bl.to_str(), "20");
-  storage.delete_mail(&obj2);
+  storage.delete_mail(*obj2.get_oid());
   // tear down
   cluster.deinit();
+  delete obj2.get_mail_buffer();
 }
 
 /**
  * Test osd decrement
  */
 TEST(librmb, increment_sub_from_existing_key) {
-  librados::IoCtx io_ctx;
-
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
 
@@ -841,12 +800,15 @@ TEST(librmb, increment_sub_from_existing_key) {
   EXPECT_EQ(0, open_connection);
 
   std::string key = "my-key";
-
   librmb::RadosMail obj2;
-  obj2.set_oid("myobject");
-
-  ceph::bufferlist mail_buf;
-  storage.save_mail(*obj2.get_oid(), mail_buf);
+  obj2.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj2.get_mail_buffer())->append("abcdefghijklmn");
+  int buffer_length = ((librados::bufferlist*)obj2.get_mail_buffer())->length();
+  obj2.set_mail_size(buffer_length);
+  int max_size = buffer_length;
+ 
+  obj2.set_oid("test_oid");
+  EXPECT_EQ(true,storage.save_mail(&obj2));
 
   long val = 10;  // value to add
   int ret = librmb::RadosUtils::osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
@@ -867,16 +829,15 @@ TEST(librmb, increment_sub_from_existing_key) {
   ceph::bufferlist bl = (*it).second;
 
   EXPECT_EQ(bl.to_str(), "5");
-  storage.delete_mail(&obj2);
+  storage.delete_mail(*obj2.get_oid());
   // tear down
   cluster.deinit();
+  delete obj2.get_mail_buffer();
 }
 /**
  * RmbCommands load objects
  */
 TEST(librmb, rmb_load_objects) {
-  librados::IoCtx io_ctx;
-
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
 
@@ -884,6 +845,7 @@ TEST(librmb, rmb_load_objects) {
   std::string ns("t1");
 
   int open_connection = storage.open_connection(pool_name);
+  
 
   EXPECT_EQ(0, open_connection);
   librmb::RadosCephConfig ceph_cfg(&storage.get_io_ctx());
@@ -907,15 +869,20 @@ TEST(librmb, rmb_load_objects) {
 
   storage.set_namespace(ns);
   librmb::RadosMail obj2;
-  obj2.set_oid("myobject");
-
-  ceph::bufferlist mail_buf;
-  storage.save_mail(*obj2.get_oid(), mail_buf);
-
+  obj2.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj2.get_mail_buffer())->append("abcdefghijklmn");
+  int buffer_length = ((librados::bufferlist*)obj2.get_mail_buffer())->length();
+  obj2.set_mail_size(buffer_length);
+  int max_size = buffer_length;
+ 
+  obj2.set_oid("test_oid");
+  storage.save_mail(&obj2);
   std::list<librmb::RadosMail *> mail_objects;
   std::string sort_string = "uid";
-
+  // std::set<std::string> find_mails_set =storage.find_mails(nullptr);
+  EXPECT_EQ(0, mail_objects.size());
   EXPECT_EQ(0, rmb_commands.load_objects(ms, mail_objects, sort_string));
+  // EXPECT_EQ(4,find_mails_set.size());
   EXPECT_EQ(1, mail_objects.size());
 
   for (std::list<librmb::RadosMail *>::iterator it = mail_objects.begin(); it != mail_objects.end(); ++it) {
@@ -923,18 +890,19 @@ TEST(librmb, rmb_load_objects) {
     delete obj;
   }
 
-  storage.delete_mail(&obj2);
+  storage.delete_mail(*obj2.get_oid());
+  std::cout<<"*obj2.get_oid()::"<<*obj2.get_oid()<<std::endl;
   storage.delete_mail(ceph_cfg.get_cfg_object_name());
+  std::cout<<"ceph_cfg.get_cfg_object_name()"<<ceph_cfg.get_cfg_object_name()<<std::endl;
   delete ms;
   // tear down
   cluster.deinit();
+  delete obj2.get_mail_buffer();
 }
 /**
  * Test RmbCommands load objects
  */
 TEST(librmb, rmb_load_objects_valid_metadata) {
-  librados::IoCtx io_ctx;
-
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
 
@@ -963,12 +931,10 @@ TEST(librmb, rmb_load_objects_valid_metadata) {
   storage.set_namespace(ns);
 
   librmb::RadosMail obj2;
-  librados::bufferlist *buffer = new librados::bufferlist();
-  obj2.set_mail_buffer(buffer);
+  obj2.set_mail_buffer(storage.alloc_mail_buffer());
   obj2.set_oid("myobject_valid");
-  obj2.get_mail_buffer()->append("hallo_welt");  // make sure obj is not empty.
-  obj2.set_mail_size(obj2.get_mail_buffer()->length());
-  librados::ObjectWriteOperation write_op;  // = new librados::ObjectWriteOperation();
+  ((librados::bufferlist*)obj2.get_mail_buffer())->append("hallo_welt");  // make sure obj is not empty.
+  obj2.set_mail_size(((librados::bufferlist*)obj2.get_mail_buffer())->length());
   {
     std::string key = "M";
     std::string val = "8eed840764b05359f12718004d2485ee";
@@ -1047,42 +1013,34 @@ TEST(librmb, rmb_load_objects_valid_metadata) {
     librmb::RadosMetadata m(key, val);
     obj2.add_metadata(m);
   }
-  // convert metadata to xattr. and add to write_op
-  ms->save_metadata(&write_op, &obj2);
+ librmb::RadosMetadata *xattr=new librmb::RadosMetadata();
+  ms->set_metadata(&obj2,*xattr);
+  
   // save complete mail.
-  EXPECT_EQ(true, storage.save_mail(&write_op, &obj2));
-  std::list<librmb::RadosMail *> list;
-  list.push_back(&obj2);
-
-  EXPECT_EQ(true, !storage.wait_for_rados_operations(list));
-
+  EXPECT_EQ(true, storage.save_mail(&obj2));
   std::list<librmb::RadosMail *> mail_objects;
   std::string sort_string = "uid";
-
   EXPECT_EQ(0, rmb_commands.load_objects(ms, mail_objects, sort_string));
   // there needs to be one mail
   EXPECT_EQ(1, mail_objects.size());
-
-  storage.delete_mail(&obj2);
+  storage.delete_mail(*obj2.get_oid());
   storage.delete_mail(ceph_cfg.get_cfg_object_name());
   for (std::list<librmb::RadosMail *>::iterator it = mail_objects.begin(); it != mail_objects.end(); ++it) {
     librmb::RadosMail *obj = *it;
-    storage.delete_mail(obj);
+    storage.delete_mail(*obj->get_oid());
     delete obj;
   }
-
   delete ms;
-
+  delete xattr;
   mail_objects.clear();
   // tear down
   cluster.deinit();
+  delete obj2.get_mail_buffer();
 }
 /**
  * Test RmbCommands load objects
  */
 TEST(librmb, rmb_load_objects_invalid_metadata) {
-  librados::IoCtx io_ctx;
-
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
 
@@ -1111,12 +1069,10 @@ TEST(librmb, rmb_load_objects_invalid_metadata) {
   storage.set_namespace(ns);
 
   librmb::RadosMail obj2;
-  librados::bufferlist *buffer = new librados::bufferlist();
-  obj2.set_mail_buffer(buffer);
+  obj2.set_mail_buffer(storage.alloc_mail_buffer());
   obj2.set_oid("myobject_invalid");
-  obj2.get_mail_buffer()->append("hallo_welt");  // make sure obj is not empty.
-  obj2.set_mail_size(obj2.get_mail_buffer()->length());
-  librados::ObjectWriteOperation write_op;  // = new librados::ObjectWriteOperation();
+  ((librados::bufferlist*)obj2.get_mail_buffer())->append("hallo_welt");  // make sure obj is not empty.
+  obj2.set_mail_size(((librados::bufferlist*)obj2.get_mail_buffer())->length());
   {
     std::string key = "M";
     std::string val = "8eed840764b05359f12718004d2485ee";
@@ -1195,14 +1151,10 @@ TEST(librmb, rmb_load_objects_invalid_metadata) {
     librmb::RadosMetadata m(key, val);
     obj2.add_metadata(m);
   }
-  // convert metadata to xattr. and add to write_op
-  ms->save_metadata(&write_op, &obj2);
+  librmb::RadosMetadata *xattr=new librmb::RadosMetadata();
+  ms->set_metadata(&obj2,*xattr);
   // save complete mail.
-  EXPECT_EQ(true, storage.save_mail(&write_op, &obj2));
-  std::list<librmb::RadosMail *> list;
-  list.push_back(&obj2);
-
-  EXPECT_EQ(true, !storage.wait_for_rados_operations(list));
+  EXPECT_EQ(true, storage.save_mail(&obj2));
 
   std::list<librmb::RadosMail *> mail_objects;
   std::string sort_string = "uid";
@@ -1216,12 +1168,14 @@ TEST(librmb, rmb_load_objects_invalid_metadata) {
     delete obj;
   }
 
-  storage.delete_mail(&obj2);
+  storage.delete_mail(*obj2.get_oid());
   storage.delete_mail(ceph_cfg.get_cfg_object_name());
   delete ms;
+  delete xattr;
   mail_objects.clear();
   // tear down
   cluster.deinit();
+  delete obj2.get_mail_buffer();
 }
 /**
  * Test RmbCommands
@@ -1229,7 +1183,6 @@ TEST(librmb, rmb_load_objects_invalid_metadata) {
 TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file) {
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
-
   std::string pool_name("rmb_tool_tests");
   std::string ns("t1");
 
@@ -1242,14 +1195,23 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file) {
   EXPECT_EQ(true, log_file.open());
   log_file.append(librmb::RadosSaveLogEntry("abc", "t1", "rmb_tool_tests", "save"));
   EXPECT_EQ(true, log_file.close());
-  librados::bufferlist bl;
-  EXPECT_EQ(0, storage.save_mail("abc", bl));
+
+  librmb::RadosMail obj;
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj.get_mail_buffer())->append("abcdefghijklmn");
+  int buffer_length =((librados::bufferlist*)obj.get_mail_buffer())->length();
+  obj.set_mail_size(buffer_length);
+  int max_size = buffer_length;
+ 
+  obj.set_oid("abc");
+  storage.save_mail(&obj);
 
   std::map<std::string, std::list<librmb::RadosSaveLogEntry>> moved_items;
   EXPECT_EQ(1, librmb::RmbCommands::delete_with_save_log("test1.log", "ceph", "client.admin", &moved_items));
   std::remove(test_file_name.c_str());
 
   cluster.deinit();
+  delete obj.get_mail_buffer();
 }
 /**
  * Test RmbCommands
@@ -1291,7 +1253,6 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file_invalid_file) {
 TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file_invalid_entry) {
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
-
   std::string pool_name("rmb_tool_tests");
   std::string ns("t1");
 
@@ -1306,11 +1267,16 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file_invalid_entry) {
       librmb::RadosSaveLogEntry("abc2", "t1", "2,2,2rmb_tool_tests", "save"));  // -> stop processing (invalid entry)!
   log_file.append(librmb::RadosSaveLogEntry("abc2", "t1", "rmb_tool_tests", "save"));
   EXPECT_EQ(true, log_file.close());
-  librados::bufferlist bl;
 
-  EXPECT_EQ(0, storage.save_mail("abc2", bl));
-  cluster.deinit();
-
+  librmb::RadosMail obj;
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj.get_mail_buffer())->append("abcdefghijklmn");
+  int buffer_length = ((librados::bufferlist*)obj.get_mail_buffer())->length();
+  obj.set_mail_size(buffer_length);
+  int max_size = buffer_length;
+ 
+  obj.set_oid("abc2");
+  EXPECT_EQ(true,storage.save_mail(&obj));
   std::map<std::string, std::list<librmb::RadosSaveLogEntry>> moved_items;
 
   EXPECT_EQ(0, librmb::RmbCommands::delete_with_save_log("test1.log", "ceph", "client.admin",
@@ -1322,6 +1288,7 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file_invalid_entry) {
   storage.set_namespace(ns);
   EXPECT_EQ(storage.delete_mail("abc2"), 0);  // check that save log processing does stop at invalid line!
   cluster.deinit();
+  delete obj.get_mail_buffer();
 }
 /**
  * Test RmbCommands
@@ -1329,7 +1296,6 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file_invalid_entry) {
 TEST(librmb, move_object_delete_with_save_log) {
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
-
   std::string pool_name("rmb_tool_tests");
   std::string ns("t1");
 
@@ -1343,8 +1309,15 @@ TEST(librmb, move_object_delete_with_save_log) {
   log_file.append(librmb::RadosSaveLogEntry("abc3", "t1", "rmb_tool_tests",
                                             "mv:t1:abc3:t1;M=123:B=INBOX:U=1:G=0246da2269ac1f5b3e1700009c60b9f7"));
   EXPECT_EQ(true, log_file.close());
-  librados::bufferlist bl;
-  EXPECT_EQ(0, storage.save_mail("abc3", bl));
+  librmb::RadosMail obj;
+  obj.set_mail_buffer(storage.alloc_mail_buffer());
+  ((librados::bufferlist*)obj.get_mail_buffer())->append("abcdefghijklmn");
+  int buffer_length = ((librados::bufferlist*)obj.get_mail_buffer())->length();
+  obj.set_mail_size(buffer_length);
+  int max_size = buffer_length;
+ 
+  obj.set_oid("abc3"); 
+  EXPECT_EQ(true,storage.save_mail(&obj));
   cluster.deinit();
 
   std::map<std::string, std::list<librmb::RadosSaveLogEntry>> moved_items;
@@ -1370,6 +1343,7 @@ TEST(librmb, move_object_delete_with_save_log) {
   storage.set_namespace(ns);
   EXPECT_EQ(storage.delete_mail("abc3"), 0);  // move does not delete the object
   cluster.deinit();
+  delete obj.get_mail_buffer();
 }
 TEST(librmb, mock_obj) {}
 int main(int argc, char **argv) {

@@ -16,26 +16,25 @@
 #include <string>
 #include <set>
 #include "rados-metadata-storage-module.h"
+#include "rbox-io-ctx.h"
 
 namespace librmb {
 /**
  * Implements the default storage of mail metadata.
  *
- * Each metadata attribute is saved as single xattribute.
+ * Each metadata attribute is saved as single xattribute.io_ctx_wrapper_wrapper
  *
  */
 class RadosMetadataStorageDefault : public RadosStorageMetadataModule {
  public:
-  explicit RadosMetadataStorageDefault(librados::IoCtx *io_ctx_);
+  explicit RadosMetadataStorageDefault(librmb::RboxIoCtx &io_ctx_wrapper);
   virtual ~RadosMetadataStorageDefault();
-  void set_io_ctx(librados::IoCtx *io_ctx_) override { this->io_ctx = io_ctx_; }
+  void set_io_ctx(librmb::RboxIoCtx &io_ctx_wrapper) override { this->io_ctx_wrapper =&io_ctx_wrapper; }
 
   int load_metadata(RadosMail *mail) override;
   int set_metadata(RadosMail *mail, RadosMetadata &xattr) override;
   bool update_metadata(const std::string &oid, std::list<RadosMetadata> &to_update) override;
-  void save_metadata(librados::ObjectWriteOperation *write_op, RadosMail *mail) override;
-  int set_metadata(RadosMail *mail, RadosMetadata &xattr, librados::ObjectWriteOperation *write_op) override;
-
+  void save_metadata(librados::ObjectWriteOperation *write_op, RadosMail *mail);
   int update_keyword_metadata(const std::string &oid, RadosMetadata *metadata) override;
   int remove_keyword_metadata(const std::string &oid, std::string &key) override;
   int load_keyword_metadata(const std::string &oid, std::set<std::string> &keys,
@@ -45,7 +44,7 @@ class RadosMetadataStorageDefault : public RadosStorageMetadataModule {
   static std::string module_name;
 
  private:
-  librados::IoCtx *io_ctx;
+  librmb::RboxIoCtx *io_ctx_wrapper;
 };
 
 } /* namespace librmb */

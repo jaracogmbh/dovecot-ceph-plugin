@@ -110,7 +110,7 @@ std::map<std::string, std::list<librmb::RadosMail>> load_rados_mail_metadata(
     mail_object.set_oid((*it));
   
     if (alt_storage) {
-      r_storage->ms->get_storage()->set_io_ctx(&r_storage->alt->get_io_ctx());
+      r_storage->ms->get_storage()->set_io_ctx(r_storage->alt->get_io_ctx_wrapper());
     }
 
     int load_metadata_ret = r_storage->ms->get_storage()->load_metadata(&mail_object); 
@@ -321,7 +321,7 @@ int rbox_storage_rebuild_in_context(struct rbox_storage *r_storage, bool force, 
         write_mail_uid.setxattr(metadata_uid.key.c_str(), metadata_uid.bl);
         write_mail_uid.setxattr(metadata.key.c_str(), metadata.bl);
 
-        if (r_storage->s->get_io_ctx().operate(*list_it->get_oid(), &write_mail_uid) < 0) {
+        if (r_storage->s->get_io_ctx_wrapper().operate(*list_it->get_oid(), &write_mail_uid) < 0) {
             i_debug("Unable to reset metadata to guid : %s",last_known_mailbox_guid.c_str());
         }else {
             i_debug("(%d) Mailbox guid for mail (oid=%s) restored to %s (INBOX) => re-run force-resync to assign them ",unassigned_counter, list_it->get_oid()->c_str(),last_known_mailbox_guid.c_str());
@@ -480,11 +480,7 @@ int repair_namespace(struct mail_namespace *ns, bool force, struct rbox_storage 
           i_debug("processing ceph index done : took: %ld ms", (milli_time));
         }
         else {
-          librados::NObjectIterator iter_guid  = r_storage->s->find_mails(nullptr);
-          while (iter_guid != librados::NObjectIterator::__EndObjectIterator) {
-            mail_list.insert((*iter_guid).get_oid());
-            iter_guid++;
-          } 
+          mail_list = r_storage->s->find_mails(nullptr);
         }           
         
         i_info("Loading mail metadata...");

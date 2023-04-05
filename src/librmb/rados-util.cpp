@@ -234,9 +234,9 @@ namespace librmb {
     ret = copy_to_alt(oid, oid, primary, alt_storage, metadata, inverse);
     if (ret > 0) {
       if (inverse) {
-        ret = alt_storage->get_io_ctx().remove(oid);
+        ret = alt_storage->get_io_ctx_wrapper().remove(oid);
       } else {
-        ret = primary->get_io_ctx().remove(oid);
+        ret = primary->get_io_ctx_wrapper().remove(oid);
       }
     }
     return ret;
@@ -250,41 +250,37 @@ namespace librmb {
       return 0;
     }
 
-    RadosMail mail;
-    mail.set_oid(src_oid);
-
-    librados::bufferlist *bl = new librados::bufferlist();
-    mail.set_mail_buffer(bl);
-
+    RadosMail* mail;
     if (inverse) {
-      ret = alt_storage->read_mail(src_oid, mail.get_mail_buffer());
-      metadata->get_storage()->set_io_ctx(&alt_storage->get_io_ctx());
+      mail=alt_storage->alloc_rados_mail();
+      ret = alt_storage->read_mail(src_oid,mail,0);
+      metadata->get_storage()->set_io_ctx(alt_storage->get_io_ctx_wrapper());
     } else {
-      ret = primary->read_mail(src_oid, mail.get_mail_buffer());
+      mail=primary->alloc_rados_mail();
+      ret = primary->read_mail(src_oid,mail,0);
     }
 
     if (ret < 0) {
-      metadata->get_storage()->set_io_ctx(&primary->get_io_ctx());
+      metadata->get_storage()->set_io_ctx(primary->get_io_ctx_wrapper());
       return ret;
     }
-    mail.set_mail_size(mail.get_mail_buffer()->length());
-
+    mail->set_mail_size(((librados::bufferlist*)mail->get_mail_buffer())->length());
     // load the metadata;
-    ret = metadata->get_storage()->load_metadata(&mail);
+    ret = metadata->get_storage()->load_metadata(mail);
     if (ret < 0) {
       return ret;
     }
 
-    mail.set_oid(dest_oid);
+    mail->set_oid(dest_oid);
 
-    librados::ObjectWriteOperation write_op;  // = new librados::ObjectWriteOperation();
-    metadata->get_storage()->save_metadata(&write_op, &mail);
+    // librados::ObjectWriteOperation write_op;  // = new librados::ObjectWriteOperation();
+    // metadata->get_storage()->save_metadata(&write_op, &mail);
 
     bool success;
     if (inverse) {
-      success = primary->save_mail(&write_op, &mail);
+      success = primary->save_mail(mail);
     } else {
-      success = alt_storage->save_mail(&write_op, &mail);
+      success = alt_storage->save_mail(mail);
     }
 
     if (!success) {

@@ -104,8 +104,8 @@ static int update_extended_metadata(struct rbox_sync_context *ctx, uint32_t seq1
     }
     
     r_storage->ms->get_storage()->set_io_ctx(alt_storage ? 
-                                             &r_storage->alt->get_io_ctx() : 
-                                             &r_storage->s->get_io_ctx() );
+                                             r_storage->alt->get_io_ctx_wrapper(): 
+                                             r_storage->s->get_io_ctx_wrapper());
     
     guid_128_t index_oid;
     if (rbox_get_oid_from_index(ctx->sync_view, seq1, ((struct rbox_mailbox *)box)->ext_id, &index_oid) >= 0) {
@@ -133,7 +133,7 @@ static int update_extended_metadata(struct rbox_sync_context *ctx, uint32_t seq1
     }
   }
   // reset metadatas storage
-  r_storage->ms->get_storage()->set_io_ctx(&r_storage->s->get_io_ctx());
+  r_storage->ms->get_storage()->set_io_ctx(r_storage->s->get_io_ctx_wrapper());
   FUNC_END();
   return ret;
 }
@@ -189,8 +189,8 @@ static int update_flags(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t s
     }
     
     r_storage->ms->get_storage()->set_io_ctx( alt_storage ? 
-                                              &r_storage->alt->get_io_ctx() : 
-                                              &r_storage->s->get_io_ctx() );
+                                              r_storage->alt->get_io_ctx_wrapper(): 
+                                              r_storage->s->get_io_ctx_wrapper());
     
     guid_128_t index_oid;
     if (rbox_get_oid_from_index(ctx->sync_view, seq1, ((struct rbox_mailbox *)box)->ext_id, &index_oid) >= 0) {
@@ -225,7 +225,7 @@ static int update_flags(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t s
     }
   }
   // reset metadata storage
-  r_storage->ms->get_storage()->set_io_ctx(&r_storage->s->get_io_ctx());
+  r_storage->ms->get_storage()->set_io_ctx(r_storage->s->get_io_ctx_wrapper());
   FUNC_END();
   return ret;
 }
@@ -452,12 +452,12 @@ static int rbox_sync_object_expunge(struct rbox_sync_context *ctx, struct expung
     return ret_remove;
   }
   librmb::RadosStorage *rados_storage = item->alt_storage ? r_storage->alt : r_storage->s;
-  ret_remove = rados_storage->get_io_ctx().remove(oid);
+  ret_remove = rados_storage->get_io_ctx_wrapper().get_io_ctx().remove(oid);
   if (ret_remove < 0) {
     if(ret_remove == -ETIMEDOUT) {
       int max_retry = 10;
       for(int i = 0;i<max_retry;i++){
-          ret_remove = rados_storage->get_io_ctx().remove(oid);
+          ret_remove = rados_storage->get_io_ctx_wrapper().get_io_ctx().remove(oid);
           if(ret_remove >=0){
             i_error("rbox_sync connection timeout during oid (%s) deletion, mail stays in object store.",oid);
             break;

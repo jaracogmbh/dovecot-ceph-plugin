@@ -49,12 +49,11 @@ static void copy_object(struct mail_namespace *_ns, struct mailbox *box) {
   struct rbox_storage *r_storage = (struct rbox_storage *)box->storage;
 
   librmb::RadosMetadata xattr(librmb::rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, box->name);
-  librados::NObjectIterator iter = r_storage->s->find_mails(&xattr);
-
+  std::set<std::string> mail_list = r_storage->s->find_mails(&xattr);
+  std::set<std::string>::iterator mail_iter;
   std::string oid;
-  while (iter != librados::NObjectIterator::__EndObjectIterator) {
-    oid = iter->get_oid();
-    iter++;
+  for(mail_iter=mail_list.begin();mail_iter!=mail_list.end();++mail_iter){
+    oid = *mail_iter;
   }
   EXPECT_TRUE(oid.length() > 0);
 
@@ -68,18 +67,18 @@ static void copy_object(struct mail_namespace *_ns, struct mailbox *box) {
   // wait for test cluster (object exists...)
   uint64_t size = 0;
   time_t pmtime = 0;
-  int stat_ret = r_storage->s->get_io_ctx().stat(oid, &size, &pmtime);
+  int stat_ret = r_storage->s->get_io_ctx_wrapper().stat(oid, &size, &pmtime);
   EXPECT_NE(size, 0);
-  i_debug("Last Version = %lu for obj: %s , stat =%d, %ld", r_storage->s->get_io_ctx().get_last_version(), oid.c_str(),
+  i_debug("Last Version = %lu for obj: %s , stat =%d, %ld", r_storage->s->get_io_ctx_wrapper().get_last_version(), oid.c_str(),
           stat_ret, size);
 
 #if LIBRADOS_VERSION_CODE >= 30000
-  write_op.copy_from(oid, r_storage->s->get_io_ctx(), r_storage->s->get_io_ctx().get_last_version(), 0);
+  write_op.copy_from(oid, r_storage->s->get_io_ctx_wrapper().get_io_ctx , r_storage->s->get_io_ctx_wrapper().get_last_version(), 0);
 #else
-  write_op.copy_from(oid, r_storage->s->get_io_ctx(), r_storage->s->get_io_ctx().get_last_version());
+  write_op.copy_from(oid, r_storage->s->get_io_ctx_wrapper().get_io_ctx, r_storage->s->get_io_ctx_wrapper().get_last_version());
 #endif
 
-  int ret = r_storage->s->get_io_ctx().operate(test_oid, &write_op);
+  int ret = r_storage->s->get_io_ctx_wrapper().operate(test_oid, &write_op);
 
   i_debug("copy operate: %d for %s", ret, test_oid.c_str());
   EXPECT_EQ(ret, 0);
@@ -88,7 +87,7 @@ static void copy_object(struct mail_namespace *_ns, struct mailbox *box) {
   librados::bufferlist list;
   std::string id = "100";
   list.append(id.c_str(), id.length() + 1);
-  ret = r_storage->s->get_io_ctx().setxattr(test_oid, metadata_name, list);
+  ret = r_storage->s->get_io_ctx_wrapper().setxattr(test_oid, metadata_name, list);
   i_debug("copy operate setxattr: %d for %s", ret, test_oid.c_str());
 
   if (rbox_open_rados_connection(box, true) < 0) {

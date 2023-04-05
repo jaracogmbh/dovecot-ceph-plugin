@@ -20,6 +20,7 @@
 #include "rados-cluster.h"
 #include "rados-mail.h"
 #include "rados-types.h"
+#include "rbox-io-ctx.h"
 
 namespace librmb {
 /** class RadosStorage
@@ -34,14 +35,7 @@ class RadosStorage {
   /*!
    * if connected, return the valid ioCtx
    */
-  virtual librados::IoCtx &get_io_ctx() = 0;
-
-  /*!
-   * if connected, return the valid ioCtx for recovery index
-   */
-  virtual librados::IoCtx &get_recovery_io_ctx() = 0;
-
-
+  virtual librmb::RboxIoCtx& get_io_ctx_wrapper() = 0;
   /*! get the object size and object save date
    * @param[in] oid unique ident for the object
    * @param[out] psize size of the object
@@ -58,16 +52,6 @@ class RadosStorage {
   /*! get the pool name
    * @return copy of the current p
 
-TEST_F(StorageTest, scanForPg) {
-  
-librmbtest::RadosClusterMock mock_test = librmbtest::RadosClusterMock();
-mock.
-librmb::RadosStorageImpl underTest = librmbtest::RadosStorageImpl(mock_test);
-
-underTest.ceph_index_append()
-underTest.ceph_index_add("dkfkjdf")
-
-}
  ool name
    * */
   virtual std::string get_pool_name() = 0;
@@ -85,46 +69,18 @@ underTest.ceph_index_add("dkfkjdf")
   /*! get the max ceph object size 
    */
   virtual int get_max_object_size() = 0;
-
-  /*! In case the current object size exceeds the max_write (bytes), object should be split into
-   * max smaller operations and executed separately.
-   *
-   * @param[in] current_object ptr to a valid mailobject.
-   * @param[in] write_op_xattr pointer to a write operation / if null, function will create new one.
-   * @param[in] max_write max number of bytes to write in one operation
-   *
-   * @return <0 in case of failure
-   * */
-  virtual int split_buffer_and_exec_op(RadosMail *current_object, librados::ObjectWriteOperation *write_op_xattr,
-                                       const uint64_t &max_write) = 0;
-
-  /*! deletes a mail object from rados
-   * @param[in] mail pointer to valid mail object
-   *
-   * @return <0 in case of failure. */
-  virtual int delete_mail(RadosMail *mail) = 0;
   /*! delete object with given oid
    * @param[in] object identifier.
    *
    * @return <0 in case of failure
    */
   virtual int delete_mail(const std::string &oid) = 0;
-  /*! asynchron execution of a write operation
-   *
-   * @param[in] io_ctx valid io context
-   * @param[in] oid object identifier
-   * @param[in] c valid pointer to a completion.
-   * @param[in] op the prepared write operation
-   * */
-  virtual int aio_operate(librados::IoCtx *io_ctx_, const std::string &oid, librados::AioCompletion *c,
-                          librados::ObjectWriteOperation *op) = 0;
   /*! search for mails based on given Filter
    * @param[in] attr a list of filter attributes
    *
    * @return object iterator or librados::NObjectIterator::__EndObjectIterator */
-  virtual librados::NObjectIterator find_mails(const RadosMetadata *attr) = 0;
-
-
+  virtual std::set<std::string> find_mails(const RadosMetadata *attr) = 0;
+ 
   virtual std::set<std::string> find_mails_async(const RadosMetadata *attr, 
                                                  std::string &pool_name, 
                                                  int num_threads,
@@ -168,31 +124,6 @@ underTest.ceph_index_add("dkfkjdf")
    * close the connection. (clean up structures to allow reconnect)
    */
   virtual void close_connection() = 0;
-
-  /*! wait for all write operations to complete
-   * @param[in] completion_op_map map of write operations with matching completion objects.
-   * @return false if successful !!!!
-   *  */
-  virtual bool wait_for_write_operations_complete(librados::AioCompletion *completion,
-                                                  librados::ObjectWriteOperation *write_operation) = 0;
-  /*!
-   * wait for all rados operations
-   *
-   * @param[in] object_list list of outstanding rados objects
-   *
-   * @return true if successful
-   */
-  virtual bool wait_for_rados_operations(const std::list<librmb::RadosMail *> &object_list) = 0;
-
-  /*! save the mail object
-   *
-   * @param[in] oid unique object identifier
-   * @param[in] buffer the objects data
-   *
-   * @return linux errorcode or 0 if successful
-   * */
-  virtual int save_mail(const std::string &oid, librados::bufferlist &buffer) = 0;
-
   /**
    * append oid to index object
   */
@@ -231,16 +162,8 @@ underTest.ceph_index_add("dkfkjdf")
    * @param[out] buffer valid ptr to bufferlist.
    * @return linux errorcode or 0 if successful
    * */
-  virtual int read_mail(const std::string &oid, librados::bufferlist *buffer) = 0;
-
-  /*! read the complete mail object into bufferlist
-   *
-   * @param[in] oid unique object identifier
-   * @param[in] read_operation read operation
-   * @param[out] buffer valid ptr to bufferlist.
-   * @return linux errorcode or 0 if successful
-   * */
-  virtual int read_operate(const std::string &oid, librados::ObjectReadOperation *read_operation, librados::bufferlist *bufferlist) = 0;
+  // virtual int read_mail(const std::string &oid, librados::bufferlist *buffer) = 0;
+  virtual int read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter)=0;
 
   /*! move a object from the given namespace to the other, updates the metadata given in to_update list
    *
@@ -270,19 +193,7 @@ underTest.ceph_index_add("dkfkjdf")
    * @return false in case of error
    * */
   virtual bool save_mail(RadosMail *mail) = 0;
-  /*!
-   * save the mail
-   * @param[in] write_op_xattr write operation to use
-   * @param[in] mail valid mail object   
-   * @return false in case of error.
-   *
-   */
-  virtual bool save_mail(librados::ObjectWriteOperation *write_op_xattr, RadosMail *mail) = 0;
-
-  virtual bool execute_operation(std::string &oid, librados::ObjectWriteOperation *write_op_xattr) = 0;
-
-  virtual bool append_to_object(std::string &oid, librados::bufferlist &bufferlist, int length) = 0;
-
+ 
   /*! create a new RadosMail
    * create new rados Mail Object.
    *  return pointer to mail object or nullptr
@@ -293,6 +204,10 @@ underTest.ceph_index_add("dkfkjdf")
    * */
   virtual void free_rados_mail(librmb::RadosMail *mail) = 0;
 
+  virtual void* alloc_mail_buffer() = 0;
+  virtual const char* get_mail_buffer(void *buffer,int *mail_buff_size) = 0;
+  virtual void free_mail_buffer(void *mail_buffer) = 0;
+  virtual void append_to_buffer(void *buff,const unsigned char *chunk, size_t size) = 0;
 
 };
 

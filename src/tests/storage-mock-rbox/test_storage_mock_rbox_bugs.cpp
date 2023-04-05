@@ -12,6 +12,7 @@
 #include "../storage-mock-rbox/TestCase.h"
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include"../../librmb/rbox-io-ctx-impl.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"           // turn off warnings for Dovecot :-(
@@ -101,33 +102,26 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
   librmbtest::RadosStorageMock *storage_mock = new librmbtest::RadosStorageMock();
 
 
-  librados::IoCtx test_ioctx;
-  EXPECT_CALL(*storage_mock, get_io_ctx()).WillRepeatedly(ReturnRef(test_ioctx));
+  librmb::RboxIoCtxImpl test_ioctx;
+  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(ReturnRef(test_ioctx));
 
   EXPECT_CALL(*storage_mock, set_ceph_wait_method(_)).Times(1);
 
   EXPECT_CALL(*storage_mock, set_namespace(_)).Times(1);
   EXPECT_CALL(*storage_mock, get_namespace()).Times(0);
 
-  EXPECT_CALL(*storage_mock, delete_mail(Matcher<librmb::RadosMail*>(_))).Times(1);
+  EXPECT_CALL(*storage_mock, delete_mail(_)).Times(1);
 
   EXPECT_CALL(*storage_mock, close_connection()).Times(0);
-
-  EXPECT_CALL(*storage_mock, execute_operation(_,_)).WillRepeatedly(Return(false));
-  EXPECT_CALL(*storage_mock, append_to_object(_,_,_)).WillRepeatedly(Return(false));
-
 
   EXPECT_CALL(*storage_mock, open_connection("mail_storage",_, "ceph", "client.admin"))
       .Times(AtLeast(1))
       .WillRepeatedly(Return(0));
 
-  EXPECT_CALL(*storage_mock, get_max_object_size())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(100000));
 
-  EXPECT_CALL(*storage_mock, get_max_write_size_bytes())
+  EXPECT_CALL(*storage_mock, save_mail(_))
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(10));
+      .WillRepeatedly(Return(false));
 
 
   librmb::RadosMail *test_obj = new librmb::RadosMail();
@@ -143,7 +137,7 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
 
   librmbtest::RadosStorageMetadataMock ms_mock;
   EXPECT_CALL(*ms_p_mock, get_storage()).WillRepeatedly(Return(&ms_mock));
-  EXPECT_CALL(ms_mock, set_metadata(_, _,_)).WillRepeatedly(Return(0));
+  EXPECT_CALL(ms_mock, set_metadata(_, _)).WillRepeatedly(Return(0));
   EXPECT_CALL(*ms_p_mock, create_metadata_storage(_,_)).Times(1);
 
   delete storage->config;
@@ -168,7 +162,6 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
   EXPECT_CALL(*cfg_mock, is_mail_attribute(_)).WillRepeatedly(Return(true));
   EXPECT_CALL(*cfg_mock, is_user_mapping()).WillRepeatedly(Return(false));
   EXPECT_CALL(*cfg_mock, get_write_method()).WillRepeatedly(Return(1));
-  EXPECT_CALL(*cfg_mock, get_chunk_size()).WillOnce(Return(100));
   storage->ns_mgr->set_config(cfg_mock);
 
   storage->config = cfg_mock;
@@ -254,19 +247,16 @@ TEST_F(StorageTest, save_mail_success) {
 
   librmbtest::RadosStorageMock *storage_mock = new librmbtest::RadosStorageMock();
 
-  EXPECT_CALL(*storage_mock, wait_for_write_operations_complete(_,_)).WillRepeatedly(Return(false));//failed = false
-  librados::IoCtx io_ctx;
-  EXPECT_CALL(*storage_mock, execute_operation(_,_)).WillRepeatedly(Return(true));
-  EXPECT_CALL(*storage_mock, append_to_object(_,_,_)).WillRepeatedly(Return(true));
+  librmb::RboxIoCtxImpl io_ctx;
 
-  EXPECT_CALL(*storage_mock, get_io_ctx()).WillRepeatedly(ReturnRef(io_ctx));
+  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(ReturnRef(io_ctx));
 
   EXPECT_CALL(*storage_mock, set_ceph_wait_method(_)).Times(1);
 
   EXPECT_CALL(*storage_mock, set_namespace(_)).Times(1);
   EXPECT_CALL(*storage_mock, get_namespace()).Times(0);
 
-  EXPECT_CALL(*storage_mock, delete_mail(Matcher<librmb::RadosMail*>(_))).Times(0);
+  EXPECT_CALL(*storage_mock, delete_mail(_)).Times(0);
 
   EXPECT_CALL(*storage_mock, close_connection()).Times(1);
 
@@ -274,14 +264,10 @@ TEST_F(StorageTest, save_mail_success) {
       .Times(AtLeast(1))
       .WillRepeatedly(Return(0));
 
-  EXPECT_CALL(*storage_mock, get_max_object_size())
+  EXPECT_CALL(*storage_mock, save_mail(_))
       .Times(AtLeast(1))
-      .WillRepeatedly(Return(100000));
+      .WillRepeatedly(Return(true));
 
-  EXPECT_CALL(*storage_mock, get_max_write_size_bytes())
-      .Times(AtLeast(1))
-      .WillRepeatedly(Return(10));
- 
   
   librmb::RadosMail *test_obj = new librmb::RadosMail();
   test_obj->set_mail_buffer(nullptr);
@@ -296,7 +282,7 @@ TEST_F(StorageTest, save_mail_success) {
 
   librmbtest::RadosStorageMetadataMock ms_mock;
   EXPECT_CALL(*ms_p_mock, get_storage()).WillRepeatedly(Return(&ms_mock));
-  EXPECT_CALL(ms_mock, set_metadata(_, _,_)).WillRepeatedly(Return(0));
+  EXPECT_CALL(ms_mock, set_metadata(_, _)).WillRepeatedly(Return(0));
   EXPECT_CALL(*ms_p_mock, create_metadata_storage(_,_)).Times(1);
 
   delete storage->config;
@@ -319,7 +305,6 @@ TEST_F(StorageTest, save_mail_success) {
   EXPECT_CALL(*cfg_mock, is_mail_attribute(_)).WillRepeatedly(Return(true));
   EXPECT_CALL(*cfg_mock, get_chunk_size()).WillOnce(Return(100));
   EXPECT_CALL(*cfg_mock, is_user_mapping()).WillRepeatedly(Return(false));
-  EXPECT_CALL(*cfg_mock, get_write_method()).WillRepeatedly(Return(1));
   
 
   storage->ns_mgr->set_config(cfg_mock);

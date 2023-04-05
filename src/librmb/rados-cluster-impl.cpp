@@ -18,6 +18,7 @@
 #include "rados-dictionary-impl.h"
 #include "rados-storage-impl.h"
 #include "rados-util.h"
+#include "rbox-io-ctx.h"
 using std::list;
 using std::pair;
 using std::string;
@@ -200,11 +201,11 @@ int RadosClusterImpl::pool_create(const string &pool) {
   return ret;
 }
 
-int RadosClusterImpl::io_ctx_create(const string &pool, librados::IoCtx *io_ctx) {
+int RadosClusterImpl::io_ctx_create(const string &pool, librmb::RboxIoCtx &io_ctx_wrapper) {
   int ret = 0;
-
-  assert(io_ctx != nullptr);
-
+  librados::IoCtx *io_ctx_create=&io_ctx_wrapper.get_io_ctx();
+  assert(io_ctx_create != nullptr);
+ 
   if (RadosClusterImpl::cluster_ref_count == 0) {
     ret = -ENOENT;
     return ret;
@@ -218,19 +219,20 @@ int RadosClusterImpl::io_ctx_create(const string &pool, librados::IoCtx *io_ctx)
   // pool exists? else create
   ret = pool_create(pool);
   if (ret == 0) {
-    ret = RadosClusterImpl::cluster->ioctx_create(pool.c_str(), *io_ctx);
+    ret = RadosClusterImpl::cluster->ioctx_create(pool.c_str(), *io_ctx_create);
   }
   return ret;
 }
 int RadosClusterImpl::recovery_index_io_ctx(const std::string &pool, 
-  librados::IoCtx *io_ctx) {
+  librmb::RboxIoCtx &io_ctx_wrapper) {
+    librados::IoCtx *io_ctx_recovery=&io_ctx_wrapper.get_recovery_io_ctx();
     if(!is_connected()) {
       return -1;
     }
     // pool exists? else create
     int ret = pool_create(pool);
     if (ret == 0) {
-      ret = RadosClusterImpl::cluster->ioctx_create(pool.c_str(), *io_ctx);
+      ret = RadosClusterImpl::cluster->ioctx_create(pool.c_str(), *io_ctx_recovery);
     }
     return ret;      
 }

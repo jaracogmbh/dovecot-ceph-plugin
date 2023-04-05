@@ -45,9 +45,9 @@ extern "C" {
 #include "rbox-copy.h"
 #include "rbox-mail.h"
 #include "rados-types.h"
-
+#include "storage-backend-factory.h"
 using std::string;
-
+using rbox::StorageBackendFactory;
 class RboxGuidGenerator : public librmb::RadosGuidGenerator {
  public:
   void generate_guid(std::string *guid_) override {
@@ -62,7 +62,6 @@ extern struct mailbox_vfuncs rbox_mailbox_vfuncs;
 
 struct mail_storage *rbox_storage_alloc(void) {
   FUNC_START();
-
   struct rbox_storage *r_storage;
   pool_t pool;
   pool = pool_alloconly_create("rbox storage", 512 + 256);
@@ -70,12 +69,18 @@ struct mail_storage *rbox_storage_alloc(void) {
   i_zero(r_storage);
   r_storage->storage = rbox_storage;
   r_storage->storage.pool = pool;
-  r_storage->cluster = new librmb::RadosClusterImpl();
-  r_storage->s = new librmb::RadosStorageImpl(r_storage->cluster);
-  r_storage->config = new librmb::RadosDovecotCephCfgImpl(&r_storage->s->get_io_ctx());
-  r_storage->ns_mgr = new librmb::RadosNamespaceManager(r_storage->config);
-  r_storage->ms = new librmb::RadosMetadataStorageImpl();
-  r_storage->alt = new librmb::RadosStorageImpl(r_storage->cluster);
+  r_storage->cluster =
+    rbox::StorageBackendFactory::get_instance().create_cluster(rbox::StorageBackendFactory::CEPH);
+  r_storage->s =
+    rbox::StorageBackendFactory::get_instance().create_storage(rbox::StorageBackendFactory::CEPH,r_storage->cluster);
+  r_storage->config =
+    rbox::StorageBackendFactory::get_instance().create_dovecot_ceph_cfg(rbox::StorageBackendFactory::CEPH,r_storage->s);
+  r_storage->ns_mgr =
+    rbox::StorageBackendFactory::get_instance().create_namespace_manager(rbox::StorageBackendFactory::CEPH,r_storage->config);
+  r_storage->ms =
+    rbox::StorageBackendFactory::get_instance().create_metadata_storage(rbox::StorageBackendFactory::CEPH);
+  r_storage->alt =
+    rbox::StorageBackendFactory::get_instance().create_storage(rbox::StorageBackendFactory::CEPH,r_storage->cluster);
 
   // logfile is set when 90-plugin.conf param rados_save_cfg is evaluated.
   r_storage->save_log = new librmb::RadosSaveLog();
@@ -498,7 +503,7 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
     assert(ret == 0);
     return ret;
   }
-  rbox->storage->ms->create_metadata_storage(&rbox->storage->s->get_io_ctx(), rbox->storage->config);
+  rbox->storage->ms->create_metadata_storage(rbox->storage->s->get_io_ctx_wrapper(), rbox->storage->config);
 
   std::string uid;
   if (box->list->ns->owner != nullptr) {

@@ -429,19 +429,17 @@ int RmbCommands::overwrite_ceph_object_index(std::set<std::string> &mail_oids){
 }
 std::set<std::string> RmbCommands::load_objects(librmb::RadosStorageMetadataModule *ms){
   std::set<std::string> mail_list;
-  librados::NObjectIterator iter_guid = storage->find_mails(nullptr);
-  while (iter_guid != librados::NObjectIterator::__EndObjectIterator) {
+  mail_list = storage->find_mails(nullptr);
+  std::set<std::string>::iterator it;
+  for(it=mail_list.begin();it!=mail_list.end();++it){
       librmb::RadosMail mail;
-      mail.set_oid((*iter_guid).get_oid());
+      mail.set_oid(*it);
      
       int load_metadata_ret = ms->load_metadata(&mail); 
       if (load_metadata_ret < 0 || !librmb::RadosUtils::validate_metadata(mail.get_metadata())) {    
-         std::cerr << "metadata for object : " << mail.get_oid()->c_str() << " is not valid, skipping object " << std::endl;
-         iter_guid++;     
+         std::cerr << "metadata for object : " << mail.get_oid()->c_str() << " is not valid, skipping object " << std::endl;    
          continue;
-      }
-      mail_list.insert((*iter_guid).get_oid());       
-      iter_guid++;     
+      }           
   } 
   return mail_list;
 }
@@ -464,28 +462,26 @@ int RmbCommands::load_objects(librmb::RadosStorageMetadataModule *ms, std::list<
   // TODO(jrse): Fix completions.....
   std::list<librados::AioCompletion *> completions;
   // load all objects metadata into memory
-  librados::NObjectIterator iter(storage->find_mails(nullptr));
-  while (iter != librados::NObjectIterator::__EndObjectIterator) {
+  std::set<std::string> mail_list=storage->find_mails(nullptr);
+  std::set<std::string>::iterator mail_iter;
+  for (mail_iter=mail_list.begin();mail_iter!=mail_list.end();mail_iter++) {
     librmb::RadosMail *mail = new librmb::RadosMail();
     AioStat *stat = new AioStat();
     stat->mail = mail;
     stat->mail_objects = &mail_objects;
     stat->load_metadata = load_metadata;
     stat->ms = ms;
-    std::string oid = iter->get_oid();
+    std::string oid = *mail_iter;
     stat->completion = librados::Rados::aio_create_completion(static_cast<void *>(stat), aio_cb, NULL);
-    int ret = storage->get_io_ctx().aio_stat(oid, stat->completion, &stat->object_size, &stat->save_date_rados);
+    int ret = storage->get_io_ctx_wrapper().aio_stat(oid, stat->completion, &stat->object_size, &stat->save_date_rados);
     if (ret != 0) {
       std::cout << " object '" << oid << "' is not a valid mail object, size = 0, ret code: " << ret << std::endl;
-      ++iter;
       delete mail;
       delete stat;
       continue;
     }
     mail->set_oid(oid);
     completions.push_back(stat->completion);
-
-    ++iter;
     if (is_debug) {
       std::cout << "added: mail " << *mail->get_oid() << std::endl;
     }
@@ -495,7 +491,8 @@ int RmbCommands::load_objects(librmb::RadosStorageMetadataModule *ms, std::list<
     (*it)->wait_for_complete_and_cb();
     (*it)->release();
   }
-
+  
+  
   if (load_metadata) {
     if (sort_string.compare("uid") == 0) {
       mail_objects.sort(sort_uid);
@@ -537,9 +534,8 @@ int RmbCommands::print_mail(std::map<std::string, librmb::RadosMailBox *> *mailb
     for (std::list<librmb::RadosMail *>::iterator it_mail = it->second->get_mails().begin();
          it_mail != it->second->get_mails().end(); ++it_mail) {
       const std::string oid = *(*it_mail)->get_oid();
-      librados::bufferlist bl;
-      (*it_mail)->set_mail_buffer(&bl);
-      if (storage->read_mail(oid, (*it_mail)->get_mail_buffer()) > 0) {
+      (*it_mail)->set_mail_buffer(storage->alloc_mail_buffer());
+      if (storage->read_mail(oid,*it_mail,0) > 0) {
         if (tools.save_mail((*it_mail)) < 0) {
           std::cout << " error saving mail : " << oid << " to " << tools.get_mailbox_path() << std::endl;
         }
@@ -615,9 +611,9 @@ RadosStorageMetadataModule *RmbCommands::init_metadata_storage_module(librmb::Ra
   // decide metadata storage!
   std::string storage_module_name = ceph_cfg.get_metadata_storage_module();
   if (storage_module_name.compare(librmb::RadosMetadataStorageIma::module_name) == 0) {
-    ms = new librmb::RadosMetadataStorageIma(&storage->get_io_ctx(), &cfg);
+    ms = new librmb::RadosMetadataStorageIma(storage->get_io_ctx_wrapper(), &cfg);
   } else {
-    ms = new librmb::RadosMetadataStorageDefault(&storage->get_io_ctx());
+    ms = new librmb::RadosMetadataStorageDefault(storage->get_io_ctx_wrapper());
   }
   if (!(*opts)["namespace"].empty()) {
     *uid = (*opts)["namespace"] + cfg.get_user_suffix();

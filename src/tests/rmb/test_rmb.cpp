@@ -13,7 +13,7 @@
 #include "gmock/gmock.h"
 #include <rados/librados.hpp>
 #include "../../librmb/rados-util.h"
-
+#include"../../librmb/rbox-io-ctx-impl.h"
 #include "../../librmb/rados-cluster-impl.h"
 #include "../../librmb/rados-mail.h"
 #include "../../librmb/rados-storage-impl.h"
@@ -104,11 +104,11 @@ TEST(rmb1, save_mail) {
   bl.append(attr_val.c_str(), attr_val.length() + 1);
   (*mail.get_metadata())["U"] = bl;
   std::string mail_guid = "defg";
-  librados::bufferlist buffer;
-  mail.set_mail_buffer(&buffer);
-  mail.get_mail_buffer()->append("hallo welt\nbababababa\n");
+  void *buffer=(void*)new librados::bufferlist();
+  mail.set_mail_buffer(buffer);
+  ((librados::bufferlist*)mail.get_mail_buffer())->append("hallo welt\nbababababa\n");
   mail.set_oid(mail_guid);
-  mail.set_mail_size(mail.get_mail_buffer()->length() - 1);
+  mail.set_mail_size(((librados::bufferlist*)mail.get_mail_buffer())->length() - 1);
   int save = tools.save_mail(&mail);
   EXPECT_EQ(0, save);
 
@@ -116,6 +116,7 @@ TEST(rmb1, save_mail) {
   int ret_rm_dir = tools.delete_mailbox_dir();
   EXPECT_EQ(0, ret);
   EXPECT_EQ(0, ret_rm_dir);
+  delete buffer;
 }
 /**
  * Test mailbox Tools constructor
@@ -148,11 +149,11 @@ TEST(rmb1, rmb_commands_no_objects_found) {
   librmb::RmbCommands rmb_cmd(&storage_mock, &cluster_mock, &opts);
   std::list<librmb::RadosMail *> mails;
   std::string search_string = "uid";
-  const librados::NObjectIterator iter = librados::NObjectIterator::__EndObjectIterator;
-  librados::IoCtx test_ioctx;
+  std::set<std::string> mail_list;
+  librmb::RboxIoCtxImpl test_ioctx;
 
-  EXPECT_CALL(storage_mock, find_mails(nullptr)).WillRepeatedly(Return(iter));
-  EXPECT_CALL(storage_mock, get_io_ctx()).WillRepeatedly(ReturnRef(test_ioctx));
+  EXPECT_CALL(storage_mock, find_mails(nullptr)).WillRepeatedly(Return(mail_list));
+  EXPECT_CALL(storage_mock,get_io_ctx_wrapper()).WillRepeatedly(ReturnRef(test_ioctx));
   EXPECT_CALL(storage_mock, stat_mail(_, _, _)).WillRepeatedly(Return(0));
   int ret = rmb_cmd.load_objects(&ms_module_mock, mails, search_string);
   EXPECT_EQ(ret, 0);

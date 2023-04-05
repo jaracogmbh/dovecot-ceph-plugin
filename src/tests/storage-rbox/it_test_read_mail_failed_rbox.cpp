@@ -113,7 +113,7 @@ TEST_F(StorageTest, read_mail_fails) {
     struct rbox_storage *r_storage = (struct rbox_storage *)box->storage;
 
     // delete mail.
-    r_storage->s->delete_mail(r_mail->rados_mail);
+    r_storage->s->delete_mail(*r_mail->rados_mail->get_oid());
 
     int ret2 = mail_get_stream(mail, &hdr_size, &body_size, &input);
     EXPECT_EQ(ret2, -1);
