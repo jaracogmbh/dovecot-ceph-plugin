@@ -15,7 +15,7 @@
 #include "rados-ceph-json-config.h"
 #include "rados-types.h"
 #include <rados/librados.hpp>
-#include "rados-storage.h"
+#include "../storage-interface/rados-storage.h"
 
 namespace librmb {
 /**

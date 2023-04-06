@@ -45,8 +45,8 @@ extern "C" {
 #include "libdict-rados-plugin.h"
 #include "../librmb/rados-cluster-impl.h"
 #include "../librmb/rados-dictionary-impl.h"
-#include "../librmb/rados-cluster.h"
-#include "../librmb/rados-guid-generator.h"
+#include "../storage-interface/rados-cluster.h"
+#include "../storage-interface/rados-guid-generator.h"
 #include "../librmb/rados-util.h"
 
 #if DOVECOT_PREREQ(2, 3)
@@ -70,9 +70,9 @@ using librados::AioCompletion;
 using librados::ObjectWriteOperation;
 using librados::completion_t;
 
-using librmb::RadosCluster;
-using librmb::RadosDictionary;
-using librmb::RadosGuidGenerator;
+using storage_interface::RadosCluster;
+using storage_interface::RadosDictionary;
+using storage_interface::RadosGuidGenerator;
 
 #define DICT_USERNAME_SEPARATOR '/'
 
@@ -83,7 +83,7 @@ struct rados_dict {
   RadosGuidGenerator *guid_generator;
 };
 
-class DictGuidGenerator : public librmb::RadosGuidGenerator {
+class DictGuidGenerator : public storage_interface::RadosGuidGenerator {
   void generate_guid(std::string *guid) override {
     guid_128_t namespace_guid;
     guid_128_generate(namespace_guid);
@@ -216,7 +216,7 @@ int rados_dict_wait(struct dict *_dict)
 
 class rados_dict_lookup_context {
  public:
-  RadosDictionary *dict;
+  storage_interface::RadosDictionary *dict;
   ObjectReadOperation read_op;
   map<string, bufferlist> result_map;
   int r_val = -1;

@@ -12,7 +12,7 @@
 #ifndef SRC_LIBRMB_RADOS_DOVECOT_CEPH_CFG_IMPL_H_
 #define SRC_LIBRMB_RADOS_DOVECOT_CEPH_CFG_IMPL_H_
 
-#include "rados-dovecot-ceph-cfg.h"
+#include "../storage-interface/rados-dovecot-ceph-cfg.h"
 #include "rados-ceph-config.h"
 
 #include <string>
@@ -22,7 +22,7 @@
 
 namespace librmb {
 
-class RadosDovecotCephCfgImpl : public RadosDovecotCephCfg {
+class RadosDovecotCephCfgImpl : public storage_interface::RadosDovecotCephCfg {
  public:
   explicit RadosDovecotCephCfgImpl(librados::IoCtx *io_ctx_);
   RadosDovecotCephCfgImpl(RadosConfig &dovecot_cfg_, RadosCephConfig &rados_cfg_);

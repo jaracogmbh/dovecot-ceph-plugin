@@ -17,11 +17,11 @@
 
 #include <rados/librados.hpp>
 #include <map>
-#include "rados-cluster.h"
+#include "../storage-interface/rados-cluster.h"
 #include "rbox-io-ctx.h"
 namespace librmb {
 
-class RadosClusterImpl : public RadosCluster {
+class RadosClusterImpl : public storage_interface::RadosCluster {
  public:
   RadosClusterImpl();
   virtual ~RadosClusterImpl();
@@ -38,7 +38,7 @@ class RadosClusterImpl : public RadosCluster {
   
   int get_config_option(const char *option, std::string *value) override;
   int dictionary_create(const std::string &pool, const std::string &username, const std::string &oid,
-                        RadosDictionary **dictionary);
+                        storage_interface::RadosDictionary **dictionary);
   bool is_connected() override;
   librados::Rados &get_cluster() { return *cluster; }
   void set_config_option(const char *option, const char *value);

@@ -228,8 +228,8 @@ namespace librmb {
     return test == 0;
   }
   // assumes that destination is open and initialized with uses namespace
-  int RadosUtils::move_to_alt(std::string &oid, RadosStorage *primary, RadosStorage *alt_storage,
-                              RadosMetadataStorage *metadata, bool inverse) {
+  int RadosUtils::move_to_alt(std::string &oid, storage_interface::RadosStorage *primary, storage_interface::RadosStorage *alt_storage,
+                              storage_interface::RadosMetadataStorage *metadata, bool inverse) {
     int ret = -1;
     ret = copy_to_alt(oid, oid, primary, alt_storage, metadata, inverse);
     if (ret > 0) {
@@ -241,8 +241,9 @@ namespace librmb {
     }
     return ret;
   }
-  int RadosUtils::copy_to_alt(std::string &src_oid, std::string &dest_oid, RadosStorage *primary,
-                              RadosStorage *alt_storage, RadosMetadataStorage *metadata, bool inverse) {
+  int RadosUtils::copy_to_alt(std::string &src_oid, std::string &dest_oid, storage_interface::RadosStorage *primary,
+                              storage_interface::RadosStorage *alt_storage,
+                              storage_interface::RadosMetadataStorage *metadata, bool inverse) {
     int ret = 0;
 
     // TODO(jrse) check that storage is connected and open.

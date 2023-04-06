@@ -9,14 +9,14 @@
  * Foundation.  See file COPYING.
  */
 
-#ifndef SRC_LIBRMB_INTERFACES_RADOS_DICTIONARY_INTERFACE_H_
-#define SRC_LIBRMB_INTERFACES_RADOS_DICTIONARY_INTERFACE_H_
+#ifndef SRC_STORAGE_INTERFACES_RADOS_DICTIONARY_INTERFACE_H_
+#define SRC_STORAGE_INTERFACES_RADOS_DICTIONARY_INTERFACE_H_
 
 #include <string>
 #include "rbox-io-ctx.h"
 #include <rados/librados.hpp>
 
-namespace librmb {
+namespace storage_interface {
 
 /**
  * Rados Dictionary
@@ -48,6 +48,6 @@ class RadosDictionary {
   static librmb::RboxIoCtx* remove_completion_wrapper; 
   static librmb::RboxIoCtx* push_back_completion_wrapper;
 };
-}  // namespace librmb
+}  // namespace storage_interface
 
-#endif  // SRC_LIBRMB_INTERFACES_RADOS_DICTIONARY_INTERFACE_H_
+#endif  // SRC_STORAGE_INTERFACES_RADOS_DICTIONARY_INTERFACE_H_

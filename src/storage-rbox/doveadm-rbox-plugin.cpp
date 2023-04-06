@@ -48,13 +48,14 @@ extern "C" {
 }
 
 #include "tools/rmb/rmb-commands.h"
-#include "rados-cluster.h"
+#include "../storage-interface/rados-cluster.h"
 #include "rados-cluster-impl.h"
-#include "rados-storage.h"
+#include "../storage-interface/rados-storage.h"
 #include "rados-storage-impl.h"
-#include "rados-dovecot-ceph-cfg.h"
+#include "../storage-interface/rados-dovecot-ceph-cfg.h"
 #include "rados-dovecot-ceph-cfg-impl.h"
-#include "rados-namespace-manager.h"
+#include "../storage-interface/rados-namespace-manager.h"
+#include "../librmb/rados-namespace-manager-impl.h"
 #include "rbox-storage.h"
 #include "rbox-save.h"
 #include "rbox-storage.hpp"
@@ -122,9 +123,9 @@ class RboxDoveadmPlugin {
   }
 
  public:
-  librmb::RadosCluster *cluster;
-  librmb::RadosStorage *storage;
-  librmb::RadosDovecotCephCfg *config;
+  storage_interface::RadosCluster *cluster;
+  storage_interface::RadosStorage *storage;
+  storage_interface::RadosDovecotCephCfg *config;
 };
 
 static int open_connection_load_config(RboxDoveadmPlugin *plugin) {
@@ -174,7 +175,7 @@ static int cmd_rmb_search_run(std::map<std::string, std::string> &opts, struct m
   std::string uid;
   librmb::RadosCephConfig *cfg = (static_cast<librmb::RadosDovecotCephCfgImpl *>(plugin.config))->get_rados_ceph_cfg();
 
-  librmb::RadosStorageMetadataModule *ms = rmb_cmds.init_metadata_storage_module(*cfg, &uid);
+  storage_interface::RadosStorageMetadataModule *ms = rmb_cmds.init_metadata_storage_module(*cfg, &uid);
   if (ms == nullptr) {
     i_error(" Error initializing metadata module");
     delete ms;
@@ -322,7 +323,7 @@ static int cmd_rmb_set_run(struct doveadm_mail_cmd_context *ctx, struct mail_use
   librmb::RadosCephConfig *cfg = (static_cast<librmb::RadosDovecotCephCfgImpl *>(plugin.config))->get_rados_ceph_cfg();
 
   std::string uid;
-  librmb::RadosStorageMetadataModule *ms = rmb_cmds.init_metadata_storage_module(*cfg, &uid);
+  storage_interface::RadosStorageMetadataModule *ms = rmb_cmds.init_metadata_storage_module(*cfg, &uid);
   if (ms == nullptr) {
     i_error(" Error initializing metadata module ");
     delete ms;
@@ -383,7 +384,7 @@ static int cmd_rmb_delete_run(struct doveadm_mail_cmd_context *ctx, struct mail_
   librmb::RadosCephConfig *cfg = (static_cast<librmb::RadosDovecotCephCfgImpl *>(plugin.config))->get_rados_ceph_cfg();
 
   std::string uid;
-  librmb::RadosStorageMetadataModule *ms = rmb_cmds.init_metadata_storage_module(*cfg, &uid);
+  storage_interface::RadosStorageMetadataModule *ms = rmb_cmds.init_metadata_storage_module(*cfg, &uid);
   if (ms == nullptr) {
     i_error(" Error initializing metadata module ");
     delete ms;
@@ -753,7 +754,7 @@ static int cmd_rmb_check_indices_run(struct doveadm_mail_cmd_context *ctx, struc
   librmb::RadosCephConfig *cfg = (static_cast<librmb::RadosDovecotCephCfgImpl *>(plugin.config))->get_rados_ceph_cfg();
 
   std::string uid;
-  librmb::RadosStorageMetadataModule *ms = rmb_cmds.init_metadata_storage_module(*cfg, &uid);
+  storage_interface::RadosStorageMetadataModule *ms = rmb_cmds.init_metadata_storage_module(*cfg, &uid);
   if (ms == nullptr) {
     i_error(" Error initializing metadata module ");
     delete ms;
@@ -797,7 +798,7 @@ static int cmd_rmb_create_ceph_index_run(struct doveadm_mail_cmd_context *_ctx, 
   std::string uid;
   librmb::RadosCephConfig *cfg = (static_cast<librmb::RadosDovecotCephCfgImpl *>(plugin.config))->get_rados_ceph_cfg();
 
-  librmb::RadosStorageMetadataModule *ms = rmb_cmds.init_metadata_storage_module(*cfg, &uid);
+  storage_interface::RadosStorageMetadataModule *ms = rmb_cmds.init_metadata_storage_module(*cfg, &uid);
   if (ms == nullptr) {
     i_error(" Error initializing metadata module");
     delete ms;
@@ -1023,7 +1024,7 @@ static int cmd_rmb_mailbox_delete_run(struct doveadm_mail_cmd_context *ctx, stru
       // we need to delete the namespace object.
       // iterate over all mailboxes, if we have no more mails, delete the user namespace object
       // for the current user.
-      librmb::RadosNamespaceManager mgr(plugin.config);
+      librmb::RadosNamespaceManagerImpl mgr(plugin.config);
       check_users_mailbox_delete_ns_object(user, plugin.config, &mgr, plugin.storage);
     }
   }

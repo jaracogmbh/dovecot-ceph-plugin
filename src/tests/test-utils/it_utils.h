@@ -51,7 +51,7 @@ class ItUtils {
   virtual ~ItUtils();
   static void add_mail(const char *message, const char *mailbox, struct mail_namespace *_ns);
   static void add_mail(const char *message, const char *mailbox, struct mail_namespace *_ns,
-                       librmb::RadosStorage *storage_impl);
+                       storage_interface::RadosStorage *storage_impl);
   static void add_mail(struct mail_save_context *save_ctx, struct istream *input, struct mailbox *box,
                        struct mailbox_transaction_context *trans);
 };

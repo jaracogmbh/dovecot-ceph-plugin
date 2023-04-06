@@ -8,14 +8,14 @@
  * License version 2.1, as published by the Free Software
  * Foundation.  See file COPYING.
  */
-#ifndef SRC_LIBRMB_RADOS_DOVECOT_CEPH_CFG_H_
-#define SRC_LIBRMB_RADOS_DOVECOT_CEPH_CFG_H_
+#ifndef SRC_STORAGE_INTERFACES_RADOS_DOVECOT_CEPH_CFG_H_
+#define SRC_STORAGE_INTERFACES_RADOS_DOVECOT_CEPH_CFG_H_
 
 #include "rados-types.h"
 #include <string>
 #include <map>
 #include "rados-storage.h"
-namespace librmb {
+namespace storage_interface {
 
 /**
  * class RadosDovecotCephCfg
@@ -32,8 +32,8 @@ class RadosDovecotCephCfg {
   virtual const std::string &get_rados_cluster_name() = 0;
   virtual const std::string &get_rados_username() = 0;
   virtual const std::string &get_rados_save_log_file() = 0;
-  virtual bool is_mail_attribute(enum rbox_metadata_key key) = 0;
-  virtual bool is_updateable_attribute(enum rbox_metadata_key key) = 0;
+  virtual bool is_mail_attribute(librmb::rbox_metadata_key key) = 0;
+  virtual bool is_updateable_attribute(librmb::rbox_metadata_key key) = 0;
   virtual void set_update_attributes(const std::string &update_attributes_) = 0;
   virtual void update_mail_attributes(const char *value) = 0;
   virtual void update_updatable_attributes(const char *value) = 0;
@@ -102,6 +102,6 @@ class RadosDovecotCephCfg {
   virtual bool is_rbox_check_empty_mailboxes() = 0;
 };
 
-} /* namespace librmb */
+} /* namespace storage_interface */
 
-#endif /* SRC_LIBRMB_RADOS_DOVECOT_CEPH_CFG_H_ */
+#endif /* SRC_STORAGE_INTERFACES_RADOS_DOVECOT_CEPH_CFG_H_ */

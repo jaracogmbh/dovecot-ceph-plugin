@@ -46,7 +46,7 @@ using ceph::bufferlist;
 
 using librmb::RadosMail;
 using librmb::RadosMetadata;
-using librmb::RadosStorage;
+using storage_interface::RadosStorage;
 using librmb::rbox_metadata_key;
 
 using std::string;
@@ -713,7 +713,7 @@ void rbox_transaction_save_rollback(struct mail_save_context *_ctx) {
   FUNC_START();
 
   struct rbox_save_context *r_ctx = (struct rbox_save_context *)_ctx;
-  librmb::RadosStorage *storage = ((struct rbox_storage *)&r_ctx->mbox->storage->storage)->s;
+  storage_interface::RadosStorage *storage = ((struct rbox_storage *)&r_ctx->mbox->storage->storage)->s;
 
   if (!r_ctx->finished) {
     rbox_save_cancel(&r_ctx->ctx);

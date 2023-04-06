@@ -21,18 +21,18 @@
 
 #include <limits>
 
-#include "../../rados-cluster.h"
+#include "../../../storage-interface/rados-cluster.h"
 #include "../../rados-cluster-impl.h"
 #include "../../rados-mail.h"
-#include "../../rados-storage.h"
+#include "../../../storage-interface/rados-storage.h"
 #include "../../rados-storage-impl.h"
 #include "../../rados-metadata-storage-ima.h"
-#include "../../rados-metadata-storage-module.h"
+#include "../../../storage-interface/rados-metadata-storage-module.h"
 #include "ls_cmd_parser.h"
 #include "mailbox_tools.h"
 #include "rados-util.h"
-#include "rados-namespace-manager.h"
-#include "rados-dovecot-ceph-cfg.h"
+#include "../../rados-namespace-manager-impl.h"
+#include "../../../storage-interface/rados-dovecot-ceph-cfg.h"
 #include "rados-dovecot-ceph-cfg-impl.h"
 #include "rados-metadata-storage-default.h"
 #include "rmb-commands.h"
@@ -201,7 +201,7 @@ __attribute__((noreturn)) static void usage_exit() {
   exit(1);
 }
 
-static void release_exit(std::list<librmb::RadosMail *> *mail_objects, librmb::RadosCluster *cluster, bool show_usage) {
+static void release_exit(std::list<librmb::RadosMail *> *mail_objects, storage_interface::RadosCluster *cluster, bool show_usage) {
   if (mail_objects != nullptr) {
     for (auto mo : *mail_objects) {
       delete mo;
@@ -393,7 +393,7 @@ int main(int argc, const char **argv) {
 
   std::string uid;
   // load metadata configuration
-  librmb::RadosStorageMetadataModule *ms = rmb_commands->init_metadata_storage_module(ceph_cfg, &uid);
+  storage_interface::RadosStorageMetadataModule *ms = rmb_commands->init_metadata_storage_module(ceph_cfg, &uid);
   if (ms == nullptr) {
     /// error exit!
     std::cerr << " Error initializing metadata module " << std::endl;

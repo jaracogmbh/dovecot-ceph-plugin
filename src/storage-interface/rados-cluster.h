@@ -9,14 +9,14 @@
  * Foundation.  See file COPYING.
  */
 
-#ifndef SRC_LIBRMB_INTERFACES_RADOS_CLUSTER_INTERFACE_H_
-#define SRC_LIBRMB_INTERFACES_RADOS_CLUSTER_INTERFACE_H_
+#ifndef SRC_STORAGE_INTERFACES_RADOS_CLUSTER_INTERFACE_H_
+#define SRC_STORAGE_INTERFACES_RADOS_CLUSTER_INTERFACE_H_
 
 #include <string>
 
 #include <rados/librados.hpp>
 #include"rbox-io-ctx.h"
-namespace librmb {
+namespace storage_interface {
 /** class RadosDictionary
  *  brief an abstract Rados Cluster
  *  details This abstract class provides the api
@@ -91,6 +91,6 @@ class RadosCluster {
   
 };
 
-}  // namespace librmb
+}  // namespace storage_interface 
 
-#endif  // SRC_LIBRMB_INTERFACES_RADOS_CLUSTER_INTERFACE_H_
+#endif  // SRC_STORAGE_INTERFACES_RADOS_CLUSTER_INTERFACE_H_

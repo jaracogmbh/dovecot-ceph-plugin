@@ -13,12 +13,11 @@
 #include <string>
 #include <list>
 #include "rados-types.h"
-#include "../../librmb/rados-cluster.h"
-#include "../../librmb/rados-dictionary.h"
+#include "../../storage-interface/rados-cluster.h"
+#include "../../storage-interface/rados-dictionary.h"
 #include "../../librmb/rados-dovecot-config.h"
-#include "../../librmb/rados-storage.h"
-#include "../../librmb/rados-dovecot-ceph-cfg.h"
-#include "../../librmb/rados-metadata-storage-impl.h"
+#include "../../storage-interface/rados-storage.h"
+#include "../../storage-interface/rados-dovecot-ceph-cfg.h"
 #include "../../librmb/rados-metadata-storage-impl.h"
 #include "../../librmb/rbox-io-ctx.h"
 #include "gmock/gmock.h"
@@ -26,9 +25,9 @@
 namespace librmbtest {
 using librmb::RadosMail;
 using librmb::RadosMetadata;
-using librmb::RadosMetadataStorage;
-using librmb::RadosStorage;
-using librmb::RadosStorageMetadataModule;
+using storage_interface::RadosMetadataStorage;
+using storage_interface::RadosStorage;
+using storage_interface::RadosStorageMetadataModule;
 using librmb::RboxIoCtx;
 
 class RboxIoCtxMock : public RboxIoCtx{
@@ -127,11 +126,11 @@ class RadosStorageMetadataMock : public RadosStorageMetadataModule {
 class RadosMetadataStorageProducerMock : public RadosMetadataStorage {
  public:
   MOCK_METHOD2(create_metadata_storage,
-               RadosStorageMetadataModule *(librmb::RboxIoCtx &io_ctx_wrapper, librmb::RadosDovecotCephCfg *cfg_));
+               RadosStorageMetadataModule *(librmb::RboxIoCtx &io_ctx_wrapper, storage_interface::RadosDovecotCephCfg *cfg_));
   MOCK_METHOD0(get_storage, RadosStorageMetadataModule *());
 };
 
-using librmb::RadosDictionary;
+using storage_interface::RadosDictionary;
 
 class RadosDictionaryMock : public RadosDictionary {
  public:
@@ -150,7 +149,7 @@ class RadosDictionaryMock : public RadosDictionary {
   MOCK_METHOD2(get, int(const std::string &key, std::string *value_r));
 };
 
-using librmb::RadosCluster;
+using storage_interface::RadosCluster;
 
 class RadosClusterMock : public RadosCluster {
  public:
@@ -169,7 +168,7 @@ class RadosClusterMock : public RadosCluster {
   MOCK_METHOD1(list_pgs_osd_for_pool, std::map<std::string, std::vector<std::string>> (std::string &pool_name));
 };
 
-using librmb::RadosDovecotCephCfg;
+using storage_interface::RadosDovecotCephCfg;
 class RadosDovecotCephCfgMock : public RadosDovecotCephCfg {
  public:
   // dovecot configuration

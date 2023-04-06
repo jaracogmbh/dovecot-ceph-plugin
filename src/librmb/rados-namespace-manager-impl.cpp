@@ -8,16 +8,16 @@
  * License version 2.1, as published by the Free Software
  * Foundation.  See file COPYING.
  */
-#include "rados-namespace-manager.h"
+#include "rados-namespace-manager-impl.h"
+
 
 #include <rados/librados.hpp>
 
 namespace librmb {
 
-RadosNamespaceManager::~RadosNamespaceManager() {
-}
+RadosNamespaceManagerImpl::~RadosNamespaceManagerImpl() {}
 
-bool RadosNamespaceManager::lookup_key(const std::string &uid, std::string *value) {
+bool RadosNamespaceManagerImpl::lookup_key(const std::string &uid, std::string *value) {
   if (uid.empty()) {
     *value = uid;
     return true;
@@ -59,8 +59,8 @@ bool RadosNamespaceManager::lookup_key(const std::string &uid, std::string *valu
   return retval;
 }
 
-bool RadosNamespaceManager::add_namespace_entry(const std::string &uid, std::string *value,
-                                                RadosGuidGenerator *guid_generator_) {
+bool RadosNamespaceManagerImpl::add_namespace_entry(const std::string &uid, std::string *value,
+                                                storage_interface::RadosGuidGenerator *guid_generator_) {
   if (config == nullptr) {
     return false;
   }

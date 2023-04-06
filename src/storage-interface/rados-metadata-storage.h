@@ -8,13 +8,13 @@
  * License version 2.1, as published by the Free Software
  * Foundation.  See file COPYING.
  */
-#ifndef SRC_LIBRMB_RADOS_METADATA_STORAGE_PRODUCER_H_
-#define SRC_LIBRMB_RADOS_METADATA_STORAGE_PRODUCER_H_
+#ifndef SRC_STORAGE_INTERFACES_RADOS_METADATA_STORAGE_PRODUCER_H_
+#define SRC_STORAGE_INTERFACES_RADOS_METADATA_STORAGE_PRODUCER_H_
 #include "rados-dovecot-ceph-cfg.h"
 
 #include "rados-metadata-storage-module.h"
 
-namespace librmb {
+namespace storage_interface {
 /**
  * Rados MetadataStorage
  *
@@ -29,6 +29,6 @@ class RadosMetadataStorage {
   virtual RadosStorageMetadataModule *get_storage() = 0;
 };
 
-}  // namespace librmb
+}  // namespace storage_interface
 
-#endif /* SRC_LIBRMB_RADOS_METADATA_STORAGE_PRODUCER_H_ */
+#endif /* SRC_STORAGE_INTERFACES_RADOS_METADATA_STORAGE_PRODUCER_H_ */

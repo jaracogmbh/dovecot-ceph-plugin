@@ -9,8 +9,8 @@
  * Foundation.  See file COPYING.
  */
 
-#ifndef SRC_LIBRMB_INTERFACES_RADOS_STORAGE_INTERFACE_H_
-#define SRC_LIBRMB_INTERFACES_RADOS_STORAGE_INTERFACE_H_
+#ifndef SRC_STORAGE_INTERFACES_RADOS_STORAGE_INTERFACE_H_
+#define SRC_STORAGE_INTERFACES_RADOS_STORAGE_INTERFACE_H_
 
 #include <string>
 #include <map>
@@ -22,7 +22,7 @@
 #include "rados-types.h"
 #include "rbox-io-ctx.h"
 
-namespace librmb {
+namespace storage_interface {
 /** class RadosStorage
  *  brief an abstract Rados Storage
  *  details This abstract class provides the api
@@ -57,7 +57,7 @@ class RadosStorage {
   virtual std::string get_pool_name() = 0;
 
   /* set the wait method for async operations */
-  virtual void set_ceph_wait_method(enum rbox_ceph_aio_wait_method wait_method) = 0;
+  virtual void set_ceph_wait_method(librmb::rbox_ceph_aio_wait_method wait_method) = 0;
 
   /*! get the max operation size in mb
    * @return the maximal number of mb to write in a single write operation*/
@@ -79,9 +79,9 @@ class RadosStorage {
    * @param[in] attr a list of filter attributes
    *
    * @return object iterator or librados::NObjectIterator::__EndObjectIterator */
-  virtual std::set<std::string> find_mails(const RadosMetadata *attr) = 0;
+  virtual std::set<std::string> find_mails(const librmb::RadosMetadata *attr) = 0;
  
-  virtual std::set<std::string> find_mails_async(const RadosMetadata *attr, 
+  virtual std::set<std::string> find_mails_async(const librmb::RadosMetadata *attr, 
                                                  std::string &pool_name, 
                                                  int num_threads,
                                                  void (*ptr)(std::string&)) = 0;
@@ -176,7 +176,7 @@ class RadosStorage {
    * @return linux errorcode or 0 if successful
    * */
   virtual int move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
-                   std::list<RadosMetadata> &to_update, bool delete_source) = 0;
+                   std::list<librmb::RadosMetadata> &to_update, bool delete_source) = 0;
 
   /*! copy a object from the given namespace to the other, updates the metadata given in to_update list
    * @param[in] src_oid unique identifier of source object
@@ -187,12 +187,12 @@ class RadosStorage {
    * @return linux errorcode or 0 if successful
    */
   virtual int copy(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
-                   std::list<RadosMetadata> &to_update) = 0;
+                   std::list<librmb::RadosMetadata> &to_update) = 0;
   /*! save the mail
    * @param[in] mail valid rados mail.   
    * @return false in case of error
    * */
-  virtual bool save_mail(RadosMail *mail) = 0;
+  virtual bool save_mail(librmb::RadosMail *mail) = 0;
  
   /*! create a new RadosMail
    * create new rados Mail Object.
@@ -211,6 +211,6 @@ class RadosStorage {
 
 };
 
-}  // namespace librmb
+}  // namespace storage_interface
 
-#endif  // SRC_LIBRMB_INTERFACES_RADOS_STORAGE_INTERFACE_H_
+#endif  // SRC_STORAGE_INTERFACES_RADOS_STORAGE_INTERFACE_H_

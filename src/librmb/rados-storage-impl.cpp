@@ -40,7 +40,7 @@ using librmb::RadosStorageImpl;
 const char *RadosStorageImpl::CFG_OSD_MAX_WRITE_SIZE = "osd_max_write_size";
 const char *RadosStorageImpl::CFG_OSD_MAX_OBJECT_SIZE= "osd_max_object_size";
 
-RadosStorageImpl::RadosStorageImpl(RadosCluster *_cluster) {
+RadosStorageImpl::RadosStorageImpl(storage_interface::RadosCluster *_cluster) {
   cluster = _cluster;
   max_write_size = 10;
   max_object_size = 134217728; //ceph default 128MB

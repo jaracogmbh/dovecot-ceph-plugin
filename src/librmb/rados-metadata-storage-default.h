@@ -15,7 +15,7 @@
 #include <map>
 #include <string>
 #include <set>
-#include "rados-metadata-storage-module.h"
+#include "../storage-interface/rados-metadata-storage-module.h"
 #include "rbox-io-ctx.h"
 
 namespace librmb {
@@ -25,7 +25,7 @@ namespace librmb {
  * Each metadata attribute is saved as single xattribute.io_ctx_wrapper_wrapper
  *
  */
-class RadosMetadataStorageDefault : public RadosStorageMetadataModule {
+class RadosMetadataStorageDefault : public storage_interface::RadosStorageMetadataModule {
  public:
   explicit RadosMetadataStorageDefault(librmb::RboxIoCtx &io_ctx_wrapper);
   virtual ~RadosMetadataStorageDefault();

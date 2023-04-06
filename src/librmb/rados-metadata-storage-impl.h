@@ -13,13 +13,13 @@
 
 #include <assert.h> /* assert */
 #include <string>
-#include "rados-metadata-storage-module.h"
+#include "../storage-interface/rados-metadata-storage-module.h"
 #include "rados-metadata-storage-default.h"
 #include "rados-metadata-storage-ima.h"
-#include "rados-metadata-storage.h"
+#include "../storage-interface/rados-metadata-storage.h"
 
 namespace librmb {
-class RadosMetadataStorageImpl : public RadosMetadataStorage {
+class RadosMetadataStorageImpl : public storage_interface::RadosMetadataStorage {
  public:
   RadosMetadataStorageImpl() {
     storage = nullptr;
@@ -33,7 +33,7 @@ class RadosMetadataStorageImpl : public RadosMetadataStorage {
     }
   }
 
-  RadosStorageMetadataModule *create_metadata_storage(librmb::RboxIoCtx &io_ctx_wrapper_, RadosDovecotCephCfg *cfg_) override {
+  storage_interface::RadosStorageMetadataModule *create_metadata_storage(librmb::RboxIoCtx &io_ctx_wrapper_, storage_interface::RadosDovecotCephCfg *cfg_) override {
     this->io_ctx_wrapper = &io_ctx_wrapper_;
     this->cfg = cfg_;
     if (storage == nullptr) {
@@ -48,15 +48,15 @@ class RadosMetadataStorageImpl : public RadosMetadataStorage {
     return storage;
   }
 
-  RadosStorageMetadataModule *get_storage() override {
+  storage_interface::RadosStorageMetadataModule *get_storage() override {
     assert(storage != nullptr);
     return storage;
   }
 
  private:
   librmb::RboxIoCtx *io_ctx_wrapper;
-  RadosDovecotCephCfg *cfg;
-  RadosStorageMetadataModule *storage;
+  storage_interface::RadosDovecotCephCfg *cfg;
+  storage_interface::RadosStorageMetadataModule *storage;
 };
 }  // namespace librmb
 

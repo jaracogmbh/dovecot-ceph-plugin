@@ -28,7 +28,7 @@
  */
 class rbox_save_context {
  public:
-  explicit rbox_save_context(const librmb::RadosStorage &_rados_storage)
+  explicit rbox_save_context(const storage_interface::RadosStorage &_rados_storage)
       : ctx({}),
         mbox(NULL),
         trans(NULL),
@@ -70,7 +70,7 @@ class rbox_save_context {
   /** stream to write the mail data to **/
   struct ostream *output_stream;
   /** storage rerference **/
-  const librmb::RadosStorage &rados_storage;
+  const storage_interface::RadosStorage &rados_storage;
   /** mails in the current save context **/
   std::list<librmb::RadosMail *> rados_mails;
   /** current mail in the context **/

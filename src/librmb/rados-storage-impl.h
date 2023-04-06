@@ -25,13 +25,13 @@
 
 #include "rados-mail.h"
 #include "rbox-io-ctx.h"
-#include "rados-storage.h"
+#include "../storage-interface/rados-storage.h"
 #include "rbox-io-ctx.h"
 
 namespace librmb {
-class RadosStorageImpl : public RadosStorage {
+class RadosStorageImpl : public storage_interface::RadosStorage {
  public:
-  explicit RadosStorageImpl(RadosCluster *cluster);
+  explicit RadosStorageImpl(storage_interface::RadosCluster *cluster);
   virtual ~RadosStorageImpl();
   librados::IoCtx &get_io_ctx();
   librmb::RboxIoCtx& get_io_ctx_wrapper()override;
@@ -103,7 +103,7 @@ class RadosStorageImpl : public RadosStorage {
                   librados::ObjectWriteOperation *op);                             
  
  private:
-  RadosCluster *cluster;
+  storage_interface::RadosCluster *cluster;
   int max_write_size;
   int max_object_size;
   std::string nspace;

@@ -864,7 +864,7 @@ TEST(librmb, rmb_load_objects) {
   */
   // load metadata info
   std::string uid;
-  librmb::RadosStorageMetadataModule *ms = rmb_commands.init_metadata_storage_module(ceph_cfg, &uid);
+  storage_interface::RadosStorageMetadataModule *ms = rmb_commands.init_metadata_storage_module(ceph_cfg, &uid);
   EXPECT_NE(nullptr, ms);
 
   storage.set_namespace(ns);
@@ -925,7 +925,7 @@ TEST(librmb, rmb_load_objects_valid_metadata) {
 
   // load metadata info
   std::string uid;
-  librmb::RadosStorageMetadataModule *ms = rmb_commands.init_metadata_storage_module(ceph_cfg, &uid);
+  storage_interface::RadosStorageMetadataModule *ms = rmb_commands.init_metadata_storage_module(ceph_cfg, &uid);
   EXPECT_NE(nullptr, ms);
 
   storage.set_namespace(ns);
@@ -1063,7 +1063,7 @@ TEST(librmb, rmb_load_objects_invalid_metadata) {
 
   // load metadata info
   std::string uid;
-  librmb::RadosStorageMetadataModule *ms = rmb_commands.init_metadata_storage_module(ceph_cfg, &uid);
+  storage_interface::RadosStorageMetadataModule *ms = rmb_commands.init_metadata_storage_module(ceph_cfg, &uid);
   EXPECT_NE(nullptr, ms);
 
   storage.set_namespace(ns);

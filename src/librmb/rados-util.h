@@ -24,8 +24,8 @@
 #include <string>
 #include <map>
 #include <rados/librados.hpp>
-#include "rados-storage.h"
-#include "rados-metadata-storage.h"
+#include "../storage-interface/rados-storage.h"
+#include "../storage-interface/rados-metadata-storage.h"
 #include "rados-types.h"
 
 namespace librmb {
@@ -125,8 +125,8 @@ class RadosUtils {
    * @param[in] bool inverse if true, copy from alt to primary.
    * @return linux error code or 0 if sucessful
    */
-  static int copy_to_alt(std::string &src_oid, std::string &dest_oid, RadosStorage *primary, RadosStorage *alt_storage,
-                         RadosMetadataStorage *metadata, bool inverse);
+  static int copy_to_alt(std::string &src_oid, std::string &dest_oid, storage_interface::RadosStorage *primary, storage_interface::RadosStorage *alt_storage,
+                         storage_interface::RadosMetadataStorage *metadata, bool inverse);
   /*!
    * move object to alternative storage
    * @param[in] src_oid
@@ -137,8 +137,8 @@ class RadosUtils {
    * @param[in] bool inverse if true, move from alt to primary.
    * @return linux error code or 0 if sucessful
    */
-  static int move_to_alt(std::string &oid, RadosStorage *primary, RadosStorage *alt_storage,
-                         RadosMetadataStorage *metadata, bool inverse);
+  static int move_to_alt(std::string &oid, storage_interface::RadosStorage *primary, storage_interface::RadosStorage *alt_storage,
+                         storage_interface::RadosMetadataStorage *metadata, bool inverse);
   /*!
    * increment (add) value directly on osd
    * @param[in] ioctx

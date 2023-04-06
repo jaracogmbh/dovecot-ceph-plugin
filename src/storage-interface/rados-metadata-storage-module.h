@@ -9,33 +9,33 @@
  * Foundation.  See file COPYING.
  */
 
-#ifndef SRC_LIBRMB_RADOS_METADATA_STORAGE_MODULE_H_
-#define SRC_LIBRMB_RADOS_METADATA_STORAGE_MODULE_H_
+#ifndef SRC_STORAGE_INTERFACES_RADOS_METADATA_STORAGE_MODULE_H_
+#define SRC_STORAGE_INTERFACES_RADOS_METADATA_STORAGE_MODULE_H_
 
 #include <rados/librados.hpp>
 
 #include "rados-mail.h"
 #include "rbox-io-ctx.h"
 
-namespace librmb {
+namespace storage_interface {
 class RadosStorageMetadataModule {
  public:
   virtual ~RadosStorageMetadataModule(){};
   /* update io_ctx */
   virtual void set_io_ctx(librmb::RboxIoCtx &io_ctx_wrapper){};
   /* load the metadta into RadosMail */
-  virtual int load_metadata(RadosMail *mail) = 0;
+  virtual int load_metadata(librmb::RadosMail *mail) = 0;
   /* set a new metadata attribute to a mail object */
-  virtual int set_metadata(RadosMail *mail, RadosMetadata &xattr) = 0;
+  virtual int set_metadata(librmb::RadosMail *mail, librmb::RadosMetadata &xattr) = 0;
   /* update the given metadata attributes */
-  virtual bool update_metadata(const std::string &oid, std::list<RadosMetadata> &to_update) = 0;
+  virtual bool update_metadata(const std::string &oid, std::list<librmb::RadosMetadata> &to_update) = 0;
   /* manage keywords */
-  virtual int update_keyword_metadata(const std::string &oid, RadosMetadata *metadata) = 0;
+  virtual int update_keyword_metadata(const std::string &oid, librmb::RadosMetadata *metadata) = 0;
   virtual int remove_keyword_metadata(const std::string &oid, std::string &key) = 0;
   virtual int load_keyword_metadata(const std::string &oid, std::set<std::string> &keys,
                                     std::map<std::string, ceph::bufferlist> *metadata) = 0;
 };
 
-}  // namespace librmb
+}  // namespace storage_interface
 
-#endif /* SRC_LIBRMB_RADOS_METADATA_STORAGE_MODULE_H_ */
+#endif /* SRC_STORAGE_INTERFACES_RADOS_METADATA_STORAGE_MODULE_H_ */

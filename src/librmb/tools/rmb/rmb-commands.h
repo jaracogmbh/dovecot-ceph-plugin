@@ -20,21 +20,21 @@
 #include <iterator>
 #include <list>
 
-#include "rados-storage.h"
-#include "rados-cluster.h"
-#include "rados-metadata-storage.h"
-#include "rados-dovecot-ceph-cfg.h"
+#include "../../../storage-interface/rados-storage.h"
+#include "../../../storage-interface/rados-cluster.h"
+#include "../../../storage-interface/rados-metadata-storage.h"
+#include "../../../storage-interface/rados-dovecot-ceph-cfg.h"
 #include "rados-ceph-config.h"
 #include "ls_cmd_parser.h"
 #include "mailbox_tools.h"
-#include "rados-metadata-storage-module.h"
+#include "../../../storage-interface/rados-metadata-storage-module.h"
 #include "rados-save-log.h"
 
 namespace librmb {
 
 class RmbCommands {
  public:
-  RmbCommands(librmb::RadosStorage *storage_, librmb::RadosCluster *cluster_,
+  RmbCommands(storage_interface::RadosStorage *storage_, storage_interface::RadosCluster *cluster_,
               std::map<std::string, std::string> *opts_);
   virtual ~RmbCommands();
 
@@ -44,20 +44,20 @@ class RmbCommands {
   void print_debug(const std::string &msg);
   static int lspools();
   int delete_mail(bool confirmed);
-  int delete_namespace(librmb::RadosStorageMetadataModule *ms, std::list<librmb::RadosMail *> &mail_objects,
+  int delete_namespace(storage_interface::RadosStorageMetadataModule *ms, std::list<librmb::RadosMail *> &mail_objects,
                        librmb::RadosCephConfig *cfg, bool confirmed);
 
   int rename_user(librmb::RadosCephConfig *cfg, bool confirmed, const std::string &uid);
 
   int configuration(bool confirmed, librmb::RadosCephConfig &ceph_cfg);
 
-  int load_objects(librmb::RadosStorageMetadataModule *ms, std::list<librmb::RadosMail *> &mail_objects,
+  int load_objects(storage_interface::RadosStorageMetadataModule *ms, std::list<librmb::RadosMail *> &mail_objects,
                    std::string &sort_string, bool load_metadata = true);
-  int update_attributes(librmb::RadosStorageMetadataModule *ms, std::map<std::string, std::string> *metadata);
+  int update_attributes(storage_interface::RadosStorageMetadataModule *ms, std::map<std::string, std::string> *metadata);
   int print_mail(std::map<std::string, librmb::RadosMailBox *> *mailbox, std::string &output_dir, bool download);
   int query_mail_storage(std::list<librmb::RadosMail *> *mail_objects, librmb::CmdLineParser *parser, bool download,
                          bool silent);
-  librmb::RadosStorageMetadataModule *init_metadata_storage_module(librmb::RadosCephConfig &ceph_cfg, std::string *uid);
+  storage_interface::RadosStorageMetadataModule *init_metadata_storage_module(librmb::RadosCephConfig &ceph_cfg, std::string *uid);
   static bool sort_uid(librmb::RadosMail *i, librmb::RadosMail *j);
   static bool sort_recv_date(librmb::RadosMail *i, librmb::RadosMail *j);
   static bool sort_phy_size(librmb::RadosMail *i, librmb::RadosMail *j);
@@ -66,13 +66,13 @@ class RmbCommands {
   void set_output_path(librmb::CmdLineParser *parser);
 
   int overwrite_ceph_object_index(std::set<std::string> &mail_oids);
-  std::set<std::string> load_objects(librmb::RadosStorageMetadataModule *ms);
+  std::set<std::string> load_objects(storage_interface::RadosStorageMetadataModule *ms);
   int remove_ceph_object_index();
   int append_ceph_object_index(const std::set<std::string> &mail_oids);
  private:
   std::map<std::string, std::string> *opts;
-  librmb::RadosStorage *storage;
-  librmb::RadosCluster *cluster;
+  storage_interface::RadosStorage *storage;
+  storage_interface::RadosCluster *cluster;
   bool is_debug;
 };
 

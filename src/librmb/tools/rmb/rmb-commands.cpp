@@ -19,14 +19,14 @@
 #include "rados-util.h"
 #include "rados-dovecot-config.h"
 #include "rados-dovecot-ceph-cfg-impl.h"
-#include "rados-namespace-manager.h"
+#include "../../rados-namespace-manager-impl.h"
 #include "rados-metadata-storage-ima.h"
 #include "rados-metadata-storage-default.h"
 #include "ls_cmd_parser.h"
 
 namespace librmb {
 
-RmbCommands::RmbCommands(librmb::RadosStorage *storage_, librmb::RadosCluster *cluster_,
+RmbCommands::RmbCommands(storage_interface::RadosStorage *storage_, storage_interface::RadosCluster *cluster_,
                          std::map<std::string, std::string> *opts_) {
   this->storage = storage_;
   this->cluster = cluster_;
@@ -134,7 +134,7 @@ int RmbCommands::lspools() {
   return 0;
 }
 
-int RmbCommands::delete_namespace(librmb::RadosStorageMetadataModule *ms, std::list<librmb::RadosMail *> &mail_objects,
+int RmbCommands::delete_namespace(storage_interface::RadosStorageMetadataModule *ms, std::list<librmb::RadosMail *> &mail_objects,
                                   librmb::RadosCephConfig *cfg, bool confirmed) {
   if (ms == nullptr || cfg == nullptr) {
     return -1;
@@ -388,7 +388,7 @@ struct AioStat {
   std::list<librmb::RadosMail *> *mail_objects;
   uint64_t object_size = 0;
   time_t save_date_rados;
-  librmb::RadosStorageMetadataModule *ms;
+  storage_interface::RadosStorageMetadataModule *ms;
   bool load_metadata;
   librados::AioCompletion *completion;
 };
@@ -427,7 +427,7 @@ static void aio_cb(rados_completion_t cb, void *arg) {
 int RmbCommands::overwrite_ceph_object_index(std::set<std::string> &mail_oids){
     return storage->ceph_index_overwrite(mail_oids);
 }
-std::set<std::string> RmbCommands::load_objects(librmb::RadosStorageMetadataModule *ms){
+std::set<std::string> RmbCommands::load_objects(storage_interface::RadosStorageMetadataModule *ms){
   std::set<std::string> mail_list;
   mail_list = storage->find_mails(nullptr);
   std::set<std::string>::iterator it;
@@ -450,7 +450,7 @@ int RmbCommands::append_ceph_object_index(const std::set<std::string> &mail_oids
   return storage->ceph_index_append(mail_oids);
 }
 
-int RmbCommands::load_objects(librmb::RadosStorageMetadataModule *ms, std::list<librmb::RadosMail *> &mail_objects,
+int RmbCommands::load_objects(storage_interface::RadosStorageMetadataModule *ms, std::list<librmb::RadosMail *> &mail_objects,
                               std::string &sort_string, bool load_metadata) {
   time_t begin = time(NULL);
 
@@ -592,15 +592,15 @@ int RmbCommands::query_mail_storage(std::list<librmb::RadosMail *> *mail_objects
   return ret;
 }
 
-RadosStorageMetadataModule *RmbCommands::init_metadata_storage_module(librmb::RadosCephConfig &ceph_cfg,
+storage_interface::RadosStorageMetadataModule *RmbCommands::init_metadata_storage_module(librmb::RadosCephConfig &ceph_cfg,
                                                                       std::string *uid) {
   print_debug("entry: init_metadata_storage_module");
   librmb::RadosConfig dovecot_cfg;
-  RadosStorageMetadataModule *ms = nullptr;
+  storage_interface::RadosStorageMetadataModule *ms = nullptr;
   dovecot_cfg.set_config_valid(true);
   ceph_cfg.set_config_valid(true);
   librmb::RadosDovecotCephCfgImpl cfg(dovecot_cfg, ceph_cfg);
-  librmb::RadosNamespaceManager mgr(&cfg);
+  librmb::RadosNamespaceManagerImpl mgr(&cfg);
 
   if (uid == nullptr) {
     std::cerr << "please set valid uid ptr" << std::endl;
@@ -634,7 +634,7 @@ RadosStorageMetadataModule *RmbCommands::init_metadata_storage_module(librmb::Ra
   print_debug("end: init_metadata_storage_module");
   return ms;
 }
-int RmbCommands::update_attributes(librmb::RadosStorageMetadataModule *ms,
+int RmbCommands::update_attributes(storage_interface::RadosStorageMetadataModule *ms,
                                    std::map<std::string, std::string> *metadata) {
   std::string oid = (*opts)["set"];
   if (!oid.empty() && metadata->size() > 0) {

@@ -12,9 +12,6 @@ lib_LTLIBRARIES = \
 	librmb.la 
 
 headers = \
-	rados-cluster.h \
-	rados-dictionary.h \
-	rados-storage.h \
 	encoding.h \
 	rados-cluster-impl.h \
 	rados-storage-impl.h \
@@ -24,15 +21,11 @@ headers = \
 	rados-metadata.h \
 	rados-types.h \
 	rados-dovecot-config.h \
-	rados-namespace-manager.h \
-	rados-dovecot-ceph-cfg.h \
+	rados-namespace-manager-impl.h\
 	rados-dovecot-ceph-cfg-impl.h \
 	rados-ceph-config.h \
 	rados-ceph-json-config.h \
-	rados-guid-generator.h \
-	rados-metadata-storage.h \
 	rados-metadata-storage-impl.h \
-	rados-metadata-storage-module.h \
 	rados-metadata-storage-default.h \
 	rados-metadata-storage-ima.h \
 	rados-save-log.h \
@@ -49,7 +42,7 @@ librmb_la_SOURCES = \
 	rados-mail.cpp \
 	rados-util.cpp \
 	rados-dovecot-config.cpp \
-	rados-namespace-manager.cpp\
+	rados-namespace-manager-impl.cpp\
 	rados-ceph-config.cpp \
 	rados-dovecot-ceph-cfg-impl.cpp \
 	rados-ceph-json-config.cpp \

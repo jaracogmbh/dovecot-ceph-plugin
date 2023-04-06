@@ -24,6 +24,7 @@
 #include <cstdint>
 #include "rbox-io-ctx.h"
 #include "rbox-io-ctx-impl.h"
+#include "rados-namespace-manager-impl.h"
 #include <rados/librados.hpp>
 
 using std::string;
@@ -38,8 +39,8 @@ using librmb::RadosDictionaryImpl;
 #define DICT_PATH_PRIVATE "priv/"
 #define DICT_PATH_SHARED "shared/"
 
-RadosDictionaryImpl::RadosDictionaryImpl(RadosCluster *_cluster, const string &_poolname, const string &_username,
-                                         const string &_oid, librmb::RadosGuidGenerator *guid_generator_,
+RadosDictionaryImpl::RadosDictionaryImpl(storage_interface::RadosCluster *_cluster, const string &_poolname, const string &_username,
+                                         const string &_oid, storage_interface::RadosGuidGenerator *guid_generator_,
                                          const std::string &cfg_object_name_)
     : cluster(_cluster),
       poolname(_poolname),
@@ -140,9 +141,9 @@ bool RadosDictionaryImpl::load_configuration(librados::IoCtx *io_ctx) {
   return loaded;
 }
 
-bool RadosDictionaryImpl::lookup_namespace(std::string &username_, librmb::RadosDovecotCephCfg *cfg_, std::string *ns) {
+bool RadosDictionaryImpl::lookup_namespace(std::string &username_, storage_interface::RadosDovecotCephCfg *cfg_, std::string *ns) {
   if (namespace_mgr == nullptr) {
-    namespace_mgr = new librmb::RadosNamespaceManager(cfg_);
+    namespace_mgr = new RadosNamespaceManagerImpl(cfg_);
   }
   if (!namespace_mgr->lookup_key(username_, ns)) {
     return namespace_mgr->add_namespace_entry(username_, ns, guid_generator) ? true : false;

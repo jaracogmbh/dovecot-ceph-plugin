@@ -289,7 +289,7 @@ static int rbox_mail_get_save_date(struct mail *_mail, time_t *date_r) {
     return -1;
   }
 
-  librmb::RadosStorage *rados_storage = alt_storage ? r_storage->alt : r_storage->s;
+  storage_interface::RadosStorage *rados_storage = alt_storage ? r_storage->alt : r_storage->s;
   int ret_val = rados_storage->stat_mail(*rmail->rados_mail->get_oid(), &object_size, &save_date_rados);
   if (ret_val < 0) {
     if (ret_val != -ENOENT) {
@@ -454,7 +454,7 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
       return -1;
     }
     
-    librmb::RadosStorage *rados_storage = alt_storage ? ((struct rbox_storage *)_mail->box->storage)->alt
+    storage_interface::RadosStorage *rados_storage = alt_storage ? ((struct rbox_storage *)_mail->box->storage)->alt
                                                       : ((struct rbox_storage *)_mail->box->storage)->s;
     if (alt_storage) {
       rados_storage->set_namespace(rados_storage->get_namespace());

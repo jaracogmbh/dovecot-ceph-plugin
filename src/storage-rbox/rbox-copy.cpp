@@ -177,7 +177,7 @@ static void mail_copy_set_failed(struct mail_save_context *ctx, struct mail *mai
   errstr = mail_storage_get_last_error(mail->box->storage, &error);
   mail_storage_set_error(ctx->transaction->box->storage, error, t_strdup_printf("%s (%s)", errstr, func));
 }
-static int copy_mail(struct mail_save_context *ctx, librmb::RadosStorage *rados_storage, struct rbox_mail *rmail,
+static int copy_mail(struct mail_save_context *ctx, storage_interface::RadosStorage *rados_storage, struct rbox_mail *rmail,
                      const std::string *ns_src, const std::string *ns_dest) {
   struct rbox_save_context *r_ctx = (struct rbox_save_context *)ctx;
   struct rbox_storage *r_storage = (struct rbox_storage *)&r_ctx->mbox->storage->storage;
@@ -261,7 +261,7 @@ static int rbox_mail_storage_try_copy(struct mail_save_context **_ctx, struct ma
       return -1;
     }
 
-    librmb::RadosStorage *rados_storage = !from_alt_storage ? r_storage->s : r_storage->alt;
+    storage_interface::RadosStorage *rados_storage = !from_alt_storage ? r_storage->s : r_storage->alt;
   
     if (copy_mail(ctx, rados_storage, rmail, &ns_src, &ns_dest) < 0) {
       FUNC_END_RET("ret == -1, copy mail failed");

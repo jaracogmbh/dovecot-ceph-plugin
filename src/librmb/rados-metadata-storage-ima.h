@@ -19,8 +19,8 @@
 #include <map>
 
 #include "rados-ceph-config.h"
-#include "rados-dovecot-ceph-cfg.h"
-#include "rados-metadata-storage-module.h"
+#include "../storage-interface/rados-dovecot-ceph-cfg.h"
+#include "../storage-interface/rados-metadata-storage-module.h"
 #include"rbox-io-ctx.h"
 namespace librmb {
 /**
@@ -32,12 +32,12 @@ namespace librmb {
  * immutable value.
  *
  */
-class RadosMetadataStorageIma : public RadosStorageMetadataModule {
+class RadosMetadataStorageIma : public storage_interface::RadosStorageMetadataModule {
  private:
   int parse_attribute(RadosMail *mail, json_t *root);
 
  public:
-  RadosMetadataStorageIma(librmb::RboxIoCtx &io_ctx_wrapper, RadosDovecotCephCfg *cfg_);
+  RadosMetadataStorageIma(librmb::RboxIoCtx &io_ctx_wrapper, storage_interface::RadosDovecotCephCfg *cfg_);
   virtual ~RadosMetadataStorageIma();
   void set_io_ctx(librmb::RboxIoCtx &io_ctx_wrapper) override { this->io_ctx_wrapper = &io_ctx_wrapper; }
   int load_metadata(RadosMail *mail) override;
@@ -56,7 +56,7 @@ class RadosMetadataStorageIma : public RadosStorageMetadataModule {
 
  private:
   librmb::RboxIoCtx *io_ctx_wrapper;
-  RadosDovecotCephCfg *cfg;
+  storage_interface::RadosDovecotCephCfg *cfg;
 };
 
 } /* namespace librmb */

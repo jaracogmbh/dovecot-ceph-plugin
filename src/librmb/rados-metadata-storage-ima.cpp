@@ -19,7 +19,7 @@ std::string librmb::RadosMetadataStorageIma::module_name = "ima";
 std::string librmb::RadosMetadataStorageIma::keyword_key = "K";
 namespace librmb {
 
-RadosMetadataStorageIma::RadosMetadataStorageIma(librmb::RboxIoCtx &io_ctx_wrapper_, RadosDovecotCephCfg *cfg_) {
+RadosMetadataStorageIma::RadosMetadataStorageIma(librmb::RboxIoCtx &io_ctx_wrapper_, storage_interface::RadosDovecotCephCfg *cfg_) {
   this->io_ctx_wrapper = &io_ctx_wrapper_;
   this->cfg = cfg_;
 }
