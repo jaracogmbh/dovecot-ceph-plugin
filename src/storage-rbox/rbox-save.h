@@ -18,7 +18,7 @@
 #include "../librmb/rados-storage-impl.h"
 #include "mail-storage-private.h"
 
-#include "../librmb/rados-mail.h"
+#include "../storage-interface/rados-mail.h"
 /**
  * @brief: rbox_save_context
  *  class is holding all references to
@@ -72,9 +72,9 @@ class rbox_save_context {
   /** storage rerference **/
   const storage_interface::RadosStorage &rados_storage;
   /** mails in the current save context **/
-  std::list<librmb::RadosMail *> rados_mails;
+  std::list<storage_interface::RadosMail *> rados_mails;
   /** current mail in the context **/
-  librmb::RadosMail *rados_mail;
+  storage_interface::RadosMail *rados_mail;
 #if DOVECOT_PREREQ(2, 3)
   unsigned int highest_pop3_uidl_seq : 1;
 #endif

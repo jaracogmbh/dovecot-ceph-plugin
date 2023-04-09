@@ -14,7 +14,7 @@
 
 #include <string>
 
-#include "../../rados-mail.h"
+#include "../../../storage-interface/rados-mail.h"
 #include "rados-mail-box.h"
 
 namespace librmb {
@@ -24,11 +24,11 @@ class MailboxTools {
   ~MailboxTools() {}
 
   int init_mailbox_dir();
-  int save_mail(librmb::RadosMail* mail_obj);
+  int save_mail(storage_interface::RadosMail* mail_obj);
   int delete_mailbox_dir();
-  int delete_mail(librmb::RadosMail* mail_obj);
+  int delete_mail(storage_interface::RadosMail* mail_obj);
 
-  int build_filename(librmb::RadosMail* mail_obj, std::string* filename);
+  int build_filename(storage_interface::RadosMail* mail_obj, std::string* filename);
 
   std::string& get_mailbox_path() { return this->mailbox_path; }
 

@@ -43,6 +43,8 @@ extern "C" {
 #include "rbox-mail.h"
 #include "rbox-storage.h"
 #include "rados-util.h"
+#include "../../storage-interface/rados-mail.h"
+#include "../../storage-engine/storage-backend-factory.h"
 
 using ::testing::AtLeast;
 using ::testing::Return;
@@ -154,9 +156,10 @@ TEST_F(StorageTest, mail_copy_mail_in_inbox) {
 
   librados::NObjectIterator iter_alt(r_storage->alt->get_io_ctx_wrapper().nobjects_begin());
   r_storage->ms->get_storage()->set_io_ctx(&r_storage->alt->get_io_ctx_wrapper().get_io_ctx());
-  std::vector<librmb::RadosMail *> objects_alt;
+  std::vector<storage_interface::RadosMail *> objects_alt;
   while (iter_alt != librados::NObjectIterator::__EndObjectIterator) {
-    librmb::RadosMail *obj = new librmb::RadosMail();
+    storage_interface::RadosMail *obj =
+     storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
     obj->set_oid((*iter_alt).get_oid());
     r_storage->ms->get_storage()->load_metadata(obj);
     objects_alt.push_back(obj);
@@ -164,8 +167,8 @@ TEST_F(StorageTest, mail_copy_mail_in_inbox) {
   }
   r_storage->ms->get_storage()->set_io_ctx(&r_storage->s->get_io_ctx_wrapper().get_io_ctx());
   ASSERT_EQ(2, (int)objects_alt.size());
-  librmb::RadosMail *mail1 = objects_alt[0];
-  librmb::RadosMail *mail2 = objects_alt[1];
+  storage_interface::RadosMail *mail1 = objects_alt[0];
+  storage_interface::RadosMail *mail2 = objects_alt[1];
 
   char *val = NULL;
   char *val2 = NULL;

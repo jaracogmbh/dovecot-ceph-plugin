@@ -178,7 +178,7 @@ namespace librmb {
     *value = NULL;
   }
   void RadosUtils::get_metadata(rbox_metadata_key key, std::map<std::string, ceph::bufferlist> *metadata, char **value) {
-    string str_key(librmb::rbox_metadata_key_to_char(key));
+    std::string str_key(librmb::rbox_metadata_key_to_char(key));
     get_metadata(str_key, metadata, value);
   }
   bool RadosUtils::is_numeric_optional(const char *text) {
@@ -188,7 +188,7 @@ namespace librmb {
     return is_numeric(text);
   }
 
-  bool RadosUtils::validate_metadata(map<string, ceph::bufferlist> *metadata) {
+  bool RadosUtils::validate_metadata(std::map<std::string, ceph::bufferlist> *metadata) {
     char *uid = NULL;
     get_metadata(RBOX_METADATA_MAIL_UID, metadata, &uid);
     char *recv_time_str = NULL;
@@ -251,7 +251,7 @@ namespace librmb {
       return 0;
     }
 
-    RadosMail* mail;
+    storage_interface::RadosMail* mail;
     if (inverse) {
       mail=alt_storage->alloc_rados_mail();
       ret = alt_storage->read_mail(src_oid,mail,0);
@@ -363,7 +363,7 @@ namespace librmb {
 
   static std::string RadosUtils::convert_to_ceph_index(const std::set<std::string> &list){
     std::ostringstream str;
-    std::copy(list.begin(), list.end(), std::ostream_iterator<string>(str, ","));
+    std::copy(list.begin(), list.end(), std::ostream_iterator<std::string>(str, ","));
     return str.str();
   }
 

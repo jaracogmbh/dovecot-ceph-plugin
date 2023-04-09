@@ -11,7 +11,7 @@
 
 #ifndef SRC_STORAGE_INTERFACES_RADOS_GUID_GENERATOR_H_
 #define SRC_STORAGE_INTERFACES_RADOS_GUID_GENERATOR_H_
-
+#include <string>
 namespace storage_interface {
 /**
  * Rados Guid Generator

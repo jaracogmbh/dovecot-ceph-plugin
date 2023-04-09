@@ -37,14 +37,14 @@ extern "C" {
 #endif
 }
 
-#include "../librmb/rados-mail.h"
+#include "../storage-interface/rados-mail.h"
 #include "rbox-storage.hpp"
 #include "../librmb/rados-storage-impl.h"
 #include "istream-bufferlist.h"
 #include "rbox-mail.h"
 #include "rados-util.h"
 
-using librmb::RadosMail;
+using storage_interface::RadosMail;
 using librmb::rbox_metadata_key;
 
 void rbox_mail_set_expunged(struct rbox_mail *mail) {

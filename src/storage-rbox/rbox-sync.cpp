@@ -25,6 +25,8 @@ extern "C" {
 #include "rbox-storage.hpp"
 #include "rbox-mail.h"
 #include "rbox-sync-rebuild.h"
+#include "../librmb/rados-mail-impl.h"
+#include "../storage-engine/storage-backend-factory.h"
 
 #define RBOX_REBUILD_COUNT 3
 
@@ -196,14 +198,15 @@ static int update_flags(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t s
     if (rbox_get_oid_from_index(ctx->sync_view, seq1, ((struct rbox_mailbox *)box)->ext_id, &index_oid) >= 0) {
       const char *oid = guid_128_to_string(index_oid);
 
-      librmb::RadosMail mail_object;
-      mail_object.set_oid(oid);
-      if (r_storage->ms->get_storage()->load_metadata(&mail_object) < 0) {
+      storage_interface::RadosMail *mail_object=
+        storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+      mail_object->set_oid(oid);
+      if (r_storage->ms->get_storage()->load_metadata(mail_object) < 0) {
         i_error("update_flags: load_metadata failed! for %d, oid(%s)", seq1, oid);
         continue;
       }
       char *flags_metadata = NULL;
-      librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_OLDV1_FLAGS, mail_object.get_metadata(), &flags_metadata);
+      librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_OLDV1_FLAGS, mail_object->get_metadata(), &flags_metadata);
       uint8_t flags = 0x0;
       if (librmb::RadosUtils::string_to_flags(flags_metadata, &flags)) {
         if (add_flags != 0) {
@@ -215,13 +218,15 @@ static int update_flags(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t s
         std::string str_flags_metadata;
         if (librmb::RadosUtils::flags_to_string(flags, &str_flags_metadata)) {
           librmb::RadosMetadata update(librmb::RBOX_METADATA_OLDV1_FLAGS, str_flags_metadata);
-          ret = r_storage->ms->get_storage()->set_metadata(&mail_object, update);
+          ret = r_storage->ms->get_storage()->set_metadata(mail_object, update);
           if (ret < 0) {
             i_warning("updating metadata for object : oid(%s), seq (%d) failed with ceph errorcode: %d",
-                      mail_object.get_oid()->c_str(), seq1, ret);
+                      mail_object->get_oid()->c_str(), seq1, ret);
           }
         }
       }
+      delete mail_object;
+      mail_object=nullptr;
     }
   }
   // reset metadata storage

@@ -10,16 +10,15 @@
 #include "../librmb/rados-namespace-manager-impl.h"
 #include "../storage-interface/rados-metadata-storage.h"
 #include "../librmb/rados-metadata-storage-impl.h"
+#include "../storage-interface/rados-mail.h"
+#include "../librmb/rados-mail-impl.h"
 
 namespace storage_engine {
 class StorageBackendFactory {
  public:
   enum StorageType { CEPH, S3 };
 
-  static StorageBackendFactory &get_instance() { return instance; }
-  StorageBackendFactory(StorageBackendFactory const &) = delete;
-
-  storage_interface::RadosCluster *create_cluster(StorageType storage_type) {
+  static storage_interface::RadosCluster *create_cluster(StorageType storage_type) {
     storage_interface::RadosCluster *cluster;
     if (storage_type == CEPH) {
       cluster = new librmb::RadosClusterImpl();
@@ -27,7 +26,7 @@ class StorageBackendFactory {
     return cluster;
   }
 
-  storage_interface::RadosStorage *create_storage(StorageType storage_type, storage_interface::RadosCluster *cluster) {
+  static storage_interface::RadosStorage *create_storage(StorageType storage_type, storage_interface::RadosCluster *cluster) {
     storage_interface::RadosStorage *storage;
     if (storage_type == CEPH) {
       storage = new librmb::RadosStorageImpl(cluster);
@@ -35,7 +34,7 @@ class StorageBackendFactory {
     return storage;
   }
 
-  storage_interface::RadosDovecotCephCfg *create_dovecot_ceph_cfg(StorageType storage_type, storage_interface::RadosStorage *storage) {
+  static storage_interface::RadosDovecotCephCfg *create_dovecot_ceph_cfg(StorageType storage_type, storage_interface::RadosStorage *storage) {
     storage_interface::RadosDovecotCephCfg *dovecot_ceph_cfg;
     if (storage_type == CEPH) {
       dovecot_ceph_cfg = new librmb::RadosDovecotCephCfgImpl(&storage->get_io_ctx_wrapper().get_io_ctx());
@@ -43,7 +42,7 @@ class StorageBackendFactory {
     return dovecot_ceph_cfg;
   }
 
-  storage_interface::RadosNamespaceManager *create_namespace_manager(StorageType storage_type,
+  static storage_interface::RadosNamespaceManager *create_namespace_manager(StorageType storage_type,
                                                           storage_interface::RadosDovecotCephCfg *dovecot_ceph_cfg) {
     storage_interface::RadosNamespaceManager *name_space_manager;
     if (storage_type == CEPH) {
@@ -52,7 +51,7 @@ class StorageBackendFactory {
     return name_space_manager;
   }
 
-  storage_interface::RadosMetadataStorage *create_metadata_storage(StorageType storage_type) {
+  static storage_interface::RadosMetadataStorage *create_metadata_storage(StorageType storage_type) {
     storage_interface::RadosMetadataStorage *metadata_storage;
     if (storage_type == CEPH) {
       metadata_storage = new librmb::RadosMetadataStorageImpl();
@@ -60,11 +59,13 @@ class StorageBackendFactory {
     return metadata_storage;
   }
 
- private:
-  StorageBackendFactory() {}
-  static StorageBackendFactory instance;
+  static storage_interface::RadosMail *create_mail(StorageType storage_type){
+    storage_interface::RadosMail *mail;
+    if (storage_type == CEPH){
+      mail=new librmb::RadosMailImpl();
+    }
+    return mail;
+  }
 };
-
-StorageBackendFactory StorageBackendFactory::instance;
 }  // namespace rbox
 #endif  // SRC_STORAGE_ENGINE_STORAGE_BACKEND_FACTORY_H_

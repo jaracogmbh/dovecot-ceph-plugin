@@ -15,7 +15,7 @@
 #include <string>
 #include <map>
 #include <list>
-
+#include <set>
 #include <rados/librados.hpp>
 #include "rados-cluster.h"
 #include "rados-mail.h"
@@ -50,15 +50,14 @@ class RadosStorage {
    * */
   virtual std::string get_namespace() = 0;
   /*! get the pool name
-   * @return copy of the current p
-
- ool name
+   * @return copy of the current 
+  pool name
    * */
   virtual std::string get_pool_name() = 0;
 
   /* set the wait method for async operations */
   virtual void set_ceph_wait_method(librmb::rbox_ceph_aio_wait_method wait_method) = 0;
-
+    
   /*! get the max operation size in mb
    * @return the maximal number of mb to write in a single write operation*/
   virtual int get_max_write_size() = 0;
@@ -163,7 +162,7 @@ class RadosStorage {
    * @return linux errorcode or 0 if successful
    * */
   // virtual int read_mail(const std::string &oid, librados::bufferlist *buffer) = 0;
-  virtual int read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter)=0;
+  virtual int read_mail(const std::string &oid, storage_interface::RadosMail* mail,int try_counter)=0;
 
   /*! move a object from the given namespace to the other, updates the metadata given in to_update list
    *
@@ -192,17 +191,17 @@ class RadosStorage {
    * @param[in] mail valid rados mail.   
    * @return false in case of error
    * */
-  virtual bool save_mail(librmb::RadosMail *mail) = 0;
+  virtual bool save_mail(storage_interface::RadosMail *mail) = 0;
  
   /*! create a new RadosMail
    * create new rados Mail Object.
    *  return pointer to mail object or nullptr
    * */
-  virtual librmb::RadosMail *alloc_rados_mail() = 0;
+  virtual storage_interface::RadosMail *alloc_rados_mail() = 0;
   /*! free the Rados Mail Object
    * @param[in] mail ptr to valid mail object
    * */
-  virtual void free_rados_mail(librmb::RadosMail *mail) = 0;
+  virtual void free_rados_mail(storage_interface::RadosMail *mail) = 0;
 
   virtual void* alloc_mail_buffer() = 0;
   virtual const char* get_mail_buffer(void *buffer,int *mail_buff_size) = 0;

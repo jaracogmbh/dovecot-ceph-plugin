@@ -13,9 +13,12 @@
 #define SRC_STORAGE_INTERFACES_RADOS_METADATA_STORAGE_MODULE_H_
 
 #include <rados/librados.hpp>
-
+#include <string>
+#include <list>
+#include <set>
 #include "rados-mail.h"
-#include "rbox-io-ctx.h"
+#include "../librmb/rbox-io-ctx.h"
+#include "../librmb/rados-metadata.h"
 
 namespace storage_interface {
 class RadosStorageMetadataModule {
@@ -24,9 +27,9 @@ class RadosStorageMetadataModule {
   /* update io_ctx */
   virtual void set_io_ctx(librmb::RboxIoCtx &io_ctx_wrapper){};
   /* load the metadta into RadosMail */
-  virtual int load_metadata(librmb::RadosMail *mail) = 0;
+  virtual int load_metadata(storage_interface::RadosMail *mail) = 0;
   /* set a new metadata attribute to a mail object */
-  virtual int set_metadata(librmb::RadosMail *mail, librmb::RadosMetadata &xattr) = 0;
+  virtual int set_metadata(storage_interface::RadosMail *mail, librmb::RadosMetadata &xattr) = 0;
   /* update the given metadata attributes */
   virtual bool update_metadata(const std::string &oid, std::list<librmb::RadosMetadata> &to_update) = 0;
   /* manage keywords */

@@ -11,8 +11,8 @@
 #ifndef SRC_STORAGE_INTERFACES_RADOS_METADATA_STORAGE_PRODUCER_H_
 #define SRC_STORAGE_INTERFACES_RADOS_METADATA_STORAGE_PRODUCER_H_
 #include "rados-dovecot-ceph-cfg.h"
-
 #include "rados-metadata-storage-module.h"
+#include "../librmb/rbox-io-ctx.h"
 
 namespace storage_interface {
 /**

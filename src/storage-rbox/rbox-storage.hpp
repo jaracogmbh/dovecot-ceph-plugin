@@ -30,7 +30,6 @@
 #include "../storage-interface/rados-dovecot-ceph-cfg.h"
 #include "../librmb/rados-metadata-storage-impl.h"
 #include "../librmb/rados-save-log.h"
-
 #include "rbox-storage-struct.h"
 
 struct rbox_storage {

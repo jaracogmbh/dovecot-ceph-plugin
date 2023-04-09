@@ -23,7 +23,7 @@
 
 #include "../../../storage-interface/rados-cluster.h"
 #include "../../rados-cluster-impl.h"
-#include "../../rados-mail.h"
+#include "../../../storage-interface/rados-mail.h"
 #include "../../../storage-interface/rados-storage.h"
 #include "../../rados-storage-impl.h"
 #include "../../rados-metadata-storage-ima.h"
@@ -201,7 +201,7 @@ __attribute__((noreturn)) static void usage_exit() {
   exit(1);
 }
 
-static void release_exit(std::list<librmb::RadosMail *> *mail_objects, storage_interface::RadosCluster *cluster, bool show_usage) {
+static void release_exit(std::list<storage_interface::RadosMail *> *mail_objects, storage_interface::RadosCluster *cluster, bool show_usage) {
   if (mail_objects != nullptr) {
     for (auto mo : *mail_objects) {
       delete mo;
@@ -282,7 +282,7 @@ static void parse_cmd_line_args(std::map<std::string, std::string> *opts, bool &
 }
 
 int main(int argc, const char **argv) {
-  std::list<librmb::RadosMail *> mail_objects;
+  std::list<storage_interface::RadosMail *> mail_objects;
   std::vector<const char *> args;
 
   std::map<std::string, std::string> opts;

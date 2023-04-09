@@ -29,6 +29,7 @@
 #include "rados-metadata-storage-impl.h"
 #include "rbox-io-ctx.h"
 #include "rbox-io-ctx-impl.h"
+#include "../storage-engine/storage-backend-factory.h"
 using std::pair;
 using std::string;
 
@@ -58,7 +59,7 @@ librmb::RboxIoCtx& RadosStorageImpl::get_io_ctx_wrapper(){
   return *io_ctx_wrapper;
 }
 //DEPRECATED!!!!! -> moved to rbox-save.cpp
-int RadosStorageImpl::split_buffer_and_exec_op(RadosMail *current_object,
+int RadosStorageImpl::split_buffer_and_exec_op(storage_interface::RadosMail *current_object,
                                                librados::ObjectWriteOperation *write_op_xattr,
                                                const uint64_t &max_write) {
   
@@ -125,7 +126,7 @@ int RadosStorageImpl::split_buffer_and_exec_op(RadosMail *current_object,
   return ret_val;
 }
 
-int RadosStorageImpl::read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter){
+int RadosStorageImpl::read_mail(const std::string &oid, storage_interface::RadosMail* mail,int try_counter){
   if (!cluster->is_connected() || !io_ctx_created) {
     return -1;
   }
@@ -514,7 +515,7 @@ int RadosStorageImpl::copy(std::string &src_oid, const char *src_ns, std::string
   return ret;
 }
 
-bool  RadosStorageImpl::save_mail(RadosMail *current_object){
+bool  RadosStorageImpl::save_mail(storage_interface::RadosMail *current_object){
   
   if (!cluster->is_connected() || !io_ctx_created) {
     return false;
@@ -571,13 +572,14 @@ bool  RadosStorageImpl::save_mail(RadosMail *current_object){
   return ret_val;
 }
   
-librmb::RadosMail *RadosStorageImpl::alloc_rados_mail() {
-  librmb::RadosMail * mail=new librmb::RadosMail();
+storage_interface::RadosMail *RadosStorageImpl::alloc_rados_mail() {
+  storage_interface::RadosMail *mail=
+    storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
   mail->set_mail_buffer((void*)new librados::bufferlist());
   return mail;
 }
 
-void RadosStorageImpl::free_rados_mail(librmb::RadosMail *mail) {
+void RadosStorageImpl::free_rados_mail(storage_interface::RadosMail *mail) {
   if (mail != nullptr) {
     delete mail;
     mail = nullptr;

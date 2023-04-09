@@ -14,6 +14,8 @@
 #include <string.h>
 #include <utility>
 #include <unistd.h>
+#include "../storage-interface/rados-mail.h"
+#include "../storage-engine/storage-backend-factory.h"
 
 std::string librmb::RadosMetadataStorageIma::module_name = "ima";
 std::string librmb::RadosMetadataStorageIma::keyword_key = "K";
@@ -26,7 +28,7 @@ RadosMetadataStorageIma::RadosMetadataStorageIma(librmb::RboxIoCtx &io_ctx_wrapp
 
 RadosMetadataStorageIma::~RadosMetadataStorageIma() {}
 
-int RadosMetadataStorageIma::parse_attribute(RadosMail *mail, json_t *root) {
+int RadosMetadataStorageIma::parse_attribute(storage_interface::RadosMail *mail, json_t *root) {
   std::string key;
   void *iter = json_object_iter(root);
 
@@ -57,7 +59,7 @@ int RadosMetadataStorageIma::parse_attribute(RadosMail *mail, json_t *root) {
   return 0;
 }
 
-int RadosMetadataStorageIma::load_metadata(RadosMail *mail) {
+int RadosMetadataStorageIma::load_metadata(storage_interface::RadosMail *mail) {
   if (mail == nullptr) {
     return -1;
   }
@@ -65,7 +67,7 @@ int RadosMetadataStorageIma::load_metadata(RadosMail *mail) {
     return 0;
   }
 
-  std::map<string, ceph::bufferlist> attr;
+  std::map<std::string, ceph::bufferlist> attr;
   // retry mechanism ..
   int max_retry = 10;
   int ret = -1;
@@ -93,7 +95,7 @@ int RadosMetadataStorageIma::load_metadata(RadosMail *mail) {
   }
 
   // load other attributes
-  for (std::map<string, ceph::bufferlist>::iterator it = attr.begin(); it != attr.end(); ++it) {
+  for (std::map<std::string, ceph::bufferlist>::iterator it = attr.begin(); it != attr.end(); ++it) {
     if ((*it).first.compare(cfg->get_metadata_storage_attribute()) != 0) {
       (*mail->get_metadata())[(*it).first] = (*it).second;
     }
@@ -108,7 +110,7 @@ int RadosMetadataStorageIma::load_metadata(RadosMail *mail) {
 }
 
 // it is required that mail->get_metadata is up to date before update.
-int RadosMetadataStorageIma::set_metadata(RadosMail *mail, RadosMetadata &xattr) {
+int RadosMetadataStorageIma::set_metadata(storage_interface::RadosMail *mail, RadosMetadata &xattr) {
   enum rbox_metadata_key k = static_cast<enum rbox_metadata_key>(*xattr.key.c_str());
   if (!cfg->is_updateable_attribute(k)) {
     mail->add_metadata(xattr);
@@ -119,12 +121,12 @@ int RadosMetadataStorageIma::set_metadata(RadosMail *mail, RadosMetadata &xattr)
     return io_ctx_wrapper->setxattr(*mail->get_oid(), xattr.key.c_str(), xattr.bl);
   }
 }
-void RadosMetadataStorageIma::save_metadata(librados::ObjectWriteOperation *write_op, RadosMail *mail) {
+void RadosMetadataStorageIma::save_metadata(librados::ObjectWriteOperation *write_op, storage_interface::RadosMail *mail) {
   char *s = NULL;
   json_t *root = json_object();
   librados::bufferlist bl;
   if (mail->get_metadata()->size() > 0) {
-    for (std::map<string, ceph::bufferlist>::iterator it = mail->get_metadata()->begin();
+    for (std::map<std::string, ceph::bufferlist>::iterator it = mail->get_metadata()->begin();
          it != mail->get_metadata()->end(); ++it) {
       enum rbox_metadata_key k = static_cast<enum rbox_metadata_key>(*(*it).first.c_str());
       if (!cfg->is_updateable_attribute(k) || !cfg->is_update_attributes()) {
@@ -138,7 +140,7 @@ void RadosMetadataStorageIma::save_metadata(librados::ObjectWriteOperation *writ
   // build extended Metadata object
   if (mail->get_extended_metadata()->size() > 0) {
     if (!cfg->is_updateable_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS) || !cfg->is_update_attributes()) {
-      for (std::map<string, ceph::bufferlist>::iterator it = mail->get_extended_metadata()->begin();
+      for (std::map<std::string, ceph::bufferlist>::iterator it = mail->get_extended_metadata()->begin();
            it != mail->get_extended_metadata()->end(); ++it) {
         json_object_set_new(keyword, (*it).first.c_str(), json_string((*it).second.to_str().c_str()));
       }
@@ -164,23 +166,25 @@ bool RadosMetadataStorageIma::update_metadata(const std::string &oid, std::list<
     return true;
   }
 
-  RadosMail obj;
-  obj.set_oid(oid);
-  load_metadata(&obj);
+  storage_interface::RadosMail *obj=storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+  obj->set_oid(oid);
+  load_metadata(obj);
 
   // update metadata
   for (std::list<RadosMetadata>::iterator it = to_update.begin(); it != to_update.end(); ++it) {
-    (*obj.get_extended_metadata())[(*it).key] = (*it).bl;
+    (*obj->get_extended_metadata())[(*it).key] = (*it).bl;
   }
 
   // write update
-  save_metadata(&write_op, &obj);
+  save_metadata(&write_op,obj);
   librados::AioCompletion *completion = librados::Rados::aio_create_completion();
   
   //TODO: do we need a retry mechanism here?
   int ret = io_ctx_wrapper->aio_operate(oid, completion, &write_op);
   completion->wait_for_complete();
   completion->release();
+  delete obj;
+  obj=nullptr;
   return ret == 0;
 }
 int RadosMetadataStorageIma::update_keyword_metadata(const std::string &oid, RadosMetadata *metadata) {
@@ -189,7 +193,7 @@ int RadosMetadataStorageIma::update_keyword_metadata(const std::string &oid, Rad
     if (!cfg->is_updateable_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS) || !cfg->is_update_attributes()) {
     } else {
       std::map<std::string, librados::bufferlist> map;
-      map.insert(std::pair<string, librados::bufferlist>(metadata->key, metadata->bl));
+      map.insert(std::pair<std::string, librados::bufferlist>(metadata->key, metadata->bl));
       ret = io_ctx_wrapper->omap_set(map,oid);
     }
   }

@@ -60,7 +60,7 @@ extern "C" {
 #include "rbox-save.h"
 #include "rbox-storage.hpp"
 
-int check_namespace_mailboxes(const struct mail_namespace *ns, const std::list<librmb::RadosMail *> &mail_objects);
+int check_namespace_mailboxes(const struct mail_namespace *ns, const std::list<storage_interface::RadosMail *> &mail_objects);
 static int iterate_list_objects(struct mail_namespace* ns, const struct mailbox_info *info, std::set<std::string> &object_list);
 
 class RboxDoveadmPlugin {
@@ -160,7 +160,7 @@ static int cmd_rmb_config(std::map<std::string, std::string> &opts) {
   return 0;
 }
 static int cmd_rmb_search_run(std::map<std::string, std::string> &opts, struct mail_user *user, bool download,
-                              librmb::CmdLineParser &parser, std::list<librmb::RadosMail *> &mail_objects, bool silent,
+                              librmb::CmdLineParser &parser, std::list<storage_interface::RadosMail *> &mail_objects, bool silent,
                               bool load_metadata = true) {
   RboxDoveadmPlugin plugin;
   int open = open_connection_load_config(&plugin);
@@ -224,12 +224,12 @@ static int cmd_rmb_ls_run(struct doveadm_mail_cmd_context *ctx, struct mail_user
   librmb::CmdLineParser parser(opts["ls"]);
 
   if (opts["ls"].compare("all") == 0 || opts["ls"].compare("-") == 0 || parser.parse_ls_string()) {
-    std::list<librmb::RadosMail *> mail_objects;
+    std::list<storage_interface::RadosMail *> mail_objects;
 
     ctx->exit_code = cmd_rmb_search_run(opts, user, false, parser, mail_objects, false);
 
     auto it_mail = std::find_if(mail_objects.begin(), mail_objects.end(),
-                                [](librmb::RadosMail *n) -> bool { return n->is_index_ref() == false; });
+                                [](storage_interface::RadosMail *n) -> bool { return n->is_index_ref() == false; });
 
     if (it_mail != mail_objects.end()) {
       std::cout << "There are unreferenced objects " << std::endl;
@@ -250,7 +250,7 @@ static int cmd_rmb_ls_mb_run(struct doveadm_mail_cmd_context *ctx, struct mail_u
   opts["sort"] = "uid";
   librmb::CmdLineParser parser(opts["ls"]);
   if (opts["ls"].compare("all") == 0 || opts["ls"].compare("-") == 0 || parser.parse_ls_string()) {
-    std::list<librmb::RadosMail *> mail_objects;
+    std::list<storage_interface::RadosMail *> mail_objects;
     ctx->exit_code = cmd_rmb_search_run(opts, user, false, parser, mail_objects, false);
   } else {
     i_error("invalid ls search query");
@@ -278,7 +278,7 @@ static int cmd_rmb_get_run(struct doveadm_mail_cmd_context *ctx, struct mail_use
 
   librmb::CmdLineParser parser(opts["get"]);
   if (opts["get"].compare("all") == 0 || opts["ls"].compare("-") == 0 || parser.parse_ls_string()) {
-    std::list<librmb::RadosMail *> mail_objects;
+    std::list<storage_interface::RadosMail *> mail_objects;
     ctx->exit_code = cmd_rmb_search_run(opts, user, true, parser, mail_objects, false);
     for (auto mo : mail_objects) {
       delete mo;
@@ -611,7 +611,7 @@ static int cmd_rmb_revert_log_run(struct doveadm_mail_cmd_context *ctx, struct m
 }
 
 static int iterate_mailbox(const struct mail_namespace *ns, const struct mailbox_info *info,
-                           const std::list<librmb::RadosMail *> &mail_objects) {
+                           const std::list<storage_interface::RadosMail *> &mail_objects) {
   int ret = 0;
   struct mailbox_transaction_context *mailbox_transaction;
   struct mail_search_context *search_ctx;
@@ -666,7 +666,7 @@ static int iterate_mailbox(const struct mail_namespace *ns, const struct mailbox
     std::string oid = guid_128_to_string(obox_rec->oid);
 
     auto it_mail = std::find_if(mail_objects.begin(), mail_objects.end(),
-                                [oid](librmb::RadosMail *m) { return m->get_oid()->compare(oid) == 0; });
+                                [oid](storage_interface::RadosMail *m) { return m->get_oid()->compare(oid) == 0; });
 
     if (it_mail == mail_objects.end()) {
       std::cout << "   missing mail object: uid=" << mail->uid << " guid=" << guid << " oid : " << oid
@@ -694,7 +694,7 @@ static int iterate_mailbox(const struct mail_namespace *ns, const struct mailbox
   return ret;
 }
 
-int check_namespace_mailboxes(const struct mail_namespace *ns, const std::list<librmb::RadosMail *> &mail_objects) {
+int check_namespace_mailboxes(const struct mail_namespace *ns, const std::list<storage_interface::RadosMail *> &mail_objects) {
   struct mailbox_list_iterate_context *iter;
   const struct mailbox_info *info;
   int ret = 0;
@@ -722,14 +722,14 @@ static int cmd_rmb_check_indices_run(struct doveadm_mail_cmd_context *ctx, struc
   opts["sort"] = "uid";
   librmb::CmdLineParser parser(opts["ls"]);
   parser.parse_ls_string();
-  std::list<librmb::RadosMail *> mail_objects;
+  std::list<storage_interface::RadosMail *> mail_objects;
   ctx->exit_code = cmd_rmb_search_run(opts, user, false, parser, mail_objects, true, false);
   if (ctx->exit_code < 0) {
     return 0;
   }
 
   auto it_mail = std::find_if(mail_objects.begin(), mail_objects.end(),
-                              [](librmb::RadosMail *m) { return m->is_index_ref() == false; });
+                              [](storage_interface::RadosMail *m) { return m->is_index_ref() == false; });
 
   if (it_mail != mail_objects.end()) {
     std::cout << std::endl << "There are mail objects without a index reference: " << std::endl;

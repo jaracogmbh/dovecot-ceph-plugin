@@ -23,7 +23,7 @@ extern "C" {
 #include "ostream-private.h"
 #include "debug-helper.h"
 }
-#include "../librmb/rados-mail.h"
+#include "../storage-interface/rados-mail.h"
 #include "rbox-storage.hpp"
 #include "rbox-mail.h"
 #include "rbox-save.h"

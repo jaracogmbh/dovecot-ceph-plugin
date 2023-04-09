@@ -35,7 +35,7 @@ extern "C" {
 #endif
 }
 
-#include "../librmb/rados-mail.h"
+#include "../storage-interface/rados-mail.h"
 #include "rbox-storage.hpp"
 #include "rbox-save.h"
 #include "rados-util.h"
@@ -44,7 +44,7 @@ extern "C" {
 
 using ceph::bufferlist;
 
-using librmb::RadosMail;
+using storage_interface::RadosMail;
 using librmb::RadosMetadata;
 using storage_interface::RadosStorage;
 using librmb::rbox_metadata_key;
@@ -296,7 +296,7 @@ int rbox_save_continue(struct mail_save_context *_ctx) {
   return 0;
 }
 
-static int rbox_save_mail_set_metadata(struct rbox_save_context *r_ctx, librmb::RadosMail *mail_object) {
+static int rbox_save_mail_set_metadata(struct rbox_save_context *r_ctx, storage_interface::RadosMail *mail_object) {
   FUNC_START();
 
   struct mail_save_data *mdata = &r_ctx->ctx.data;

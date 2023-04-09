@@ -41,13 +41,12 @@ extern "C" {
 #include "../librmb/rados-dovecot-ceph-cfg-impl.h"
 #include "../storage-interface/rados-guid-generator.h"
 #include "../librmb/rados-metadata-storage-impl.h"
+#include "../storage-engine/storage-backend-factory.h"
 
 #include "rbox-copy.h"
 #include "rbox-mail.h"
 #include "rados-types.h"
-#include "../storage-engine/storage-backend-factory.h"
 using std::string;
-using storage_engine::StorageBackendFactory;
 class RboxGuidGenerator : public storage_interface::RadosGuidGenerator {
  public:
   void generate_guid(std::string *guid_) override {
@@ -70,17 +69,17 @@ struct mail_storage *rbox_storage_alloc(void) {
   r_storage->storage = rbox_storage;
   r_storage->storage.pool = pool;
   r_storage->cluster =
-    storage_engine::StorageBackendFactory::get_instance().create_cluster(storage_engine::StorageBackendFactory::CEPH);
+    storage_engine::StorageBackendFactory::create_cluster(storage_engine::StorageBackendFactory::CEPH);
   r_storage->s =
-    storage_engine::StorageBackendFactory::get_instance().create_storage(storage_engine::StorageBackendFactory::CEPH,r_storage->cluster);
+    storage_engine::StorageBackendFactory::create_storage(storage_engine::StorageBackendFactory::CEPH,r_storage->cluster); 
   r_storage->config =
-    storage_engine::StorageBackendFactory::get_instance().create_dovecot_ceph_cfg(storage_engine::StorageBackendFactory::CEPH,r_storage->s);
+    storage_engine::StorageBackendFactory::create_dovecot_ceph_cfg(storage_engine::StorageBackendFactory::CEPH,r_storage->s);
   r_storage->ns_mgr =
-    storage_engine::StorageBackendFactory::get_instance().create_namespace_manager(storage_engine::StorageBackendFactory::CEPH,r_storage->config);
+    storage_engine::StorageBackendFactory::create_namespace_manager(storage_engine::StorageBackendFactory::CEPH,r_storage->config);
   r_storage->ms =
-    storage_engine::StorageBackendFactory::get_instance().create_metadata_storage(storage_engine::StorageBackendFactory::CEPH);
+    storage_engine::StorageBackendFactory::create_metadata_storage(storage_engine::StorageBackendFactory::CEPH);
   r_storage->alt =
-    storage_engine::StorageBackendFactory::get_instance().create_storage(storage_engine::StorageBackendFactory::CEPH,r_storage->cluster);
+    storage_engine::StorageBackendFactory::create_storage(storage_engine::StorageBackendFactory::CEPH,r_storage->cluster); 
 
   // logfile is set when 90-plugin.conf param rados_save_cfg is evaluated.
   r_storage->save_log = new librmb::RadosSaveLog();

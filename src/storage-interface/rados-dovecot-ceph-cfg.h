@@ -14,6 +14,7 @@
 #include "rados-types.h"
 #include <string>
 #include <map>
+#include <iostream>
 #include "rados-storage.h"
 namespace storage_interface {
 

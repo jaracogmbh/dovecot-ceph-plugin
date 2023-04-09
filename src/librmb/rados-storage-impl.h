@@ -23,7 +23,7 @@
 #include <algorithm>
 #include <rados/librados.hpp>
 
-#include "rados-mail.h"
+#include "../storage-interface/rados-mail.h"
 #include "rbox-io-ctx.h"
 #include "../storage-interface/rados-storage.h"
 #include "rbox-io-ctx.h"
@@ -47,7 +47,7 @@ class RadosStorageImpl : public storage_interface::RadosStorage {
   std::string get_namespace() override { return nspace; }
   std::string get_pool_name() override { return pool_name; }
 
-  void set_ceph_wait_method(enum rbox_ceph_aio_wait_method wait_method_) { this->wait_method = wait_method_; }
+  void set_ceph_wait_method(enum rbox_ceph_aio_wait_method wait_method_) override { this->wait_method = wait_method_; }
   int get_max_write_size() override { return max_write_size; }
   int get_max_write_size_bytes() override { return max_write_size * 1024 * 1024; }
   int get_max_object_size() override {return max_object_size;}
@@ -70,15 +70,15 @@ class RadosStorageImpl : public storage_interface::RadosStorage {
                       const std::string &rados_username) override;
   void close_connection() override;
   // int read_mail(const std::string &oid, librados::bufferlist *buffer) override;
-  int read_mail(const std::string &oid, librmb::RadosMail* mail,int try_counter) override;
+  int read_mail(const std::string &oid, storage_interface::RadosMail* mail,int try_counter) override;
   int move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
            std::list<RadosMetadata> &to_update, bool delete_source) override;
   int copy(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
            std::list<RadosMetadata> &to_update) override;
-  bool save_mail(RadosMail *mail) override;
-  librmb::RadosMail *alloc_rados_mail() override;
+  bool save_mail(storage_interface::RadosMail *mail) override;
+  storage_interface::RadosMail *alloc_rados_mail() override;
 
-  void free_rados_mail(librmb::RadosMail *mail) override;
+  void free_rados_mail(storage_interface::RadosMail *mail) override;
 
   uint64_t ceph_index_size() override;
   int ceph_index_append(const std::string &oid)  override;
@@ -97,7 +97,7 @@ class RadosStorageImpl : public storage_interface::RadosStorage {
  private:
   int create_connection(const std::string &poolname,const std::string &index_pool);
   librados::IoCtx &get_recovery_io_ctx();
-  int split_buffer_and_exec_op(RadosMail *current_object, librados::ObjectWriteOperation *write_op_xattr,
+  int split_buffer_and_exec_op(storage_interface::RadosMail *current_object, librados::ObjectWriteOperation *write_op_xattr,
                                const uint64_t &max_write);
   int aio_operate(librados::IoCtx *io_ctx_, const std::string &oid, librados::AioCompletion *c,
                   librados::ObjectWriteOperation *op);                             
@@ -116,9 +116,6 @@ class RadosStorageImpl : public storage_interface::RadosStorage {
   static const char *CFG_OSD_MAX_WRITE_SIZE;
   static const char *CFG_OSD_MAX_OBJECT_SIZE;
 };
-  
-
-
 }  // namespace librmb
 
 #endif  // SRC_LIBRMB_RADOS_MAIL_STORAGE_IMPL_H_

@@ -13,7 +13,8 @@
 #define SRC_STORAGE_INTERFACES_RADOS_CLUSTER_INTERFACE_H_
 
 #include <string>
-
+#include <vector>
+#include <map>
 #include <rados/librados.hpp>
 #include"rbox-io-ctx.h"
 namespace storage_interface {

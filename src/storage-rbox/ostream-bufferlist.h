@@ -18,9 +18,9 @@ extern "C" {
 }
 #include <rados/librados.hpp>
 #include "../storage-interface/rados-storage.h"
-#include "rados-mail.h"
+#include "../storage-interface/rados-mail.h"
 
-struct ostream *o_stream_create_bufferlist(librmb::RadosMail *rados_mail, storage_interface::RadosStorage *rados_storage,
+struct ostream *o_stream_create_bufferlist(storage_interface::RadosMail *rados_mail, storage_interface::RadosStorage *rados_storage,
                                            bool execute_write_ops);
 int o_stream_buffer_write_at(struct ostream_private *stream, const void *data, size_t size, uoff_t offset);
 #endif /* SRC_STORAGE_RBOX_OSTREAM_BUFFERLIST_H_ */

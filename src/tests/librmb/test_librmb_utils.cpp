@@ -21,7 +21,8 @@
 #include "rados-util.h"
 #include "rados-types.h"
 #include "rados-save-log.h"
-#include "rados-mail.h"
+#include "../../storage-interface/rados-mail.h"
+#include "../../storage-engine/storage-backend-factory.h"
 #include <cstdio>
 #include <pthread.h>
 
@@ -31,11 +32,12 @@ using ::testing::Return;
 TEST(librmb, get_metadata_1) {
   enum librmb::rbox_metadata_key key = librmb::rbox_metadata_key::RBOX_METADATA_GUID;
   librmb::RadosMetadata m(key, "abcdefg");
-  librmb::RadosMail mail;
-  mail.add_metadata(m);
+  storage_interface::RadosMail *mail=
+    storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+  mail->add_metadata(m);
   char *val = NULL;
 
-  librmb::RadosUtils::get_metadata(key, mail.get_metadata(), &val);
+  librmb::RadosUtils::get_metadata(key, mail->get_metadata(), &val);
   std::cout << val << std::endl;
   EXPECT_STREQ(val, "abcdefg\0");
 }
