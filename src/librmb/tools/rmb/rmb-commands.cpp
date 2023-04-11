@@ -135,7 +135,7 @@ int RmbCommands::lspools() {
 }
 
 int RmbCommands::delete_namespace(storage_interface::RadosStorageMetadataModule *ms, std::list<storage_interface::RadosMail *> &mail_objects,
-                                  librmb::RadosCephConfig *cfg, bool confirmed) {
+                                  storage_interface::RadosCephConfig *cfg, bool confirmed) {
   if (ms == nullptr || cfg == nullptr) {
     return -1;
   }
@@ -185,7 +185,7 @@ int RmbCommands::delete_mail(bool confirmed) {
   return ret;
 }
 
-int RmbCommands::rename_user(librmb::RadosCephConfig *cfg, bool confirmed, const std::string &uid) {
+int RmbCommands::rename_user(storage_interface::RadosCephConfig *cfg, bool confirmed, const std::string &uid) {
   print_debug("entry: rename_user");
   if (cfg == nullptr) {
     return -1;
@@ -246,7 +246,7 @@ int RmbCommands::rename_user(librmb::RadosCephConfig *cfg, bool confirmed, const
   return ret;
 }
 
-int RmbCommands::configuration(bool confirmed, librmb::RadosCephConfig &ceph_cfg) {
+int RmbCommands::configuration(bool confirmed, storage_interface::RadosCephConfig *ceph_cfg) {
   print_debug("entry: configuration");
   bool has_update = (*opts).find("update") != (*opts).end();
   bool has_ls = (*opts).find("print_cfg") != (*opts).end();
@@ -257,7 +257,7 @@ int RmbCommands::configuration(bool confirmed, librmb::RadosCephConfig &ceph_cfg
   }
 
   if (has_ls) {
-    std::cout << ceph_cfg.get_config()->to_string() << std::endl;
+    std::cout << ceph_cfg->get_config()->to_string() << std::endl;
     print_debug("end: configuration");
     return 0;
   }
@@ -288,7 +288,7 @@ int RmbCommands::configuration(bool confirmed, librmb::RadosCephConfig &ceph_cfg
 
   std::string key = (*opts)["update"].substr(0, key_val_separator_idx);
   std::string key_val = (*opts)["update"].substr(key_val_separator_idx + 1, (*opts)["update"].length() - 1);
-  bool failed = ceph_cfg.update_valid_key_value(key, key_val) ? false : true;
+  bool failed = ceph_cfg->update_valid_key_value(key, key_val) ? false : true;
   if (failed) {
     std::cout << "Error: key : " << key << " value: " << key_val << " is not valid !" << std::endl;
     if (key_val.compare("TRUE") == 0 || key_val.compare("FALSE") == 0) {
@@ -299,7 +299,7 @@ int RmbCommands::configuration(bool confirmed, librmb::RadosCephConfig &ceph_cfg
   }
   std::cout << "cfg: key " << key << " cfg_val: " << key_val << std::endl;
 
-  if (ceph_cfg.save_cfg() < 0) {
+  if (ceph_cfg->save_cfg() < 0) {
     std::cout << " saving cfg failed" << std::endl;
 
     print_debug("end: configuration");
@@ -594,13 +594,13 @@ int RmbCommands::query_mail_storage(std::list<storage_interface::RadosMail *> *m
   return ret;
 }
 
-storage_interface::RadosStorageMetadataModule *RmbCommands::init_metadata_storage_module(librmb::RadosCephConfig &ceph_cfg,
+storage_interface::RadosStorageMetadataModule *RmbCommands::init_metadata_storage_module(storage_interface::RadosCephConfig *ceph_cfg,
                                                                       std::string *uid) {
   print_debug("entry: init_metadata_storage_module");
   librmb::RadosConfig dovecot_cfg;
   storage_interface::RadosStorageMetadataModule *ms = nullptr;
   dovecot_cfg.set_config_valid(true);
-  ceph_cfg.set_config_valid(true);
+  ceph_cfg->set_config_valid(true);
   librmb::RadosDovecotCephCfgImpl cfg(dovecot_cfg, ceph_cfg);
   librmb::RadosNamespaceManagerImpl mgr(&cfg);
 
@@ -611,7 +611,7 @@ storage_interface::RadosStorageMetadataModule *RmbCommands::init_metadata_storag
   }
 
   // decide metadata storage!
-  std::string storage_module_name = ceph_cfg.get_metadata_storage_module();
+  std::string storage_module_name = ceph_cfg->get_metadata_storage_module();
   if (storage_module_name.compare(librmb::RadosMetadataStorageIma::module_name) == 0) {
     ms = new librmb::RadosMetadataStorageIma(storage->get_io_ctx_wrapper(), &cfg);
   } else {

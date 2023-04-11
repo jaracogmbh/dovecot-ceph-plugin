@@ -18,7 +18,7 @@
 #include <string>
 #include <map>
 
-#include "rados-ceph-config.h"
+#include "../storage-interface/rados-ceph-config.h"
 #include "../storage-interface/rados-dovecot-ceph-cfg.h"
 #include "../storage-interface/rados-metadata-storage-module.h"
 #include "../storage-interface/rados-mail.h"

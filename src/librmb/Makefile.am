@@ -23,7 +23,7 @@ headers = \
 	rados-dovecot-config.h \
 	rados-namespace-manager-impl.h\
 	rados-dovecot-ceph-cfg-impl.h \
-	rados-ceph-config.h \
+	rados-ceph-config-impl.h \
 	rados-ceph-json-config.h \
 	rados-metadata-storage-impl.h \
 	rados-metadata-storage-default.h \
@@ -43,7 +43,7 @@ librmb_la_SOURCES = \
 	rados-util.cpp \
 	rados-dovecot-config.cpp \
 	rados-namespace-manager-impl.cpp\
-	rados-ceph-config.cpp \
+	rados-ceph-config-impl.cpp \
 	rados-dovecot-ceph-cfg-impl.cpp \
 	rados-ceph-json-config.cpp \
 	rados-metadata-storage-default.cpp \

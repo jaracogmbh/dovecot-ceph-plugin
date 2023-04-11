@@ -10,19 +10,27 @@
  */
 
 #include "rados-dovecot-ceph-cfg-impl.h"
+#include "../storage-interface/rados-ceph-config.h"
+#include "../storage-engine/storage-backend-factory.h"
 
 namespace librmb {
 
 RadosDovecotCephCfgImpl::RadosDovecotCephCfgImpl(librados::IoCtx *io_ctx_) {
-  rados_cfg.set_io_ctx(io_ctx_);
+  if(rados_cfg!=nullptr){
+    rados_cfg->set_io_ctx(io_ctx_);
+  }else{
+    rados_cfg=
+      storage_engine::StorageBackendFactory::create_ceph_config(storage_engine::StorageBackendFactory::CEPH);
+    rados_cfg->set_io_ctx(io_ctx_);
+  }
 }
 
-RadosDovecotCephCfgImpl::RadosDovecotCephCfgImpl(RadosConfig &dovecot_cfg_, RadosCephConfig &rados_cfg_) : dovecot_cfg(dovecot_cfg_), rados_cfg(rados_cfg_) {}
+RadosDovecotCephCfgImpl::RadosDovecotCephCfgImpl(RadosConfig &dovecot_cfg_, storage_interface::RadosCephConfig *rados_cfg_) : dovecot_cfg(dovecot_cfg_), rados_cfg(rados_cfg_) {}
 
 
 int RadosDovecotCephCfgImpl::save_default_rados_config() {
-  bool valid = rados_cfg.save_cfg() == 0 ? true : false;
-  rados_cfg.set_config_valid(valid);
+  bool valid = rados_cfg->save_cfg() == 0 ? true : false;
+  rados_cfg->set_config_valid(valid);
   return valid ? 0 : -1;
 }
 

@@ -16,6 +16,7 @@
 #include <map>
 #include <iostream>
 #include "rados-storage.h"
+#include "rados-ceph-config.h"
 namespace storage_interface {
 
 /**
@@ -101,6 +102,7 @@ class RadosDovecotCephCfg {
   virtual void set_io_ctx_namespace(const std::string &namespace_) = 0;
 
   virtual bool is_rbox_check_empty_mailboxes() = 0;
+  virtual storage_interface::RadosCephConfig *get_rados_ceph_cfg() = 0;
 };
 
 } /* namespace storage_interface */

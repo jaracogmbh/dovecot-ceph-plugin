@@ -236,6 +236,7 @@ class RadosDovecotCephCfgMock : public RadosDovecotCephCfg {
   MOCK_METHOD0(get_metadata_storage_attribute, std::string &());
 
   MOCK_METHOD0(is_rbox_check_empty_mailboxes, bool());
+  MOCK_METHOD0(get_rados_ceph_cfg,storage_interface::RadosCephConfig *());
 };
 
 }  // namespace librmbtest

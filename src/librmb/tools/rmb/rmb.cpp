@@ -36,6 +36,7 @@
 #include "rados-dovecot-ceph-cfg-impl.h"
 #include "rados-metadata-storage-default.h"
 #include "rmb-commands.h"
+#include "../../../storage-engine/storage-backend-factory.h"
 #undef PACKAGE_BUGREPORT
 #undef PACKAGE_NAME
 #undef PACKAGE_STRING
@@ -351,15 +352,17 @@ int main(int argc, const char **argv) {
   }
 
   // initialize configuration
-  librmb::RadosCephConfig ceph_cfg(&storage.get_io_ctx());
+  storage_interface::RadosCephConfig *ceph_cfg=
+    storage_engine::StorageBackendFactory::create_ceph_config(storage_engine::StorageBackendFactory::CEPH);
+  ceph_cfg->set_io_ctx(&storage.get_io_ctx());
   // set config object
-  config_obj = opts.find("cfg_obj") != opts.end() ? opts["cfg_obj"] : ceph_cfg.get_cfg_object_name();
-  ceph_cfg.set_cfg_object_name(config_obj);
+  config_obj = opts.find("cfg_obj") != opts.end() ? opts["cfg_obj"] : ceph_cfg->get_cfg_object_name();
+  ceph_cfg->set_cfg_object_name(config_obj);
 
-  int ret_load_cfg = ceph_cfg.load_cfg();
+  int ret_load_cfg = ceph_cfg->load_cfg();
   if (ret_load_cfg < 0) {
     if (create_config) {
-      if (ceph_cfg.save_cfg() < 0) {
+      if (ceph_cfg->save_cfg() < 0) {
         std::cerr << "loading config object failed " << std::endl;
       } else {
         std::cout << "config created" << std::endl;
@@ -381,6 +384,7 @@ int main(int argc, const char **argv) {
       std::cerr << "error processing config option" << std::endl;
     }
     delete rmb_commands;
+    delete ceph_cfg;
     // tear down.
     release_exit(nullptr, &cluster, false);
     exit(0);
@@ -398,13 +402,14 @@ int main(int argc, const char **argv) {
     /// error exit!
     std::cerr << " Error initializing metadata module " << std::endl;
     delete rmb_commands;
+    delete ceph_cfg;
     release_exit(&mail_objects, &cluster, false);
     exit(0);
   }
 
   if (delete_mail_option) {
     if (opts["to_delete"].size() == 1 && opts["to_delete"].compare("-") == 0) {
-      if (rmb_commands->delete_namespace(ms, mail_objects, &ceph_cfg, confirmed) < 0) {
+      if (rmb_commands->delete_namespace(ms, mail_objects, ceph_cfg, confirmed) < 0) {
         std::cerr << "error deleting namespace " << std::endl;
         release_exit(&mail_objects, &cluster, false);
       }
@@ -416,10 +421,11 @@ int main(int argc, const char **argv) {
     release_exit(&mail_objects, &cluster, false);
     delete rmb_commands;
     delete ms;
+    delete ceph_cfg;
     exit(0);
 
   } else if (rename_user_option) {
-    if (rmb_commands->rename_user(&ceph_cfg, confirmed, uid) < 0) {
+    if (rmb_commands->rename_user(ceph_cfg, confirmed, uid) < 0) {
       std::cerr << "error renaming user" << std::endl;
     }
   } else if (opts.find("ls") != opts.end()) {
@@ -447,6 +453,7 @@ int main(int argc, const char **argv) {
 
   delete rmb_commands;
   delete ms;
+  delete ceph_cfg;
 
   // tear down.
   release_exit(&mail_objects, &cluster, false);

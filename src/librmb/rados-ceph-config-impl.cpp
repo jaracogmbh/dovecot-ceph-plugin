@@ -9,22 +9,22 @@
  * Foundation.  See file COPYING.
  */
 
-#include "rados-ceph-config.h"
+#include "rados-ceph-config-impl.h"
 #include <jansson.h>
 #include <climits>
 #include <unistd.h>
 
 namespace librmb {
 
-RadosCephConfig::RadosCephConfig(librados::IoCtx *io_ctx_) { io_ctx = io_ctx_; }
+RadosCephConfigImpl::RadosCephConfigImpl(librados::IoCtx *io_ctx_) { io_ctx = io_ctx_; }
 
-int RadosCephConfig::save_cfg() {
+int RadosCephConfigImpl::save_cfg() {
   ceph::bufferlist buffer;
   bool success = config.to_json(&buffer) ? save_object(config.get_cfg_object_name(), buffer) >= 0 : false;
   return success ? 0 : -1;
 }
 
-int RadosCephConfig::load_cfg() {
+int RadosCephConfigImpl::load_cfg() {
   if (config.is_valid()) {
     return 0;
   }
@@ -37,7 +37,7 @@ int RadosCephConfig::load_cfg() {
   return config.from_json(&buffer) ? 0 : -1;
 }
 
-bool RadosCephConfig::is_valid_key_value(const std::string &key, const std::string &value) {
+bool RadosCephConfigImpl::is_valid_key_value(const std::string &key, const std::string &value) {
   bool success = false;
   if (value.empty() || key.empty()) {
     return false;
@@ -65,7 +65,7 @@ bool RadosCephConfig::is_valid_key_value(const std::string &key, const std::stri
   return success;
 }
 
-bool RadosCephConfig::update_valid_key_value(const std::string &key, const std::string &value) {
+bool RadosCephConfigImpl::update_valid_key_value(const std::string &key, const std::string &value) {
   bool success = false;
   if (value.empty() || key.empty()) {
     return false;
@@ -101,13 +101,13 @@ bool RadosCephConfig::update_valid_key_value(const std::string &key, const std::
   return success;
 }
 
-int RadosCephConfig::save_object(const std::string &oid, librados::bufferlist &buffer) {
+int RadosCephConfigImpl::save_object(const std::string &oid, librados::bufferlist &buffer) {
   if (io_ctx == nullptr) {
     return -1;
   }
   return io_ctx->write_full(oid, buffer);
 }
-int RadosCephConfig::read_object(const std::string &oid, librados::bufferlist *buffer) {
+int RadosCephConfigImpl::read_object(const std::string &oid, librados::bufferlist *buffer) {
   size_t max = INT_MAX;
   if (io_ctx == nullptr) {
     return -1;
@@ -130,7 +130,7 @@ int RadosCephConfig::read_object(const std::string &oid, librados::bufferlist *b
   return ret_read;
 }
 
-void RadosCephConfig::set_io_ctx_namespace(const std::string &namespace_) {
+void RadosCephConfigImpl::set_io_ctx_namespace(const std::string &namespace_) {
   if (io_ctx != nullptr) {
     io_ctx->set_namespace(namespace_);
   }

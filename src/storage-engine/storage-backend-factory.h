@@ -12,6 +12,8 @@
 #include "../librmb/rados-metadata-storage-impl.h"
 #include "../storage-interface/rados-mail.h"
 #include "../librmb/rados-mail-impl.h"
+#include "../storage-interface/rados-ceph-config.h"
+#include "../librmb/rados-ceph-config-impl.h"
 
 namespace storage_engine {
 class StorageBackendFactory {
@@ -65,6 +67,14 @@ class StorageBackendFactory {
       mail=new librmb::RadosMailImpl();
     }
     return mail;
+  }
+
+  static storage_interface::RadosCephConfig *create_ceph_config(StorageType storage_type){
+    storage_interface::RadosCephConfig *ceph_config;
+    if(storage_type==CEPH){
+      ceph_config=new librmb::RadosCephConfigImpl();
+    }
+    return ceph_config;
   }
 };
 }  // namespace rbox

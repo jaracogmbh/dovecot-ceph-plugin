@@ -322,10 +322,8 @@ TEST(librmb, AttributeVersions) {
 // 1. save_metadata
 // 2. set_metadata (update uid)
 TEST(librmb, json_ima) {
-  librados::IoCtx io_ctx;
   uint64_t max_size = 3;
 
-  // librados::ObjectWriteOperation op;  // = new librados::ObjectWriteOperation();
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
 
@@ -335,11 +333,11 @@ TEST(librmb, json_ima) {
   int open_connection = storage.open_connection(pool_name);
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
-
-  librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
-
+  std::cout<<"it ie the test for ceph_config"<<std::endl;
+  librmb::RadosDovecotCephCfgImpl *cfg= new librmb::RadosDovecotCephCfgImpl(&storage.get_io_ctx());
+  std::cout<<"it ie the test for ceph_config"<<std::endl;
   // cfg.update_updatable_attributes("");
-  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), &cfg);
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), cfg);
 
   librmb::RadosMailImpl obj;
   obj.set_mail_buffer(storage.alloc_mail_buffer());
@@ -383,6 +381,8 @@ TEST(librmb, json_ima) {
   // tear down
   cluster.deinit();
   delete obj.get_mail_buffer();
+  delete cfg;
+
 }
 // standard call order for metadata updates
 // 0. pre-condition: setting flags as updateable
@@ -450,6 +450,8 @@ TEST(librmb, json_ima_2) {
   // tear down
   cluster.deinit();
   delete obj.get_mail_buffer();
+  librmb::RadosDovecotCephCfgImpl *cfg_ptr=&cfg;
+  delete cfg_ptr;
 }
 
 // standard call order for metadata updates
@@ -530,6 +532,8 @@ TEST(librmb, json_ima_3) {
   // tear down
   cluster.deinit();
   delete obj.get_mail_buffer();
+  librmb::RadosDovecotCephCfgImpl *cfg_ptr=&cfg;
+  delete cfg_ptr;
 }
 /**
  * Load metadata with default metadata reader
@@ -590,6 +594,8 @@ TEST(librmb, test_default_metadata_load_attributes) {
   // tear down
   cluster.deinit();
   delete obj.get_mail_buffer();
+  librmb::RadosDovecotCephCfgImpl *cfg_ptr=&cfg;
+  delete cfg_ptr;
 }
 /**
  * Test LoadMetadata default reader
@@ -620,6 +626,8 @@ TEST(librmb, test_default_metadata_load_attributes_obj_no_longer_exist) {
 
   // tear down
   cluster.deinit();
+  librmb::RadosDovecotCephCfgImpl *cfg_ptr=&cfg;
+  delete cfg_ptr;
 }
 /**
  * Test Metadata reader with ima reader
@@ -650,6 +658,8 @@ TEST(librmb, test_default_metadata_load_attributes_obj_no_longer_exist_ima) {
 
   // tear down
   cluster.deinit();
+  librmb::RadosDovecotCephCfgImpl *cfg_ptr=&cfg;
+  delete cfg_ptr;
 }
 /**
  * Test osd increment
@@ -851,14 +861,16 @@ TEST(librmb, rmb_load_objects) {
   
 
   EXPECT_EQ(0, open_connection);
-  librmb::RadosCephConfig ceph_cfg(&storage.get_io_ctx());
-  EXPECT_EQ(0, ceph_cfg.save_cfg());
+  storage_interface::RadosCephConfig *ceph_cfg=
+   storage_engine::StorageBackendFactory::create_ceph_config(storage_engine::StorageBackendFactory::CEPH);
+  ceph_cfg->set_io_ctx(&storage.get_io_ctx());
+  EXPECT_EQ(0, ceph_cfg->save_cfg());
 
   std::map<std::string, std::string> opts;
   opts["pool"] = pool_name;
   opts["namespace"] = ns;
   opts["print_cfg"] = "true";
-  opts["cfg_obj"] = ceph_cfg.get_cfg_object_name();
+  opts["cfg_obj"] = ceph_cfg->get_cfg_object_name();
 
   librmb::RmbCommands rmb_commands(&storage, &cluster, &opts);
 
@@ -895,12 +907,13 @@ TEST(librmb, rmb_load_objects) {
 
   storage.delete_mail(*obj2.get_oid());
   std::cout<<"*obj2.get_oid()::"<<*obj2.get_oid()<<std::endl;
-  storage.delete_mail(ceph_cfg.get_cfg_object_name());
-  std::cout<<"ceph_cfg.get_cfg_object_name()"<<ceph_cfg.get_cfg_object_name()<<std::endl;
+  storage.delete_mail(ceph_cfg->get_cfg_object_name());
+  std::cout<<"ceph_cfg.get_cfg_object_name()"<<ceph_cfg->get_cfg_object_name()<<std::endl;
   delete ms;
   // tear down
   cluster.deinit();
   delete obj2.get_mail_buffer();
+  delete ceph_cfg;
 }
 /**
  * Test RmbCommands load objects
@@ -915,14 +928,16 @@ TEST(librmb, rmb_load_objects_valid_metadata) {
   int open_connection = storage.open_connection(pool_name);
 
   EXPECT_EQ(0, open_connection);
-  librmb::RadosCephConfig ceph_cfg(&storage.get_io_ctx());
-  EXPECT_EQ(0, ceph_cfg.save_cfg());
+  storage_interface::RadosCephConfig *ceph_cfg=
+   storage_engine::StorageBackendFactory::create_ceph_config(storage_engine::StorageBackendFactory::CEPH);
+  ceph_cfg->set_io_ctx(&storage.get_io_ctx()); 
+  EXPECT_EQ(0, ceph_cfg->save_cfg());
 
   std::map<std::string, std::string> opts;
   opts["pool"] = pool_name;
   opts["namespace"] = ns;
   opts["print_cfg"] = "true";
-  opts["cfg_obj"] = ceph_cfg.get_cfg_object_name();
+  opts["cfg_obj"] = ceph_cfg->get_cfg_object_name();
 
   librmb::RmbCommands rmb_commands(&storage, &cluster, &opts);
 
@@ -1027,7 +1042,7 @@ TEST(librmb, rmb_load_objects_valid_metadata) {
   // there needs to be one mail
   EXPECT_EQ(1, mail_objects.size());
   storage.delete_mail(*obj2.get_oid());
-  storage.delete_mail(ceph_cfg.get_cfg_object_name());
+  storage.delete_mail(ceph_cfg->get_cfg_object_name());
   for (std::list<storage_interface::RadosMail *>::iterator it = mail_objects.begin(); it != mail_objects.end(); ++it) {
     storage_interface::RadosMail *obj = *it;
     storage.delete_mail(*obj->get_oid());
@@ -1039,6 +1054,7 @@ TEST(librmb, rmb_load_objects_valid_metadata) {
   // tear down
   cluster.deinit();
   delete obj2.get_mail_buffer();
+  delete ceph_cfg;
 }
 /**
  * Test RmbCommands load objects
@@ -1053,14 +1069,16 @@ TEST(librmb, rmb_load_objects_invalid_metadata) {
   int open_connection = storage.open_connection(pool_name);
 
   EXPECT_EQ(0, open_connection);
-  librmb::RadosCephConfig ceph_cfg(&storage.get_io_ctx());
-  EXPECT_EQ(0, ceph_cfg.save_cfg());
+  storage_interface::RadosCephConfig *ceph_cfg=
+   storage_engine::StorageBackendFactory::create_ceph_config(storage_engine::StorageBackendFactory::CEPH);
+  ceph_cfg->set_io_ctx(&storage.get_io_ctx()); 
+  EXPECT_EQ(0, ceph_cfg->save_cfg());
 
   std::map<std::string, std::string> opts;
   opts["pool"] = pool_name;
   opts["namespace"] = ns;
   opts["print_cfg"] = "true";
-  opts["cfg_obj"] = ceph_cfg.get_cfg_object_name();
+  opts["cfg_obj"] = ceph_cfg->get_cfg_object_name();
 
   librmb::RmbCommands rmb_commands(&storage, &cluster, &opts);
 
@@ -1172,13 +1190,14 @@ TEST(librmb, rmb_load_objects_invalid_metadata) {
   }
 
   storage.delete_mail(*obj2.get_oid());
-  storage.delete_mail(ceph_cfg.get_cfg_object_name());
+  storage.delete_mail(ceph_cfg->get_cfg_object_name());
   delete ms;
   delete xattr;
   mail_objects.clear();
   // tear down
   cluster.deinit();
   delete obj2.get_mail_buffer();
+  delete ceph_cfg;
 }
 /**
  * Test RmbCommands
