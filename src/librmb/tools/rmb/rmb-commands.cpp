@@ -22,6 +22,8 @@
 #include "../../rados-namespace-manager-impl.h"
 #include "../../rados-metadata-storage-ima.h"
 #include "../../rados-metadata-storage-default.h"
+#include "../../rados-metadata-impl.h"
+#include "../../../storage-interface/rados-dovecot-ceph-cfg.h"
 #include "ls_cmd_parser.h"
 
 namespace librmb {
@@ -211,7 +213,7 @@ int RmbCommands::rename_user(storage_interface::RadosCephConfig *cfg, bool confi
     print_debug("end: rename_user");
     return -1;
   }
-  std::list<librmb::RadosMetadata> list;
+  std::list<storage_interface::RadosMetadata*> list;
   std::cout << " copy namespace configuration src " << src_ << " to dest " << dest_ << " in namespace "
             << cfg->get_user_ns() << std::endl;
   storage->set_namespace(cfg->get_user_ns());
@@ -601,8 +603,8 @@ storage_interface::RadosStorageMetadataModule *RmbCommands::init_metadata_storag
   storage_interface::RadosStorageMetadataModule *ms = nullptr;
   dovecot_cfg.set_config_valid(true);
   ceph_cfg->set_config_valid(true);
-  librmb::RadosDovecotCephCfgImpl cfg(dovecot_cfg, ceph_cfg);
-  librmb::RadosNamespaceManagerImpl mgr(&cfg);
+  storage_interface::RadosDovecotCephCfg *cfg=new librmb::RadosDovecotCephCfgImpl(dovecot_cfg, ceph_cfg);
+  librmb::RadosNamespaceManagerImpl mgr(cfg);
 
   if (uid == nullptr) {
     std::cerr << "please set valid uid ptr" << std::endl;
@@ -613,12 +615,12 @@ storage_interface::RadosStorageMetadataModule *RmbCommands::init_metadata_storag
   // decide metadata storage!
   std::string storage_module_name = ceph_cfg->get_metadata_storage_module();
   if (storage_module_name.compare(librmb::RadosMetadataStorageIma::module_name) == 0) {
-    ms = new librmb::RadosMetadataStorageIma(storage->get_io_ctx_wrapper(), &cfg);
+    ms = new librmb::RadosMetadataStorageIma(storage->get_io_ctx_wrapper(), cfg);
   } else {
     ms = new librmb::RadosMetadataStorageDefault(storage->get_io_ctx_wrapper());
   }
   if (!(*opts)["namespace"].empty()) {
-    *uid = (*opts)["namespace"] + cfg.get_user_suffix();
+    *uid = (*opts)["namespace"] + cfg->get_user_suffix();
   }
   std::string ns;
   if (mgr.lookup_key(*uid, &ns)) {
@@ -655,11 +657,13 @@ int RmbCommands::update_attributes(storage_interface::RadosStorageMetadataModule
       storage_interface::RadosMail *obj=storage->alloc_rados_mail();
       obj->set_oid(oid);
       ms->load_metadata(obj);
-      librmb::RadosMetadata attr(ke, value);
+      storage_interface::RadosMetadata *attr=new librmb::RadosMetadataImpl(ke, value);
       ms->set_metadata(obj, attr);
       std::cout << " saving object ..." << std::endl;
       delete obj;
       obj=nullptr;
+      delete attr;
+      attr=nullptr;
     }
   } else {
     std::cerr << " invalid number of arguments, check usage " << std::endl;

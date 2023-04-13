@@ -84,14 +84,17 @@ int rbox_sync_add_object(struct index_rebuild_context *ctx, const std::string &o
   }
 
   // update uid.
-  librmb::RadosMetadata mail_uid(librmb::RBOX_METADATA_MAIL_UID, next_uid);
+  storage_interface::RadosMetadata *mail_uid=
+    storage_engine::StorageBackendFactory::create_metadata_uint(
+      storage_engine::StorageBackendFactory::CEPH, librmb::RBOX_METADATA_MAIL_UID, next_uid);
   std::string s_oid = *mail_obj->get_oid();
-  std::list<librmb::RadosMetadata> to_update;
+  std::list<storage_interface::RadosMetadata*> to_update;
   to_update.push_back(mail_uid);
   if (!r_storage->ms->get_storage()->update_metadata(s_oid, to_update)) {
     i_warning("update of MAIL_UID failed: for object: %s , uid: %d", mail_obj->get_oid()->c_str(), next_uid);
   }
-
+  delete mail_uid;
+  mail_uid=nullptr;
   FUNC_END();
   return 0;
 }
@@ -312,15 +315,17 @@ int rbox_storage_rebuild_in_context(struct rbox_storage *r_storage, bool force, 
         if((*list_it)->is_restored()){
           continue;
         }
-        librmb::RadosMetadata metadata;
-        metadata.convert(rbox_metadata_key::RBOX_METADATA_MAILBOX_GUID, last_known_mailbox_guid);
+        storage_interface::RadosMetadata *metadata=storage_engine::StorageBackendFactory::create_metadata_default(
+          storage_engine::StorageBackendFactory::CEPH);
+        metadata->convert(rbox_metadata_key::RBOX_METADATA_MAILBOX_GUID, last_known_mailbox_guid);
     
-        librmb::RadosMetadata metadata_uid;
-        metadata_uid.convert(rbox_metadata_key::RBOX_METADATA_MAIL_UID, INT32_MAX);
+        storage_interface::RadosMetadata *metadata_uid=storage_engine::StorageBackendFactory::create_metadata_default(
+          storage_engine::StorageBackendFactory::CEPH);
+        metadata_uid->convert(rbox_metadata_key::RBOX_METADATA_MAIL_UID, INT32_MAX);
   
         librados::ObjectWriteOperation write_mail_uid;
-        write_mail_uid.setxattr(metadata_uid.key.c_str(), metadata_uid.bl);
-        write_mail_uid.setxattr(metadata.key.c_str(), metadata.bl);
+        write_mail_uid.setxattr(metadata_uid->get_key().c_str(), metadata_uid->get_buffer());
+        write_mail_uid.setxattr(metadata->get_key().c_str(), metadata->get_buffer());
 
         if (r_storage->s->get_io_ctx_wrapper().operate(*(*list_it)->get_oid(), &write_mail_uid) < 0) {
             i_debug("Unable to reset metadata to guid : %s",last_known_mailbox_guid.c_str());
@@ -329,6 +334,10 @@ int rbox_storage_rebuild_in_context(struct rbox_storage *r_storage, bool force, 
         }
         unassigned_counter++;
         (*list_it)->set_lost_object(true);
+        delete metadata;
+        metadata=nullptr;
+        delete metadata_uid;
+        metadata_uid=nullptr;
       }
     }
     if(unassigned_counter > 0){
@@ -446,13 +455,15 @@ int repair_namespace(struct mail_namespace *ns, bool force, struct rbox_storage 
         if( r_storage->config->get_object_search_method() == 1) {
 
             //all mail first end up in the inbox
-            librmb::RadosMetadata filter(rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, "INBOX");
+            storage_interface::RadosMetadata *filter=
+              storage_engine::StorageBackendFactory::create_metadata_string(
+                storage_engine::StorageBackendFactory::CEPH, rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, "INBOX");
   
             long milli_time, seconds, useconds;
             struct timeval start_time, end_time;
             gettimeofday(&start_time, NULL);
             
-            mail_list = r_storage->s->find_mails_async(&filter, 
+            mail_list = r_storage->s->find_mails_async(filter, 
                                                        pool_name,
                                                        r_storage->config->get_object_search_threads(),
                                                        &cb);
@@ -462,6 +473,8 @@ int repair_namespace(struct mail_namespace *ns, bool force, struct rbox_storage 
             milli_time = ((seconds) * 1000 + useconds/1000.0);
 
             i_debug("multithreading done : took: %ld ms", (milli_time));
+            delete filter;
+            filter=nullptr;
         }
         else if( r_storage->config->get_object_search_method() == 2){
                     

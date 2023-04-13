@@ -18,7 +18,7 @@ headers = \
 	rados-dictionary-impl.h \
 	rados-mail-impl.h \
 	rados-util.h \
-	rados-metadata.h \
+	rados-metadata-impl.h \
 	rados-types.h \
 	rados-dovecot-config.h \
 	rados-namespace-manager-impl.h\

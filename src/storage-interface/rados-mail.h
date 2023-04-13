@@ -16,8 +16,8 @@
 #include <iostream>
 #include <sstream>
 #include <map>
-#include "../librmb/rados-metadata.h"
-#include "rados-types.h"
+#include "rados-metadata.h"
+#include "../librmb/rados-types.h"
 #include <rados/librados.hpp>
 
 namespace storage_interface {
@@ -48,13 +48,13 @@ class RadosMail{
   virtual bool is_valid() = 0; 
   virtual void set_valid(bool valid_) = 0; 
   
-  virtual bool is_restored() = 0; 
+  virtual bool is_restored() = 0;
   virtual void set_restored(bool restored_) = 0; 
   
   virtual bool is_lost_object() = 0; 
   virtual void set_lost_object(bool is_lost_object) = 0; 
   virtual string to_string(const string& padding) = 0;
-  virtual void add_metadata(const librmb::RadosMetadata& metadata) = 0; 
+  virtual void add_metadata(const storage_interface::RadosMetadata* metadata) = 0; 
   virtual bool is_deprecated_uid() = 0; 
   virtual void set_deprecated_uid(bool deprecated_uid_) = 0; 
   /*!
@@ -66,7 +66,7 @@ class RadosMail{
    * Save metadata to extended metadata store currently omap
    * @param[in] metadata valid radosMetadata.
    */
-  virtual void add_extended_metadata(const librmb::RadosMetadata& metadata) = 0;
+  virtual void add_extended_metadata(const storage_interface::RadosMetadata* metadata) = 0;
 
   virtual const string get_extended_metadata(const string& key) = 0;
 };

@@ -73,7 +73,8 @@ struct mail_storage *rbox_storage_alloc(void) {
   r_storage->s =
     storage_engine::StorageBackendFactory::create_storage(storage_engine::StorageBackendFactory::CEPH,r_storage->cluster); 
   r_storage->config =
-    storage_engine::StorageBackendFactory::create_dovecot_ceph_cfg(storage_engine::StorageBackendFactory::CEPH,r_storage->s);
+    storage_engine::StorageBackendFactory::create_dovecot_ceph_cfg_io(
+      storage_engine::StorageBackendFactory::CEPH,&(r_storage->s->get_io_ctx_wrapper().get_io_ctx()));
   r_storage->ns_mgr =
     storage_engine::StorageBackendFactory::create_namespace_manager(storage_engine::StorageBackendFactory::CEPH,r_storage->config);
   r_storage->ms =

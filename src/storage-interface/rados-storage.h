@@ -78,9 +78,9 @@ class RadosStorage {
    * @param[in] attr a list of filter attributes
    *
    * @return object iterator or librados::NObjectIterator::__EndObjectIterator */
-  virtual std::set<std::string> find_mails(const librmb::RadosMetadata *attr) = 0;
+  virtual std::set<std::string> find_mails(const storage_interface::RadosMetadata *attr) = 0;
  
-  virtual std::set<std::string> find_mails_async(const librmb::RadosMetadata *attr, 
+  virtual std::set<std::string> find_mails_async(const storage_interface::RadosMetadata *attr, 
                                                  std::string &pool_name, 
                                                  int num_threads,
                                                  void (*ptr)(std::string&)) = 0;
@@ -175,7 +175,7 @@ class RadosStorage {
    * @return linux errorcode or 0 if successful
    * */
   virtual int move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
-                   std::list<librmb::RadosMetadata> &to_update, bool delete_source) = 0;
+                   std::list<storage_interface::RadosMetadata*> &to_update, bool delete_source) = 0;
 
   /*! copy a object from the given namespace to the other, updates the metadata given in to_update list
    * @param[in] src_oid unique identifier of source object
@@ -186,7 +186,7 @@ class RadosStorage {
    * @return linux errorcode or 0 if successful
    */
   virtual int copy(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
-                   std::list<librmb::RadosMetadata> &to_update) = 0;
+                   std::list<storage_interface::RadosMetadata*> &to_update) = 0;
   /*! save the mail
    * @param[in] mail valid rados mail.   
    * @return false in case of error

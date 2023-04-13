@@ -25,16 +25,17 @@
 #include "../../storage-engine/storage-backend-factory.h"
 #include <cstdio>
 #include <pthread.h>
+#include "../../librmb/rados-metadata-impl.h"
 
 using ::testing::AtLeast;
 using ::testing::Return;
 
 TEST(librmb, get_metadata_1) {
   enum librmb::rbox_metadata_key key = librmb::rbox_metadata_key::RBOX_METADATA_GUID;
-  librmb::RadosMetadata m(key, "abcdefg");
+  librmb::RadosMetadataImpl m(key, "abcdefg");
   storage_interface::RadosMail *mail=
     storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
-  mail->add_metadata(m);
+  mail->add_metadata(&m);
   char *val = NULL;
 
   librmb::RadosUtils::get_metadata(key, mail->get_metadata(), &val);
@@ -345,14 +346,23 @@ TEST(librmb, append_to_existing_file_multi_threading) {
 }
 
 TEST(librmb, test_mvn_option) {
-  std::list<librmb::RadosMetadata *> metadata;
-  librmb::RadosMetadata guid(librmb::RBOX_METADATA_MAILBOX_GUID, "ABCDEFG");
-  librmb::RadosMetadata mb_name(librmb::RBOX_METADATA_ORIG_MAILBOX, "INBOX");
+  std::list<storage_interface::RadosMetadata *> metadata;
+  storage_interface::RadosMetadata *guid=
+    storage_engine::StorageBackendFactory::create_metadata_string(
+      storage_engine::StorageBackendFactory::CEPH, librmb::RBOX_METADATA_MAILBOX_GUID, "ABCDEFG");
+
+  storage_interface::RadosMetadata *mb_name=
+    storage_engine::StorageBackendFactory::create_metadata_string(
+      storage_engine::StorageBackendFactory::CEPH, librmb::RBOX_METADATA_ORIG_MAILBOX, "INBOX");
+
   uint uid_ = 1;
-  librmb::RadosMetadata uid(librmb::RBOX_METADATA_MAIL_UID, uid_);
-  metadata.push_back(&guid);
-  metadata.push_back(&mb_name);
-  metadata.push_back(&uid);
+  storage_interface::RadosMetadata *uid=
+    storage_engine::StorageBackendFactory::create_metadata_uint(
+      storage_engine::StorageBackendFactory::CEPH, librmb::RBOX_METADATA_MAIL_UID, uid_);
+
+  metadata.push_back(guid);
+  metadata.push_back(mb_name);
+  metadata.push_back(uid);
 
   std::string test_file_name = "test_2.log";
   librmb::RadosSaveLog log_file(test_file_name);
@@ -373,7 +383,9 @@ TEST(librmb, test_mvn_option) {
     EXPECT_EQ(entry.op, "mv:ns_src:src_oid:user;M=ABCDEFG:B=INBOX:U=1\0");
     EXPECT_EQ(entry.metadata.size(), 3);
   }
-
+  delete guid;
+  delete mb_name;
+  delete uid;
   read.close();
   // EXPECT_EQ(1, 0);
   std::remove(test_file_name.c_str());

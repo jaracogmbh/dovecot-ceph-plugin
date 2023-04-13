@@ -16,7 +16,7 @@
 #include <iostream>
 #include <sstream>
 #include <map>
-#include "rados-metadata.h"
+#include "../storage-interface/rados-metadata.h"
 #include "rados-types.h"
 #include <rados/librados.hpp>
 #include "../storage-interface/rados-mail.h"
@@ -62,7 +62,7 @@ class RadosMailImpl : public storage_interface::RadosMail {
   bool is_lost_object() override { return lost_object; }
   void set_lost_object(bool is_lost_object) override { lost_object = is_lost_object; }
   string to_string(const string& padding) override;
-  void add_metadata(const RadosMetadata& metadata) override { attrset[metadata.key] = metadata.bl; }
+  void add_metadata(const storage_interface::RadosMetadata* metadata) override { attrset[metadata->get_key()] = metadata->get_buffer(); }
   bool is_deprecated_uid() override {return deprecated_uid;}
   void set_deprecated_uid(bool deprecated_uid_) override {deprecated_uid = deprecated_uid_;}
   /*!
@@ -74,7 +74,7 @@ class RadosMailImpl : public storage_interface::RadosMail {
    * Save metadata to extended metadata store currently omap
    * @param[in] metadata valid radosMetadata.
    */
-  void add_extended_metadata(const RadosMetadata& metadata) override { extended_attrset[metadata.key] = metadata.bl; }
+  void add_extended_metadata(const storage_interface::RadosMetadata *metadata) override { extended_attrset[metadata->get_key()] = metadata->get_buffer(); }
 
   const string get_extended_metadata(const string& key) override {
     if (extended_attrset.find(key) != extended_attrset.end()) {

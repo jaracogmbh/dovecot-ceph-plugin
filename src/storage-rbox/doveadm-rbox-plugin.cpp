@@ -47,13 +47,13 @@ extern "C" {
 #include "config-local.h"
 }
 
-#include "tools/rmb/rmb-commands.h"
+#include "../librmb/tools/rmb/rmb-commands.h"
 #include "../storage-interface/rados-cluster.h"
-#include "rados-cluster-impl.h"
+#include "../librmb/rados-cluster-impl.h"
 #include "../storage-interface/rados-storage.h"
-#include "rados-storage-impl.h"
+#include "../librmb/rados-storage-impl.h"
 #include "../storage-interface/rados-dovecot-ceph-cfg.h"
-#include "rados-dovecot-ceph-cfg-impl.h"
+#include "../librmb/rados-dovecot-ceph-cfg-impl.h"
 #include "../storage-interface/rados-namespace-manager.h"
 #include "../storage-interface/rados-dovecot-ceph-cfg.h"
 #include "../librmb/rados-namespace-manager-impl.h"
@@ -70,7 +70,8 @@ class RboxDoveadmPlugin {
   RboxDoveadmPlugin() {
     this->cluster =storage_engine::StorageBackendFactory::create_cluster(storage_engine::StorageBackendFactory::CEPH);
     this->storage = storage_engine::StorageBackendFactory::create_storage(storage_engine::StorageBackendFactory::CEPH,this->cluster);
-    this->config = storage_engine::StorageBackendFactory::create_dovecot_ceph_cfg(storage_engine::StorageBackendFactory::CEPH,this->storage);
+    this->config = storage_engine::StorageBackendFactory::create_dovecot_ceph_cfg_io(
+      storage_engine::StorageBackendFactory::CEPH,&(this->storage->get_io_ctx_wrapper().get_io_ctx()));
   }
 
   ~RboxDoveadmPlugin() {
@@ -550,14 +551,14 @@ static int doveadm_rmb_mail_next_user(struct doveadm_mail_cmd_context *ctx,
     std::string key_guid(1, static_cast<char>(librmb::RBOX_METADATA_GUID));
     std::string key_mbox_name(1, static_cast<char>(librmb::RBOX_METADATA_ORIG_MAILBOX));
 
-    std::list<librmb::RadosMetadata>::iterator it_guid =
+    std::list<storage_interface::RadosMetadata*>::iterator it_guid =
         std::find_if(it->metadata.begin(), it->metadata.end(),
-                     [key_guid](librmb::RadosMetadata const &m) { return m.key == key_guid; });
-    std::list<librmb::RadosMetadata>::iterator it_mb =
+                     [key_guid](storage_interface::RadosMetadata* const m) { return m->get_key() == key_guid; });
+    std::list<storage_interface::RadosMetadata*>::iterator it_mb =
         std::find_if(it->metadata.begin(), it->metadata.end(),
-                     [key_mbox_name](librmb::RadosMetadata const &m) { return m.key == key_mbox_name; });
+                     [key_mbox_name](storage_interface::RadosMetadata* const m) { return m->get_key() == key_mbox_name; });
 
-    restore_index_entry(*cur_mail_user, (*it_mb).bl.to_str().c_str(), (*it_guid).bl.to_str(), it->src_oid);
+    restore_index_entry(*cur_mail_user, (*it_mb)->get_buffer().to_str().c_str(), (*it_guid)->get_buffer().to_str(), it->src_oid);
   }
   mail_user_unref(cur_mail_user);
 

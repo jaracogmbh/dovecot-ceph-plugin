@@ -43,6 +43,8 @@ extern "C" {
 #include "istream-bufferlist.h"
 #include "rbox-mail.h"
 #include "rados-util.h"
+#include "../storage-engine/storage-backend-factory.h"
+#include "../storage-interface/rados-metadata.h"
 
 using storage_interface::RadosMail;
 using librmb::rbox_metadata_key;
@@ -356,12 +358,16 @@ int rbox_mail_get_virtual_size(struct mail *_mail, uoff_t *size_r) {
             oid.c_str());
     ret = -1;
   }
-  librmb::RadosMetadata metadata_phy(rbox_metadata_key::RBOX_METADATA_VIRTUAL_SIZE, data->virtual_size);
+  storage_interface::RadosMetadata *metadata_phy=
+    storage_engine::StorageBackendFactory::create_metadata_uint(
+      storage_engine::StorageBackendFactory::CEPH, rbox_metadata_key::RBOX_METADATA_VIRTUAL_SIZE, data->virtual_size);
   rmail->rados_mail->add_metadata(metadata_phy);
 
   if (value != NULL && free_value) {
     i_free(value);
   }
+  delete metadata_phy;
+  metadata_phy=nullptr;
   return ret;
 }
 

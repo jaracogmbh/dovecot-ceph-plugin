@@ -20,7 +20,8 @@
 #include <list>
 #include <iostream>
 
-#include "rados-metadata.h"
+#include "../storage-interface/rados-metadata.h"
+#include "../storage-engine/storage-backend-factory.h"
 
 namespace librmb {
 /**
@@ -65,18 +66,21 @@ class RadosSaveLogEntry {
     std::stringstream right(op.substr(pos + 1, op.size()));
     std::vector<std::string> right_tokens;
     while (std::getline(right, item, ':')) {
-      librmb::RadosMetadata m;
-      if (!librmb::RadosMetadata::from_string(item, &m)) {
+      storage_interface::RadosMetadata *m= storage_engine::StorageBackendFactory::create_metadata_default(
+        storage_engine::StorageBackendFactory::CEPH);
+      if (!m->from_string(item)) {
         return false;
       }
       metadata.push_back(m);
+      delete m;
+      m=nullptr;
     }
     return true;
   }
   static std::string op_save() { return "save"; }
   static std::string op_cpy() { return "cpy"; }
   static std::string op_mv(const std::string &src_ns, const std::string &src_oid, const std::string &src_user,
-                           std::list<librmb::RadosMetadata *> &metadata) {
+                           std::list<storage_interface::RadosMetadata *> &metadata) {
     std::stringstream mv;
     mv << "mv:" << src_ns << ":" << src_oid << ":" << src_user << ";" << convert_metadata(metadata, ":");
     return mv.str();
@@ -113,9 +117,9 @@ class RadosSaveLogEntry {
     return is;
   }
 
-  static std::string convert_metadata(std::list<librmb::RadosMetadata *> &metadata, const std::string &separator) {
+  static std::string convert_metadata(std::list<storage_interface::RadosMetadata *> &metadata, const std::string &separator) {
     std::stringstream metadata_str;
-    std::list<librmb::RadosMetadata *>::iterator list_it;
+    std::list<storage_interface::RadosMetadata *>::iterator list_it;
     list_it = metadata.begin();
     if (list_it != metadata.end()) {
       metadata_str << (*list_it)->to_string();
@@ -137,7 +141,7 @@ class RadosSaveLogEntry {
   std::string src_oid;
   std::string src_ns;
   std::string src_user;
-  std::list<librmb::RadosMetadata> metadata;
+  std::list<storage_interface::RadosMetadata*> metadata;
 };
 
 class RadosSaveLog {

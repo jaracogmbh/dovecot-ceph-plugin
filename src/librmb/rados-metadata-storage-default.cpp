@@ -36,10 +36,10 @@ int RadosMetadataStorageDefault::load_metadata(storage_interface::RadosMail *mai
   }
   return ret;
 }
-int RadosMetadataStorageDefault::set_metadata(storage_interface::RadosMail *mail, RadosMetadata &xattr) {
+int RadosMetadataStorageDefault::set_metadata(storage_interface::RadosMail *mail, storage_interface::RadosMetadata *xattr) {
   if(mail->get_metadata()->size()==0){
     mail->add_metadata(xattr);
-    return io_ctx_wrapper->setxattr(*mail->get_oid(), xattr.key.c_str(), xattr.bl);
+    return io_ctx_wrapper->setxattr(*mail->get_oid(), xattr->get_key().c_str(), xattr->get_buffer());
   }else{
     librados::ObjectWriteOperation write_op_xattr;
     save_metadata(&write_op_xattr,mail);
@@ -56,13 +56,13 @@ void RadosMetadataStorageDefault::save_metadata(librados::ObjectWriteOperation *
     write_op->omap_set(*mail->get_extended_metadata());
   }
 }
-bool RadosMetadataStorageDefault::update_metadata(const std::string &oid, std::list<RadosMetadata> &to_update) {
+bool RadosMetadataStorageDefault::update_metadata(const std::string &oid, std::list<storage_interface::RadosMetadata*> &to_update) {
   librados::ObjectWriteOperation write_op;
   librados::AioCompletion *completion = librados::Rados::aio_create_completion();
 
   // update metadata
-  for (std::list<RadosMetadata>::iterator it = to_update.begin(); it != to_update.end(); ++it) {
-    write_op.setxattr((*it).key.c_str(), (*it).bl);
+  for (std::list<storage_interface::RadosMetadata*>::iterator it = to_update.begin(); it != to_update.end(); ++it) {
+    write_op.setxattr((*it)->get_key().c_str(), (*it)->get_buffer());
   }
 
   int ret = io_ctx_wrapper->aio_operate(oid, completion, &write_op);
@@ -70,11 +70,11 @@ bool RadosMetadataStorageDefault::update_metadata(const std::string &oid, std::l
   completion->release();
   return ret == 0;
 }
-int RadosMetadataStorageDefault::update_keyword_metadata(const std::string &oid, RadosMetadata *metadata) {
+int RadosMetadataStorageDefault::update_keyword_metadata(const std::string &oid, storage_interface::RadosMetadata *metadata) {
   int ret = -1;
   if (metadata != nullptr) {
     std::map<std::string, librados::bufferlist> map;
-    map.insert(std::pair<std::string, librados::bufferlist>(metadata->key, metadata->bl));
+    map.insert(std::pair<std::string, librados::bufferlist>(metadata->get_key(), metadata->get_buffer()));
     ret = io_ctx_wrapper->omap_set(map,oid);
   }
   return ret;

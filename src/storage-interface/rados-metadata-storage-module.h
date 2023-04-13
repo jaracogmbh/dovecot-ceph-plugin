@@ -18,7 +18,7 @@
 #include <set>
 #include "rados-mail.h"
 #include "../librmb/rbox-io-ctx.h"
-#include "../librmb/rados-metadata.h"
+#include "rados-metadata.h"
 
 namespace storage_interface {
 class RadosStorageMetadataModule {
@@ -29,11 +29,11 @@ class RadosStorageMetadataModule {
   /* load the metadta into RadosMail */
   virtual int load_metadata(storage_interface::RadosMail *mail) = 0;
   /* set a new metadata attribute to a mail object */
-  virtual int set_metadata(storage_interface::RadosMail *mail, librmb::RadosMetadata &xattr) = 0;
+  virtual int set_metadata(storage_interface::RadosMail *mail, storage_interface::RadosMetadata *xattr) = 0;
   /* update the given metadata attributes */
-  virtual bool update_metadata(const std::string &oid, std::list<librmb::RadosMetadata> &to_update) = 0;
+  virtual bool update_metadata(const std::string &oid, std::list<storage_interface::RadosMetadata*> &to_update) = 0;
   /* manage keywords */
-  virtual int update_keyword_metadata(const std::string &oid, librmb::RadosMetadata *metadata) = 0;
+  virtual int update_keyword_metadata(const std::string &oid, storage_interface::RadosMetadata *metadata) = 0;
   virtual int remove_keyword_metadata(const std::string &oid, std::string &key) = 0;
   virtual int load_keyword_metadata(const std::string &oid, std::set<std::string> &keys,
                                     std::map<std::string, ceph::bufferlist> *metadata) = 0;

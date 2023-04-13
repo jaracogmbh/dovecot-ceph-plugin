@@ -13,7 +13,7 @@
 
 #include <string>
 #include "../librmb/rados-ceph-json-config.h"
-#include "rados-types.h"
+#include "../librmb/rados-types.h"
 #include <rados/librados.hpp>
 #include "rados-storage.h"
 

@@ -20,12 +20,11 @@ RadosDovecotCephCfgImpl::RadosDovecotCephCfgImpl(librados::IoCtx *io_ctx_) {
     rados_cfg->set_io_ctx(io_ctx_);
   }else{
     rados_cfg=
-      storage_engine::StorageBackendFactory::create_ceph_config(storage_engine::StorageBackendFactory::CEPH);
-    rados_cfg->set_io_ctx(io_ctx_);
+      storage_engine::StorageBackendFactory::create_ceph_config_io(storage_engine::StorageBackendFactory::CEPH,io_ctx_);
   }
 }
 
-RadosDovecotCephCfgImpl::RadosDovecotCephCfgImpl(RadosConfig &dovecot_cfg_, storage_interface::RadosCephConfig *rados_cfg_) : dovecot_cfg(dovecot_cfg_), rados_cfg(rados_cfg_) {}
+RadosDovecotCephCfgImpl::RadosDovecotCephCfgImpl(librmb::RadosConfig &dovecot_cfg_, storage_interface::RadosCephConfig *rados_cfg_) : dovecot_cfg(dovecot_cfg_), rados_cfg(rados_cfg_) {}
 
 
 int RadosDovecotCephCfgImpl::save_default_rados_config() {

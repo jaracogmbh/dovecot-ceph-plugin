@@ -353,8 +353,7 @@ int main(int argc, const char **argv) {
 
   // initialize configuration
   storage_interface::RadosCephConfig *ceph_cfg=
-    storage_engine::StorageBackendFactory::create_ceph_config(storage_engine::StorageBackendFactory::CEPH);
-  ceph_cfg->set_io_ctx(&storage.get_io_ctx());
+    storage_engine::StorageBackendFactory::create_ceph_config_io(storage_engine::StorageBackendFactory::CEPH,&storage.get_io_ctx());
   // set config object
   config_obj = opts.find("cfg_obj") != opts.end() ? opts["cfg_obj"] : ceph_cfg->get_cfg_object_name();
   ceph_cfg->set_cfg_object_name(config_obj);

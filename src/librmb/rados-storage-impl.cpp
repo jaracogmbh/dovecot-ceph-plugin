@@ -30,6 +30,7 @@
 #include "rbox-io-ctx.h"
 #include "rbox-io-ctx-impl.h"
 #include "../storage-engine/storage-backend-factory.h"
+
 using std::pair;
 using std::string;
 
@@ -203,7 +204,7 @@ void RadosStorageImpl::set_namespace(const std::string &_nspace) {
   this->nspace = _nspace;
 }
 
-std::set<std::string> RadosStorageImpl::find_mails(const RadosMetadata *attr) {
+std::set<std::string> RadosStorageImpl::find_mails(const storage_interface::RadosMetadata *attr) {
   if (!cluster->is_connected() || !io_ctx_created) {
     return ;
   }
@@ -214,8 +215,8 @@ std::set<std::string> RadosStorageImpl::find_mails(const RadosMetadata *attr) {
     ceph::bufferlist filter_bl;
 
     encode(filter_name, filter_bl);
-    encode("_" + attr->key, filter_bl);
-    encode(attr->bl.to_str(), filter_bl);
+    encode("_" + attr->get_key(), filter_bl);
+    encode(attr->get_buffer().to_str(), filter_bl);
 
     iter_guid=io_ctx_wrapper->nobjects_begin(filter_bl);
   } else {
@@ -233,7 +234,7 @@ std::set<std::string> RadosStorageImpl::find_mails(const RadosMetadata *attr) {
  * see in prod how it behaves. 
  * 
  **/
-std::set<std::string> RadosStorageImpl::find_mails_async(const RadosMetadata *attr, 
+std::set<std::string> RadosStorageImpl::find_mails_async(const storage_interface::RadosMetadata *attr, 
                                                          std::string &pool_name,
                                                          int num_threads,
                                                          void (*ptr)(std::string&)){
@@ -286,8 +287,8 @@ std::set<std::string> RadosStorageImpl::find_mails_async(const RadosMetadata *at
     ceph::bufferlist filter_bl;
 
     encode(filter_name, filter_bl);
-    encode("_" + attr->key, filter_bl);
-    encode(attr->bl.to_str(), filter_bl);
+    encode("_" + attr->get_key(), filter_bl);
+    encode(attr->get_buffer().to_str(), filter_bl);
     std::string msg_1 = "buffer set";
     (*ptr)(msg_1); 
 
@@ -404,7 +405,7 @@ void RadosStorageImpl::close_connection() {
 }
 // assumes that destination io ctx is current io_ctx;
 int RadosStorageImpl::move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
-                           std::list<RadosMetadata> &to_update, bool delete_source) {
+                           std::list<storage_interface::RadosMetadata*> &to_update, bool delete_source) {
   if (!cluster->is_connected() || !io_ctx_created) {
     return -1;
   }
@@ -446,8 +447,8 @@ int RadosStorageImpl::move(std::string &src_oid, const char *src_ns, std::string
   write_op.mtime(&save_time);
 
   // update metadata
-  for (std::list<RadosMetadata>::iterator it = to_update.begin(); it != to_update.end(); ++it) {
-    write_op.setxattr((*it).key.c_str(), (*it).bl);
+  for (std::list<storage_interface::RadosMetadata*>::iterator it = to_update.begin(); it != to_update.end(); ++it) {
+    write_op.setxattr((*it)->get_key().c_str(), (*it)->get_buffer());
   }
   ret = aio_operate(&dest_io_ctx, dest_oid, completion, &write_op);
   if (ret >= 0) {
@@ -465,7 +466,7 @@ int RadosStorageImpl::move(std::string &src_oid, const char *src_ns, std::string
 
 // assumes that destination io ctx is current io_ctx;
 int RadosStorageImpl::copy(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
-                           std::list<RadosMetadata> &to_update) {
+                           std::list<storage_interface::RadosMetadata*> &to_update) {
   if (!cluster->is_connected() || !io_ctx_created) {
     return -1;
   }
@@ -498,8 +499,8 @@ int RadosStorageImpl::copy(std::string &src_oid, const char *src_ns, std::string
   write_op.mtime(&save_time);
 
   // update metadata
-  for (std::list<RadosMetadata>::iterator it = to_update.begin(); it != to_update.end(); ++it) {
-    write_op.setxattr((*it).key.c_str(), (*it).bl);
+  for (std::list<storage_interface::RadosMetadata*>::iterator it = to_update.begin(); it != to_update.end(); ++it) {
+    write_op.setxattr((*it)->get_key().c_str(), (*it)->get_buffer());
   }
   int ret = 0;
   librados::AioCompletion *completion = librados::Rados::aio_create_completion();
@@ -526,9 +527,10 @@ bool  RadosStorageImpl::save_mail(storage_interface::RadosMail *current_object){
   if( max_object_size < object_size ||object_size<0||max_object_size==0){
     return false;
   }
-  librmb::RadosMetadata *xattr=new librmb::RadosMetadata();
+  storage_interface::RadosMetadata *xattr=
+    storage_engine::StorageBackendFactory::create_metadata_default(storage_engine::StorageBackendFactory::CEPH);
   librmb::RadosMetadataStorageDefault rados_metadata_storage(*io_ctx_wrapper);
-  ret_val=rados_metadata_storage.set_metadata(current_object,*xattr) >= 0 ? true: false;
+  ret_val=rados_metadata_storage.set_metadata(current_object, xattr) >= 0 ? true: false;
   if(!ret_val){
     return ret_val;
   }

@@ -18,50 +18,47 @@
 #include <stdlib.h>
 #include <sstream>
 #include <rados/librados.hpp>
+#include "../storage-interface/rados-metadata.h"
 
 namespace librmb {
 
-class RadosMetadata {
+class RadosMetadataImpl : public storage_interface::RadosMetadata{
  public:
-  RadosMetadata() {}
-  RadosMetadata(std::string& key_, std::string& value_) : key(key_) { bl.append(value_.c_str(), value_.length() + 1); }
-  RadosMetadata(enum rbox_metadata_key _key, const std::string& val) { convert(_key, val); }
+  RadosMetadataImpl() {}
+  RadosMetadataImpl(std::string& key_, std::string& value_) : key(key_) { bl.append(value_.c_str(), value_.length() + 1); }
+  RadosMetadataImpl(enum rbox_metadata_key _key, const std::string& val) { convert(_key, val); }
 
-  RadosMetadata(enum rbox_metadata_key _key, const time_t& val) { convert(_key, val); }
+  RadosMetadataImpl(enum rbox_metadata_key _key, const time_t& val) { convert(_key, val); }
 
-  RadosMetadata(enum rbox_metadata_key _key, const char* val) { convert(_key, val); }
+  RadosMetadataImpl(enum rbox_metadata_key _key, const char* val) { convert(_key, val); }
 
-  RadosMetadata(enum rbox_metadata_key _key, const uint& val) { convert(_key, val); }
+  RadosMetadataImpl(enum rbox_metadata_key _key, const uint& val) { convert(_key, val); }
 
-  RadosMetadata(enum rbox_metadata_key _key, const size_t& val) { convert(_key, val); }
-  RadosMetadata(enum rbox_metadata_key _key, const int val) { convert(_key, val); }
-  ~RadosMetadata() {}
+  RadosMetadataImpl(enum rbox_metadata_key _key, const size_t& val) { convert(_key, val); }
+  RadosMetadataImpl(enum rbox_metadata_key _key, const int val) { convert(_key, val); }
+  ~RadosMetadataImpl() {}
 
- public:
-  ceph::bufferlist& get_bl();
-  std::string& get_key();
-
-  void convert(const char* value, time_t* t) {
+  void convert(const char* value, time_t* t) override{
     if (t != NULL) {
       std::istringstream stream(value);
       stream >> *t;
     }
   }
-  static bool from_string(const std::string& str, RadosMetadata* metadata) {
+  bool from_string(const std::string& str) override{
     std::stringstream ss(str);
     std::string item;
     std::vector<std::string> token;
     while (std::getline(ss, item, '=')) {
       token.push_back(item);
     }
-    if (token.size() != 2 || metadata == nullptr) {
+    if (token.size() != 2 || this == nullptr) {
       return false;
     }
-    metadata->key = token[0];
-    metadata->bl.append(token[1]);
+    this->key = token[0];
+    this->bl.append(token[1]);
     return true;
   }
-  std::string to_string() {
+  std::string to_string() override{
     std::stringstream str;
     str << key << "=" << bl.to_str().substr(0, bl.length() - 1);
     return str.str();
@@ -71,40 +68,55 @@ class RadosMetadata {
   ceph::bufferlist bl;
   std::string key;
 
-  void convert(enum rbox_metadata_key _key, const std::string& val) {
+  ceph::bufferlist& get_buffer() override{
+    return bl;
+  };
+  std::string& get_key() override{
+    return key;
+  };
+  
+  void set_buffer(ceph::bufferlist& bl_) override{
+    this->bl=bl_;
+  }
+
+  void set_key(std::string& key_) override{
+    this->key=key_;
+  };
+
+  void convert(enum rbox_metadata_key _key, const std::string& val) override{
     bl.clear();
     key = librmb::rbox_metadata_key_to_char(_key);
     bl.append(val.c_str(), val.length() + 1);
   }
 
-  void convert(enum rbox_metadata_key _key, const time_t& time) {
+  void convert(enum rbox_metadata_key _key, const time_t& time) override{
     bl.clear();
     key = librmb::rbox_metadata_key_to_char(_key);
     std::string time_ = std::to_string(time);
     bl.append(time_.c_str(), time_.length() + 1);
   }
 
-  void convert(enum rbox_metadata_key _key, char* value) {
+  void convert(enum rbox_metadata_key _key, char* value) override{
     bl.clear();
     key = librmb::rbox_metadata_key_to_char(_key);
     std::string str = value;
     bl.append(str.c_str(), str.length() + 1);
   }
 
-  void convert(enum rbox_metadata_key _key, const uint& value) {
+  void convert(enum rbox_metadata_key _key, const uint& value) override{
     bl.clear();
     key = librmb::rbox_metadata_key_to_char(_key);
     std::string val = std::to_string(value);
     bl.append(val.c_str(), val.length() + 1);
   }
 
-  void convert(enum rbox_metadata_key _key, const size_t& value) {
+  void convert(enum rbox_metadata_key _key, const size_t& value) override{
     bl.clear();
     key = librmb::rbox_metadata_key_to_char(_key);
     std::string val = std::to_string(static_cast<int>(value));
     bl.append(val.c_str(), val.length() + 1);
   }
-  void convert(enum rbox_metadata_key _key, const int value) {
+  void convert(enum rbox_metadata_key _key, const int value) override{
     bl.clear();
     key = librmb::rbox_metadata_key_to_char(_key);
     std::string val = std::to_string(value);

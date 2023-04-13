@@ -26,6 +26,8 @@
 #include "../../storage-interface/rados-mail.h"
 #include "../../storage-engine/storage-backend-factory.h"
 #include "../../librmb/rados-save-log.h"
+#include "../../librmb/rados-metadata-impl.h"
+#include "../../storage-interface/rados-dovecot-ceph-cfg.h"
 
 using ::testing::AtLeast;
 using ::testing::Return;
@@ -124,7 +126,7 @@ TEST(librmb1, split_write_operation_1) {
  */
 TEST(librmb1, convert_types) {
   std::string value = "4441c5339f4c9d59523000009c60b9f7";
-  librmb::RadosMetadata attr(librmb::RBOX_METADATA_GUID, value);
+  librmb::RadosMetadataImpl attr(librmb::RBOX_METADATA_GUID, value);
 
   EXPECT_EQ(attr.key, "G");
   EXPECT_STREQ(attr.bl.c_str(), "4441c5339f4c9d59523000009c60b9f7");
@@ -132,7 +134,7 @@ TEST(librmb1, convert_types) {
 
   attr.key = "";
   attr.bl.clear();
-  librmb::RadosMetadata attr2(librmb::RBOX_METADATA_RECEIVED_TIME, t);
+  librmb::RadosMetadataImpl attr2(librmb::RBOX_METADATA_RECEIVED_TIME, t);
 
   EXPECT_EQ(attr2.key, "R");
   EXPECT_STREQ(attr2.bl.c_str(), "1503488583");
@@ -142,7 +144,7 @@ TEST(librmb1, convert_types) {
   EXPECT_EQ(t, recv_date);
 
   size_t st = 100;
-  librmb::RadosMetadata attr4(librmb::RBOX_METADATA_VIRTUAL_SIZE, st);
+  librmb::RadosMetadataImpl attr4(librmb::RBOX_METADATA_VIRTUAL_SIZE, st);
   EXPECT_EQ(attr4.key, "V");
   EXPECT_STREQ(attr4.bl.c_str(), "100");
 
@@ -221,12 +223,12 @@ TEST(librmb, load_metadata) {
 
   std::string key="key_1";
   std::string val="val_1";
-  const librmb::RadosMetadata rados_metadata_1=librmb::RadosMetadata::RadosMetadata(key,val);
-  obj.add_metadata(rados_metadata_1);
+  const librmb::RadosMetadataImpl rados_metadata_1=librmb::RadosMetadataImpl(key,val);
+  obj.add_metadata(&rados_metadata_1);
   key="key_2";
   val="val_2";
-  const librmb::RadosMetadata rados_metadata_2=librmb::RadosMetadata::RadosMetadata(key,val);
-  obj.add_metadata(rados_metadata_2);
+  const librmb::RadosMetadataImpl rados_metadata_2=librmb::RadosMetadataImpl(key,val);
+  obj.add_metadata(&rados_metadata_2);
   bool ret_storage = storage.save_mail(&obj);
 
   ms.load_metadata(&obj);
@@ -279,12 +281,12 @@ TEST(librmb, AttributeVersions) {
   librmb::RadosMetadataStorageDefault ms(storage.get_io_ctx_wrapper());
   std::string key="key_1";
   std::string val="val_1";
-  const librmb::RadosMetadata rados_metadata_1=librmb::RadosMetadata::RadosMetadata(key,val);
-  obj.add_metadata(rados_metadata_1);
+  const librmb::RadosMetadataImpl rados_metadata_1=librmb::RadosMetadataImpl(key,val);
+  obj.add_metadata(&rados_metadata_1);
   key="key_2";
   val="val_2";
-  const librmb::RadosMetadata rados_metadata_2=librmb::RadosMetadata::RadosMetadata(key,val);
-  obj.add_metadata(rados_metadata_2);
+  const librmb::RadosMetadataImpl rados_metadata_2=librmb::RadosMetadataImpl(key,val);
+  obj.add_metadata(&rados_metadata_2);
 
   bool ret_storage = storage.save_mail(&obj);
   EXPECT_EQ(ret_storage, true);
@@ -297,8 +299,8 @@ TEST(librmb, AttributeVersions) {
   uint64_t version = storage.get_io_ctx().get_last_version();
 
   // update metadata
-  librmb::RadosMetadata metadata(librmb::RBOX_METADATA_OLDV1_KEYWORDS, "abc");
-  ms.set_metadata(&obj, metadata);
+  librmb::RadosMetadataImpl metadata(librmb::RBOX_METADATA_OLDV1_KEYWORDS, "abc");
+  ms.set_metadata(&obj, &metadata);
 
   uint64_t version_after_xattr_update = storage.get_io_ctx().get_last_version();
   EXPECT_NE(version, version_after_xattr_update);
@@ -333,12 +335,14 @@ TEST(librmb, json_ima) {
   int open_connection = storage.open_connection(pool_name);
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
-  std::cout<<"it ie the test for ceph_config"<<std::endl;
-  librmb::RadosDovecotCephCfgImpl *cfg= new librmb::RadosDovecotCephCfgImpl(&storage.get_io_ctx());
-  std::cout<<"it ie the test for ceph_config"<<std::endl;
+  std::cout<<"keep it till end"<<std::endl;
+  storage_interface::RadosDovecotCephCfg *cfg=new librmb::RadosDovecotCephCfgImpl(&storage.get_io_ctx());
+  std::cout<<" it is crashed here"<<std::endl;
+  if(cfg==nullptr){
+    std::cout<<"it is like a joke"<<std::endl;
+  }
   // cfg.update_updatable_attributes("");
-  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), cfg);
-
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(),cfg);
   librmb::RadosMailImpl obj;
   obj.set_mail_buffer(storage.alloc_mail_buffer());
   ((librados::bufferlist*)obj.get_mail_buffer())->append("abcdefghijklmn");
@@ -348,15 +352,15 @@ TEST(librmb, json_ima) {
   unsigned int flags = 0x18;
   long recv_time = 12345677;
   // all attributes are not updateable.
-  librmb::RadosMetadata attr(librmb::RBOX_METADATA_GUID, "guid");
-  librmb::RadosMetadata attr2(librmb::RBOX_METADATA_OLDV1_FLAGS, flags);
-  librmb::RadosMetadata attr3(librmb::RBOX_METADATA_RECEIVED_TIME, recv_time);
-  librmb::RadosMetadata attr4(librmb::RBOX_METADATA_VERSION, "0.1");
+  librmb::RadosMetadataImpl attr(librmb::RBOX_METADATA_GUID, "guid");
+  librmb::RadosMetadataImpl attr2(librmb::RBOX_METADATA_OLDV1_FLAGS, flags);
+  librmb::RadosMetadataImpl attr3(librmb::RBOX_METADATA_RECEIVED_TIME, recv_time);
+  librmb::RadosMetadataImpl attr4(librmb::RBOX_METADATA_VERSION, "0.1");
 
-  obj.add_metadata(attr);
-  obj.add_metadata(attr2);
-  obj.add_metadata(attr3);
-  obj.add_metadata(attr4);
+  obj.add_metadata(&attr);
+  obj.add_metadata(&attr2);
+  obj.add_metadata(&attr3);
+  obj.add_metadata(&attr4);
 
   // ms.save_metadata(&op, &obj);
   bool ret_storage = storage.save_mail(&obj);
@@ -368,9 +372,10 @@ TEST(librmb, json_ima) {
   EXPECT_EQ(4, attr_list.size());
 
   unsigned int uid = 10;
-  librmb::RadosMetadata attr_uid(librmb::RBOX_METADATA_MAIL_UID, uid);
-
-  ms.set_metadata(&obj, attr_uid);
+  librmb::RadosMetadataImpl attr_uid(librmb::RBOX_METADATA_MAIL_UID, uid);
+  std::cout<<"what is required by cfg??"<<std::endl;
+  ms.set_metadata(&obj, &attr_uid);
+  std::cout<<"Is there any problem with ms??"<<std::endl;
 
   // check again
   attr_list.clear();
@@ -382,14 +387,12 @@ TEST(librmb, json_ima) {
   cluster.deinit();
   delete obj.get_mail_buffer();
   delete cfg;
-
 }
 // standard call order for metadata updates
 // 0. pre-condition: setting flags as updateable
 // 1. save_metadata
 // 2. set_metadata (update uid)
 TEST(librmb, json_ima_2) {
-  librados::IoCtx io_ctx;
   uint64_t max_size = 3;
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
@@ -401,11 +404,11 @@ TEST(librmb, json_ima_2) {
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
 
-  librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
+  storage_interface::RadosDovecotCephCfg *cfg=new librmb::RadosDovecotCephCfgImpl (&storage.get_io_ctx());
 
-  cfg.set_update_attributes("true");
-  cfg.update_updatable_attributes("F");
-  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), &cfg);
+  cfg->set_update_attributes("true");
+  cfg->update_updatable_attributes("F");
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), cfg);
 
   librmb::RadosMailImpl obj;
   obj.set_mail_buffer(storage.alloc_mail_buffer());
@@ -416,15 +419,15 @@ TEST(librmb, json_ima_2) {
   unsigned int flags = 0x18;
   long recv_time = 12345677;
   // all attributes are not updateable.
-  librmb::RadosMetadata attr(librmb::RBOX_METADATA_GUID, "guid");
-  librmb::RadosMetadata attr2(librmb::RBOX_METADATA_OLDV1_FLAGS, flags);
-  librmb::RadosMetadata attr3(librmb::RBOX_METADATA_RECEIVED_TIME, recv_time);
-  librmb::RadosMetadata attr4(librmb::RBOX_METADATA_VERSION, "0.1");
+  librmb::RadosMetadataImpl attr(librmb::RBOX_METADATA_GUID, "guid");
+  librmb::RadosMetadataImpl attr2(librmb::RBOX_METADATA_OLDV1_FLAGS, flags);
+  librmb::RadosMetadataImpl attr3(librmb::RBOX_METADATA_RECEIVED_TIME, recv_time);
+  librmb::RadosMetadataImpl attr4(librmb::RBOX_METADATA_VERSION, "0.1");
 
-  obj.add_metadata(attr);
-  obj.add_metadata(attr2);
-  obj.add_metadata(attr3);
-  obj.add_metadata(attr4);
+  obj.add_metadata(&attr);
+  obj.add_metadata(&attr2);
+  obj.add_metadata(&attr3);
+  obj.add_metadata(&attr4);
 
   // ms.save_metadata(&op, &obj);
   bool ret_storage = storage.save_mail(&obj);
@@ -437,9 +440,9 @@ TEST(librmb, json_ima_2) {
   EXPECT_EQ(4, attr_list.size());
 
   unsigned int uid = 10;
-  librmb::RadosMetadata attr_uid(librmb::RBOX_METADATA_MAIL_UID, uid);
+  librmb::RadosMetadataImpl attr_uid(librmb::RBOX_METADATA_MAIL_UID, uid);
 
-  ms.set_metadata(&obj, attr_uid);
+  ms.set_metadata(&obj, &attr_uid);
 
   // check again
   attr_list.clear();
@@ -450,8 +453,7 @@ TEST(librmb, json_ima_2) {
   // tear down
   cluster.deinit();
   delete obj.get_mail_buffer();
-  librmb::RadosDovecotCephCfgImpl *cfg_ptr=&cfg;
-  delete cfg_ptr;
+  delete cfg;
 }
 
 // standard call order for metadata updates
@@ -470,10 +472,10 @@ TEST(librmb, json_ima_3) {
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
 
-  librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
-  cfg.set_update_attributes("true");
-  cfg.update_updatable_attributes("FK");
-  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), &cfg);
+  storage_interface::RadosDovecotCephCfg *cfg=new  librmb::RadosDovecotCephCfgImpl (&storage.get_io_ctx());
+  cfg->set_update_attributes("true");
+  cfg->update_updatable_attributes("FK");
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), cfg);
 
   librmb::RadosMailImpl obj;
   obj.set_mail_buffer(storage.alloc_mail_buffer());
@@ -484,21 +486,21 @@ TEST(librmb, json_ima_3) {
   unsigned int flags = 0x18;
   long recv_time = 12345677;
   // all attributes are not updateable.
-  librmb::RadosMetadata attr(librmb::RBOX_METADATA_GUID, "guid");
-  librmb::RadosMetadata attr2(librmb::RBOX_METADATA_OLDV1_FLAGS, flags);
-  librmb::RadosMetadata attr3(librmb::RBOX_METADATA_RECEIVED_TIME, recv_time);
-  librmb::RadosMetadata attr4(librmb::RBOX_METADATA_VERSION, "0.1");
+  librmb::RadosMetadataImpl attr(librmb::RBOX_METADATA_GUID, "guid");
+  librmb::RadosMetadataImpl attr2(librmb::RBOX_METADATA_OLDV1_FLAGS, flags);
+  librmb::RadosMetadataImpl attr3(librmb::RBOX_METADATA_RECEIVED_TIME, recv_time);
+  librmb::RadosMetadataImpl attr4(librmb::RBOX_METADATA_VERSION, "0.1");
 
-  obj.add_metadata(attr);
-  obj.add_metadata(attr2);
-  obj.add_metadata(attr3);
-  obj.add_metadata(attr4);
+  obj.add_metadata(&attr);
+  obj.add_metadata(&attr2);
+  obj.add_metadata(&attr3);
+  obj.add_metadata(&attr4);
 
   for (int i = 0; i < 10; i++) {
     std::string keyword = std::to_string(i);
     std::string ext_key = "k_" + keyword;
-    librmb::RadosMetadata ext_metadata(ext_key, keyword);
-    obj.add_extended_metadata(ext_metadata);
+    librmb::RadosMetadataImpl ext_metadata(ext_key, keyword);
+    obj.add_extended_metadata(&ext_metadata);
   }
 
   // ms.save_metadata(&op, &obj);
@@ -512,9 +514,9 @@ TEST(librmb, json_ima_3) {
   EXPECT_EQ(4, attr_list.size());
 
   unsigned int uid = 10;
-  librmb::RadosMetadata attr_uid(librmb::RBOX_METADATA_MAIL_UID, uid);
+  librmb::RadosMetadataImpl attr_uid(librmb::RBOX_METADATA_MAIL_UID, uid);
 
-  ms.set_metadata(&obj, attr_uid);
+  ms.set_metadata(&obj, &attr_uid);
 
   // check again
   attr_list.clear();
@@ -532,8 +534,7 @@ TEST(librmb, json_ima_3) {
   // tear down
   cluster.deinit();
   delete obj.get_mail_buffer();
-  librmb::RadosDovecotCephCfgImpl *cfg_ptr=&cfg;
-  delete cfg_ptr;
+  delete cfg;
 }
 /**
  * Load metadata with default metadata reader
@@ -550,9 +551,9 @@ TEST(librmb, test_default_metadata_load_attributes) {
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
 
-  librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
-  cfg.set_update_attributes("true");
-  cfg.update_updatable_attributes("FK");
+  storage_interface::RadosDovecotCephCfg *cfg=new librmb::RadosDovecotCephCfgImpl (&storage.get_io_ctx());
+  cfg->set_update_attributes("true");
+  cfg->update_updatable_attributes("FK");
   librmb::RadosMetadataStorageDefault ms(storage.get_io_ctx_wrapper());
 
   librmb::RadosMailImpl obj;
@@ -564,21 +565,21 @@ TEST(librmb, test_default_metadata_load_attributes) {
   unsigned int flags = 0x18;
   long recv_time = 12345677;
   // all attributes are not updateable.
-  librmb::RadosMetadata attr(librmb::RBOX_METADATA_GUID, "guid");
-  librmb::RadosMetadata attr2(librmb::RBOX_METADATA_OLDV1_FLAGS, flags);
-  librmb::RadosMetadata attr3(librmb::RBOX_METADATA_RECEIVED_TIME, recv_time);
-  librmb::RadosMetadata attr4(librmb::RBOX_METADATA_VERSION, "0.1");
+  librmb::RadosMetadataImpl attr(librmb::RBOX_METADATA_GUID, "guid");
+  librmb::RadosMetadataImpl attr2(librmb::RBOX_METADATA_OLDV1_FLAGS, flags);
+  librmb::RadosMetadataImpl attr3(librmb::RBOX_METADATA_RECEIVED_TIME, recv_time);
+  librmb::RadosMetadataImpl attr4(librmb::RBOX_METADATA_VERSION, "0.1");
 
-  obj.add_metadata(attr);
-  obj.add_metadata(attr2);
-  obj.add_metadata(attr3);
-  obj.add_metadata(attr4);
+  obj.add_metadata(&attr);
+  obj.add_metadata(&attr2);
+  obj.add_metadata(&attr3);
+  obj.add_metadata(&attr4);
 
   for (int i = 0; i < 10; i++) {
     std::string keyword = std::to_string(i);
     std::string ext_key = "k_" + keyword;
-    librmb::RadosMetadata ext_metadata(ext_key, keyword);
-    obj.add_extended_metadata(ext_metadata);
+    librmb::RadosMetadataImpl ext_metadata(ext_key, keyword);
+    obj.add_extended_metadata(&ext_metadata);
   }
 
   // ms.save_metadata(&op, &obj);
@@ -594,8 +595,7 @@ TEST(librmb, test_default_metadata_load_attributes) {
   // tear down
   cluster.deinit();
   delete obj.get_mail_buffer();
-  librmb::RadosDovecotCephCfgImpl *cfg_ptr=&cfg;
-  delete cfg_ptr;
+  delete cfg;
 }
 /**
  * Test LoadMetadata default reader
@@ -613,9 +613,9 @@ TEST(librmb, test_default_metadata_load_attributes_obj_no_longer_exist) {
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
 
-  librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
-  cfg.set_update_attributes("true");
-  cfg.update_updatable_attributes("FK");
+  storage_interface::RadosDovecotCephCfg *cfg=new librmb::RadosDovecotCephCfgImpl (&storage.get_io_ctx());
+  cfg->set_update_attributes("true");
+  cfg->update_updatable_attributes("FK");
   librmb::RadosMetadataStorageDefault ms(storage.get_io_ctx_wrapper());
 
   librmb::RadosMailImpl obj2;
@@ -626,8 +626,7 @@ TEST(librmb, test_default_metadata_load_attributes_obj_no_longer_exist) {
 
   // tear down
   cluster.deinit();
-  librmb::RadosDovecotCephCfgImpl *cfg_ptr=&cfg;
-  delete cfg_ptr;
+  delete cfg;
 }
 /**
  * Test Metadata reader with ima reader
@@ -645,10 +644,10 @@ TEST(librmb, test_default_metadata_load_attributes_obj_no_longer_exist_ima) {
   storage.set_namespace(ns);
   EXPECT_EQ(0, open_connection);
 
-  librmb::RadosDovecotCephCfgImpl cfg(&storage.get_io_ctx());
-  cfg.set_update_attributes("true");
-  cfg.update_updatable_attributes("FK");
-  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), &cfg);
+  storage_interface::RadosDovecotCephCfg *cfg=new librmb::RadosDovecotCephCfgImpl (&storage.get_io_ctx());
+  cfg->set_update_attributes("true");
+  cfg->update_updatable_attributes("FK");
+  librmb::RadosMetadataStorageIma ms(storage.get_io_ctx_wrapper(), cfg);
 
   librmb::RadosMailImpl obj2;
   obj2.set_oid("test_ima1");
@@ -658,8 +657,7 @@ TEST(librmb, test_default_metadata_load_attributes_obj_no_longer_exist_ima) {
 
   // tear down
   cluster.deinit();
-  librmb::RadosDovecotCephCfgImpl *cfg_ptr=&cfg;
-  delete cfg_ptr;
+  delete cfg;
 }
 /**
  * Test osd increment
@@ -862,8 +860,7 @@ TEST(librmb, rmb_load_objects) {
 
   EXPECT_EQ(0, open_connection);
   storage_interface::RadosCephConfig *ceph_cfg=
-   storage_engine::StorageBackendFactory::create_ceph_config(storage_engine::StorageBackendFactory::CEPH);
-  ceph_cfg->set_io_ctx(&storage.get_io_ctx());
+   storage_engine::StorageBackendFactory::create_ceph_config_io(storage_engine::StorageBackendFactory::CEPH,&storage.get_io_ctx());
   EXPECT_EQ(0, ceph_cfg->save_cfg());
 
   std::map<std::string, std::string> opts;
@@ -929,8 +926,7 @@ TEST(librmb, rmb_load_objects_valid_metadata) {
 
   EXPECT_EQ(0, open_connection);
   storage_interface::RadosCephConfig *ceph_cfg=
-   storage_engine::StorageBackendFactory::create_ceph_config(storage_engine::StorageBackendFactory::CEPH);
-  ceph_cfg->set_io_ctx(&storage.get_io_ctx()); 
+   storage_engine::StorageBackendFactory::create_ceph_config_io(storage_engine::StorageBackendFactory::CEPH,&storage.get_io_ctx());
   EXPECT_EQ(0, ceph_cfg->save_cfg());
 
   std::map<std::string, std::string> opts;
@@ -956,83 +952,83 @@ TEST(librmb, rmb_load_objects_valid_metadata) {
   {
     std::string key = "M";
     std::string val = "8eed840764b05359f12718004d2485ee";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "I";
     std::string val = "v0.1";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "G";
     std::string val = "8eed840764b05359f12718004d2485ee";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "R";
     std::string val = "1234567";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "S";
     std::string val = "1234561117";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "P";
     std::string val = "1";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "O";
     std::string val = "0";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "Z";
     std::string val = "200";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "V";
     std::string val = "250";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "U";
     std::string val = "1";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "A";
     std::string val = "";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "F";
     std::string val = "01";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "B";
     std::string val = "DRAFTS";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
- librmb::RadosMetadata *xattr=new librmb::RadosMetadata();
-  ms->set_metadata(&obj2,*xattr);
+ librmb::RadosMetadataImpl *xattr=new librmb::RadosMetadataImpl();
+  ms->set_metadata(&obj2,xattr);
   
   // save complete mail.
   EXPECT_EQ(true, storage.save_mail(&obj2));
@@ -1070,8 +1066,7 @@ TEST(librmb, rmb_load_objects_invalid_metadata) {
 
   EXPECT_EQ(0, open_connection);
   storage_interface::RadosCephConfig *ceph_cfg=
-   storage_engine::StorageBackendFactory::create_ceph_config(storage_engine::StorageBackendFactory::CEPH);
-  ceph_cfg->set_io_ctx(&storage.get_io_ctx()); 
+   storage_engine::StorageBackendFactory::create_ceph_config_io(storage_engine::StorageBackendFactory::CEPH,&storage.get_io_ctx()); 
   EXPECT_EQ(0, ceph_cfg->save_cfg());
 
   std::map<std::string, std::string> opts;
@@ -1097,83 +1092,83 @@ TEST(librmb, rmb_load_objects_invalid_metadata) {
   {
     std::string key = "M";
     std::string val = "8eed840764b05359f12718004d2485ee";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "I";
     std::string val = "v0.1";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "G";
     std::string val = "8eed840764b05359f12718004d2485ee";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "R";
     std::string val = "abnahsijsksisis";  // <-- This should be numeric
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "S";
     std::string val = "1234561117";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "P";
     std::string val = "1";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "O";
     std::string val = "0";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "Z";
     std::string val = "200";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "V";
     std::string val = "250";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "U";
     std::string val = "1";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "A";
     std::string val = "";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "F";
     std::string val = "01";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
   {
     std::string key = "B";
     std::string val = "DRAFTS";
-    librmb::RadosMetadata m(key, val);
-    obj2.add_metadata(m);
+    librmb::RadosMetadataImpl m(key, val);
+    obj2.add_metadata(&m);
   }
-  librmb::RadosMetadata *xattr=new librmb::RadosMetadata();
-  ms->set_metadata(&obj2,*xattr);
+  librmb::RadosMetadataImpl *xattr=new librmb::RadosMetadataImpl();
+  ms->set_metadata(&obj2,xattr);
   // save complete mail.
   EXPECT_EQ(true, storage.save_mail(&obj2));
 
@@ -1354,10 +1349,10 @@ TEST(librmb, move_object_delete_with_save_log) {
   EXPECT_EQ(entry.src_user, "t1");
 
   std::string key_guid(1, static_cast<char>(librmb::RBOX_METADATA_GUID));
-  std::list<librmb::RadosMetadata>::iterator it_guid =
+  std::list<storage_interface::RadosMetadata*>::iterator it_guid =
       std::find_if(entry.metadata.begin(), entry.metadata.end(),
-                   [key_guid](librmb::RadosMetadata const &m) { return m.key == key_guid; });
-  EXPECT_EQ("0246da2269ac1f5b3e1700009c60b9f7", (*it_guid).bl.to_str());
+                   [key_guid](storage_interface::RadosMetadata* const m) { return m->get_key() == key_guid; });
+  EXPECT_EQ("0246da2269ac1f5b3e1700009c60b9f7", (*it_guid)->get_buffer().to_str());
 
   std::remove(test_file_name.c_str());
   open_connection = storage.open_connection(pool_name);

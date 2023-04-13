@@ -23,10 +23,11 @@
 #include "../../storage-engine/storage-backend-factory.h"
 #include "../../librmb/rbox-io-ctx.h"
 #include "gmock/gmock.h"
+#include "../../storage-interface/rados-metadata.h"
 
 namespace librmbtest {
 using storage_interface::RadosMail;
-using librmb::RadosMetadata;
+using storage_interface::RadosMetadata;
 using storage_interface::RadosMetadataStorage;
 using storage_interface::RadosStorage;
 using storage_interface::RadosStorageMetadataModule;
@@ -78,10 +79,10 @@ class RadosStorageMock : public RadosStorage {
   MOCK_METHOD0(get_max_write_size_bytes, int());
   MOCK_METHOD0(get_max_object_size, int());
   MOCK_METHOD1(delete_mail, int(const std::string &oid));
-  MOCK_METHOD1(find_mails, std::set<std::string>(const RadosMetadata *attr));
+  MOCK_METHOD1(find_mails, std::set<std::string>(const storage_interface::RadosMetadata *attr));
   MOCK_METHOD1(open_connection, int(const std::string &poolname));
   MOCK_METHOD2(open_connection, int(const std::string &poolname, const std::string &index_pool));
-  MOCK_METHOD4(find_mails_async, std::set<std::string>(const RadosMetadata *attr, std::string &pool_name,int num_threads, void (*ptr)(std::string&)));
+  MOCK_METHOD4(find_mails_async, std::set<std::string>(const storage_interface::RadosMetadata *attr, std::string &pool_name,int num_threads, void (*ptr)(std::string&)));
 
   MOCK_METHOD4(open_connection,
                int(const std::string &poolname, const std::string &index_pool, const std::string &clustername, const std::string &rados_username));
@@ -93,10 +94,10 @@ class RadosStorageMock : public RadosStorage {
   MOCK_METHOD1(set_ceph_wait_method, void(enum librmb::rbox_ceph_aio_wait_method wait_method));
   MOCK_METHOD3(read_mail, int(const std::string &oid, storage_interface::RadosMail* mail,int try_counter));
   MOCK_METHOD6(move, int(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
-                         std::list<RadosMetadata> &to_update, bool delete_source));
+                         std::list<storage_interface::RadosMetadata*> &to_update, bool delete_source));
 
   MOCK_METHOD5(copy, int(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
-                         std::list<RadosMetadata> &to_update));
+                         std::list<storage_interface::RadosMetadata*> &to_update));
   MOCK_METHOD1(save_mail, bool(storage_interface::RadosMail *mail));
   MOCK_METHOD0(alloc_rados_mail, storage_interface::RadosMail *());
   MOCK_METHOD1(free_rados_mail, void(storage_interface::RadosMail *mail));
@@ -117,9 +118,9 @@ class RadosStorageMetadataMock : public RadosStorageMetadataModule {
  public:
   MOCK_METHOD1(set_io_ctx, void(librmb::RboxIoCtx &io_ctx_wrapper));
   MOCK_METHOD1(load_metadata, int(storage_interface::RadosMail *mail));
-  MOCK_METHOD2(set_metadata, int(storage_interface::RadosMail *mail, RadosMetadata &xattr));
-  MOCK_METHOD2(update_metadata, bool(const std::string &oid, std::list<RadosMetadata> &to_update));
-  MOCK_METHOD2(update_keyword_metadata, int(const std::string &oid, librmb::RadosMetadata *metadata));
+  MOCK_METHOD2(set_metadata, int(storage_interface::RadosMail *mail, storage_interface::RadosMetadata *xattr));
+  MOCK_METHOD2(update_metadata, bool(const std::string &oid, std::list<storage_interface::RadosMetadata*> &to_update));
+  MOCK_METHOD2(update_keyword_metadata, int(const std::string &oid, storage_interface::RadosMetadata *metadata));
   MOCK_METHOD2(remove_keyword_metadata, int(const std::string &oid, std::string &key));
   MOCK_METHOD3(load_keyword_metadata, int(const std::string &oid, std::set<std::string> &keys,
                                           std::map<std::string, ceph::bufferlist> *metadata));

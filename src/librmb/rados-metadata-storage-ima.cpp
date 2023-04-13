@@ -110,15 +110,15 @@ int RadosMetadataStorageIma::load_metadata(storage_interface::RadosMail *mail) {
 }
 
 // it is required that mail->get_metadata is up to date before update.
-int RadosMetadataStorageIma::set_metadata(storage_interface::RadosMail *mail, RadosMetadata &xattr) {
-  enum rbox_metadata_key k = static_cast<enum rbox_metadata_key>(*xattr.key.c_str());
+int RadosMetadataStorageIma::set_metadata(storage_interface::RadosMail *mail, storage_interface::RadosMetadata *xattr) {
+  enum rbox_metadata_key k = static_cast<enum rbox_metadata_key>(*xattr->get_key().c_str());
   if (!cfg->is_updateable_attribute(k)) {
     mail->add_metadata(xattr);
     librados::ObjectWriteOperation op;
     save_metadata(&op, mail);
     return io_ctx_wrapper->operate(*mail->get_oid(), &op);
   } else {
-    return io_ctx_wrapper->setxattr(*mail->get_oid(), xattr.key.c_str(), xattr.bl);
+    return io_ctx_wrapper->setxattr(*mail->get_oid(), xattr->get_key().c_str(), xattr->get_buffer());
   }
 }
 void RadosMetadataStorageIma::save_metadata(librados::ObjectWriteOperation *write_op, storage_interface::RadosMail *mail) {
@@ -159,7 +159,7 @@ void RadosMetadataStorageIma::save_metadata(librados::ObjectWriteOperation *writ
   write_op->setxattr(cfg->get_metadata_storage_attribute().c_str(), bl);
 }
 
-bool RadosMetadataStorageIma::update_metadata(const std::string &oid, std::list<RadosMetadata> &to_update) {
+bool RadosMetadataStorageIma::update_metadata(const std::string &oid, std::list<storage_interface::RadosMetadata*> &to_update) {
   librados::ObjectWriteOperation write_op;
 
   if (to_update.empty()) {
@@ -171,8 +171,8 @@ bool RadosMetadataStorageIma::update_metadata(const std::string &oid, std::list<
   load_metadata(obj);
 
   // update metadata
-  for (std::list<RadosMetadata>::iterator it = to_update.begin(); it != to_update.end(); ++it) {
-    (*obj->get_extended_metadata())[(*it).key] = (*it).bl;
+  for (std::list<storage_interface::RadosMetadata*>::iterator it = to_update.begin(); it != to_update.end(); ++it) {
+    (*obj->get_extended_metadata())[(*it)->get_key()] = (*it)->get_buffer();
   }
 
   // write update
@@ -187,13 +187,13 @@ bool RadosMetadataStorageIma::update_metadata(const std::string &oid, std::list<
   obj=nullptr;
   return ret == 0;
 }
-int RadosMetadataStorageIma::update_keyword_metadata(const std::string &oid, RadosMetadata *metadata) {
+int RadosMetadataStorageIma::update_keyword_metadata(const std::string &oid, storage_interface::RadosMetadata *metadata) {
   int ret = -1;
   if (metadata != nullptr) {
     if (!cfg->is_updateable_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS) || !cfg->is_update_attributes()) {
     } else {
       std::map<std::string, librados::bufferlist> map;
-      map.insert(std::pair<std::string, librados::bufferlist>(metadata->key, metadata->bl));
+      map.insert(std::pair<std::string, librados::bufferlist>(metadata->get_key(), metadata->get_buffer()));
       ret = io_ctx_wrapper->omap_set(map,oid);
     }
   }

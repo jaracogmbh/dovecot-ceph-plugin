@@ -26,6 +26,7 @@
 #include "../storage-interface/rados-mail.h"
 #include "rbox-io-ctx.h"
 #include "../storage-interface/rados-storage.h"
+#include "../storage-interface/rados-metadata.h"
 #include "rbox-io-ctx.h"
 
 namespace librmb {
@@ -55,9 +56,9 @@ class RadosStorageImpl : public storage_interface::RadosStorage {
   int delete_mail(const std::string &oid) override;
 
 
-  std::set<std::string> find_mails(const RadosMetadata *attr) override;
+  std::set<std::string> find_mails(const storage_interface::RadosMetadata *attr) override;
   
-  std::set<std::string> find_mails_async(const RadosMetadata *attr, std::string &pool_name, int num_threads, void (*ptr)(std::string&)) override;
+  std::set<std::string> find_mails_async(const storage_interface::RadosMetadata *attr, std::string &pool_name, int num_threads, void (*ptr)(std::string&)) override;
 
   int open_connection(const std::string &poolname) override;
   int open_connection(const std::string &poolname, const std::string &index_pool) override;
@@ -72,9 +73,9 @@ class RadosStorageImpl : public storage_interface::RadosStorage {
   // int read_mail(const std::string &oid, librados::bufferlist *buffer) override;
   int read_mail(const std::string &oid, storage_interface::RadosMail* mail,int try_counter) override;
   int move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
-           std::list<RadosMetadata> &to_update, bool delete_source) override;
+           std::list<storage_interface::RadosMetadata*> &to_update, bool delete_source) override;
   int copy(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
-           std::list<RadosMetadata> &to_update) override;
+           std::list<storage_interface::RadosMetadata*> &to_update) override;
   bool save_mail(storage_interface::RadosMail *mail) override;
   storage_interface::RadosMail *alloc_rados_mail() override;
 

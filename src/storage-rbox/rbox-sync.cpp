@@ -126,8 +126,12 @@ static int update_extended_metadata(struct rbox_sync_context *ctx, uint32_t seq1
           continue;
         }
         std::string key_value = keywords[keyword_idx];
-        librmb::RadosMetadata ext_metata(ext_key, key_value);
-        ret = r_storage->ms->get_storage()->update_keyword_metadata(key_oid, &ext_metata);
+        storage_interface::RadosMetadata *ext_metata=
+          storage_engine::StorageBackendFactory::create_metadata_str_key_val(
+            storage_engine::StorageBackendFactory::CEPH, ext_key, key_value);
+        ret = r_storage->ms->get_storage()->update_keyword_metadata(key_oid, ext_metata);
+        delete ext_metata;
+        ext_metata=nullptr;
       }
       if (ret < 0) {
         break;
@@ -217,12 +221,16 @@ static int update_flags(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t s
         }
         std::string str_flags_metadata;
         if (librmb::RadosUtils::flags_to_string(flags, &str_flags_metadata)) {
-          librmb::RadosMetadata update(librmb::RBOX_METADATA_OLDV1_FLAGS, str_flags_metadata);
+          storage_interface::RadosMetadata *update=
+            storage_engine::StorageBackendFactory::create_metadata_string(
+              storage_engine::StorageBackendFactory::CEPH, librmb::RBOX_METADATA_OLDV1_FLAGS, str_flags_metadata);
           ret = r_storage->ms->get_storage()->set_metadata(mail_object, update);
           if (ret < 0) {
             i_warning("updating metadata for object : oid(%s), seq (%d) failed with ceph errorcode: %d",
                       mail_object->get_oid()->c_str(), seq1, ret);
           }
+          delete update;
+          update =nullptr;
         }
       }
       delete mail_object;
