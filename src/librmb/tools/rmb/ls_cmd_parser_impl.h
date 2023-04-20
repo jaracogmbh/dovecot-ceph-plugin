@@ -36,9 +36,9 @@ class PredicateImpl : public storage_interface::Predicate {
   bool& get_valid() override{ return valid;}
 
   bool eval(const std::string &_p_value) override{
-    rbox_metadata_key rbox_key = static_cast<librmb::rbox_metadata_key>(*key.c_str());
+    storage_interface::rbox_metadata_key rbox_key = static_cast<storage_interface::rbox_metadata_key>(*key.c_str());
 
-    if (rbox_key == RBOX_METADATA_RECEIVED_TIME || rbox_key == RBOX_METADATA_OLDV1_SAVE_TIME) {
+    if (rbox_key == storage_interface::RBOX_METADATA_RECEIVED_TIME || rbox_key == storage_interface::RBOX_METADATA_OLDV1_SAVE_TIME) {
       // ref value
       time_t query_date = 0;
       convert_str_to_time_t(this->value, &query_date);
@@ -63,8 +63,8 @@ class PredicateImpl : public storage_interface::Predicate {
       }
       // time
       return true;
-    } else if (rbox_key == RBOX_METADATA_VIRTUAL_SIZE || rbox_key == RBOX_METADATA_PHYSICAL_SIZE ||
-               rbox_key == RBOX_METADATA_MAIL_UID) {
+    } else if (rbox_key == storage_interface::RBOX_METADATA_VIRTUAL_SIZE || rbox_key == storage_interface::RBOX_METADATA_PHYSICAL_SIZE ||
+               rbox_key == storage_interface::RBOX_METADATA_MAIL_UID) {
       uint64_t val = -1;
       uint64_t val2 = -1;
       try {

@@ -27,10 +27,10 @@ extern "C" {
 #include "encoding.h"
 #include "../storage-interface/rados-mail.h"
 #include "../storage-interface/rados-util.h"
-#include "rados-types.h"
+#include "../storage-interface/rados-types.h"
 #include "../storage-engine/storage-backend-factory.h"
 
-using librmb::rbox_metadata_key;
+using storage_interface::rbox_metadata_key;
 
 
 int rbox_sync_add_object(struct index_rebuild_context *ctx, const std::string &oi, storage_interface::RadosMail *mail_obj,
@@ -88,7 +88,7 @@ int rbox_sync_add_object(struct index_rebuild_context *ctx, const std::string &o
   // update uid.
   storage_interface::RadosMetadata *mail_uid=
     storage_engine::StorageBackendFactory::create_metadata_uint(
-      storage_engine::StorageBackendFactory::CEPH, librmb::RBOX_METADATA_MAIL_UID, next_uid);
+      storage_engine::StorageBackendFactory::CEPH, storage_interface::RBOX_METADATA_MAIL_UID, next_uid);
   std::string s_oid = *mail_obj->get_oid();
   std::list<storage_interface::RadosMetadata*> to_update;
   to_update.push_back(mail_uid);
@@ -127,7 +127,7 @@ std::map<std::string, std::list<storage_interface::RadosMail*>> load_rados_mail_
     }
     
     char *mailbox_guid = NULL;
-    rados_utils->get_metadata(librmb::RBOX_METADATA_MAILBOX_GUID, 
+    rados_utils->get_metadata(storage_interface::RBOX_METADATA_MAILBOX_GUID, 
                                       mail_object->get_metadata(), 
                                       &mailbox_guid
                                     );

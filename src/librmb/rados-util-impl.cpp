@@ -63,12 +63,11 @@ namespace librmb {
         break;
       }
     }
-
     return is_numeric;
   }
 
-  bool RadosUtilsImpl::is_date_attribute(const rbox_metadata_key &key) {
-    return (key == RBOX_METADATA_OLDV1_SAVE_TIME || key == RBOX_METADATA_RECEIVED_TIME);
+  bool RadosUtilsImpl::is_date_attribute(const storage_interface::rbox_metadata_key &key) {
+    return (key == storage_interface::RBOX_METADATA_OLDV1_SAVE_TIME || key == storage_interface::RBOX_METADATA_RECEIVED_TIME);
   }
 
   int RadosUtilsImpl::convert_time_t_to_str(const time_t &t, std::string *ret_val) {
@@ -177,8 +176,8 @@ namespace librmb {
     }
     *value = NULL;
   }
-  void RadosUtilsImpl::get_metadata(rbox_metadata_key key, std::map<std::string, ceph::bufferlist> *metadata, char **value) {
-    std::string str_key(librmb::rbox_metadata_key_to_char(key));
+  void RadosUtilsImpl::get_metadata(storage_interface::rbox_metadata_key key, std::map<std::string, ceph::bufferlist> *metadata, char **value) {
+    std::string str_key(storage_interface::rbox_metadata_key_to_char(key));
     get_metadata(str_key, metadata, value);
   }
   bool RadosUtilsImpl::is_numeric_optional(const char *text) {
@@ -190,29 +189,28 @@ namespace librmb {
 
   bool RadosUtilsImpl::validate_metadata(std::map<std::string, ceph::bufferlist> *metadata) {
     char *uid = NULL;
-    get_metadata(RBOX_METADATA_MAIL_UID, metadata, &uid);
+    get_metadata(storage_interface::RBOX_METADATA_MAIL_UID, metadata, &uid);
     char *recv_time_str = NULL;
-    get_metadata(RBOX_METADATA_RECEIVED_TIME, metadata, &recv_time_str);
+    get_metadata(storage_interface::RBOX_METADATA_RECEIVED_TIME, metadata, &recv_time_str);
     char *p_size = NULL;
-    get_metadata(RBOX_METADATA_PHYSICAL_SIZE, metadata, &p_size);
+    get_metadata(storage_interface::RBOX_METADATA_PHYSICAL_SIZE, metadata, &p_size);
     char *v_size = NULL;
-    get_metadata(RBOX_METADATA_VIRTUAL_SIZE, metadata, &v_size);
-
+    get_metadata(storage_interface::RBOX_METADATA_VIRTUAL_SIZE, metadata, &v_size);
     char *rbox_version;
-    get_metadata(RBOX_METADATA_VERSION, metadata, &rbox_version);
+    get_metadata(storage_interface::RBOX_METADATA_VERSION, metadata, &rbox_version);
     char *mailbox_guid = NULL;
-    get_metadata(RBOX_METADATA_MAILBOX_GUID, metadata, &mailbox_guid);
+    get_metadata(storage_interface::RBOX_METADATA_MAILBOX_GUID, metadata, &mailbox_guid);
     char *mail_guid = NULL;
-    get_metadata(RBOX_METADATA_GUID, metadata, &mail_guid);
+    get_metadata(storage_interface::RBOX_METADATA_GUID, metadata, &mail_guid);
     char *mb_orig_name = NULL;
-    get_metadata(RBOX_METADATA_ORIG_MAILBOX, metadata, &mb_orig_name);
+    get_metadata(storage_interface::RBOX_METADATA_ORIG_MAILBOX, metadata, &mb_orig_name);
 
     char *flags = NULL;
-    get_metadata(RBOX_METADATA_OLDV1_FLAGS, metadata, &flags);
+    get_metadata(storage_interface::RBOX_METADATA_OLDV1_FLAGS, metadata, &flags);
     char *pvt_flags = NULL;
-    get_metadata(RBOX_METADATA_PVT_FLAGS, metadata, &pvt_flags);
+    get_metadata(storage_interface::RBOX_METADATA_PVT_FLAGS, metadata, &pvt_flags);
     char *from_envelope = NULL;
-    get_metadata(RBOX_METADATA_FROM_ENVELOPE, metadata, &from_envelope);
+    get_metadata(storage_interface::RBOX_METADATA_FROM_ENVELOPE, metadata, &from_envelope);
 
     int test = 0;
     test += is_numeric(uid) ? 0 : 1;

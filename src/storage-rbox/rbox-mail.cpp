@@ -47,7 +47,7 @@ extern "C" {
 #include "../storage-interface/rados-storage.h"
 
 using storage_interface::RadosMail;
-using librmb::rbox_metadata_key;
+using storage_interface::rbox_metadata_key;
 
 void rbox_mail_set_expunged(struct rbox_mail *mail) {
   FUNC_START();
@@ -155,7 +155,7 @@ static int rbox_mail_metadata_get(struct rbox_mail *rmail, enum rbox_metadata_ke
   }
   int ret_load_metadata = r_storage->ms->get_storage()->load_metadata(rmail->rados_mail);
   if (ret_load_metadata < 0) {
-    std::string metadata_key = librmb::rbox_metadata_key_to_char(key);
+    std::string metadata_key = storage_interface::rbox_metadata_key_to_char(key);
     if (ret_load_metadata == -ENOENT) {
       //i_debug("Errorcode: process %d returned with %d cannot get x_attr(%s,%c) from rados_object: %s",getpid(), ret_load_metadata,
       //          metadata_key.c_str(), key, rmail->rados_mail != NULL ? rmail->rados_mail->to_string(" ").c_str() : " no rados_mail");

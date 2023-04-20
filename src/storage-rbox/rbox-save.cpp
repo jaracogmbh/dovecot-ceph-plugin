@@ -28,7 +28,7 @@ extern "C" {
 #include "str.h"
 
 #include "rbox-sync.h"
-#include "rados-types.h"
+#include "../storage-interface/rados-types.h"
 #include "debug-helper.h"
 #if DOVECOT_PREREQ(2, 3)
 #include "index-pop3-uidl.h"
@@ -48,7 +48,7 @@ using ceph::bufferlist;
 using storage_interface::RadosMail;
 using storage_interface::RadosMetadata;
 using storage_interface::RadosStorage;
-using librmb::rbox_metadata_key;
+using storage_interface::rbox_metadata_key;
 using storage_engine::StorageBackendFactory;
 using std::string;
 

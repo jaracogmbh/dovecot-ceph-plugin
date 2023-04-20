@@ -17,7 +17,6 @@
 #include <sstream>
 #include <map>
 #include "rados-metadata.h"
-#include "../librmb/rados-types.h"
 #include <rados/librados.hpp>
 
 namespace storage_interface {

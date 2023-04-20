@@ -127,7 +127,7 @@ TEST(librmb1, split_write_operation_1) {
  */
 TEST(librmb1, convert_types) {
   std::string value = "4441c5339f4c9d59523000009c60b9f7";
-  librmb::RadosMetadataImpl attr(librmb::RBOX_METADATA_GUID, value);
+  librmb::RadosMetadataImpl attr(storage_interface::RBOX_METADATA_GUID, value);
 
   EXPECT_EQ(attr.key, "G");
   EXPECT_STREQ(attr.bl.c_str(), "4441c5339f4c9d59523000009c60b9f7");
@@ -135,7 +135,7 @@ TEST(librmb1, convert_types) {
 
   attr.key = "";
   attr.bl.clear();
-  librmb::RadosMetadataImpl attr2(librmb::RBOX_METADATA_RECEIVED_TIME, t);
+  librmb::RadosMetadataImpl attr2(storage_interface::RBOX_METADATA_RECEIVED_TIME, t);
 
   EXPECT_EQ(attr2.key, "R");
   EXPECT_STREQ(attr2.bl.c_str(), "1503488583");
@@ -145,7 +145,7 @@ TEST(librmb1, convert_types) {
   EXPECT_EQ(t, recv_date);
 
   size_t st = 100;
-  librmb::RadosMetadataImpl attr4(librmb::RBOX_METADATA_VIRTUAL_SIZE, st);
+  librmb::RadosMetadataImpl attr4(storage_interface::RBOX_METADATA_VIRTUAL_SIZE, st);
   EXPECT_EQ(attr4.key, "V");
   EXPECT_STREQ(attr4.bl.c_str(), "100");
 
@@ -300,7 +300,7 @@ TEST(librmb, AttributeVersions) {
   uint64_t version = storage.get_io_ctx().get_last_version();
 
   // update metadata
-  librmb::RadosMetadataImpl metadata(librmb::RBOX_METADATA_OLDV1_KEYWORDS, "abc");
+  librmb::RadosMetadataImpl metadata(storage_interface::RBOX_METADATA_OLDV1_KEYWORDS, "abc");
   ms.set_metadata(&obj, &metadata);
 
   uint64_t version_after_xattr_update = storage.get_io_ctx().get_last_version();
@@ -353,10 +353,10 @@ TEST(librmb, json_ima) {
   unsigned int flags = 0x18;
   long recv_time = 12345677;
   // all attributes are not updateable.
-  librmb::RadosMetadataImpl attr(librmb::RBOX_METADATA_GUID, "guid");
-  librmb::RadosMetadataImpl attr2(librmb::RBOX_METADATA_OLDV1_FLAGS, flags);
-  librmb::RadosMetadataImpl attr3(librmb::RBOX_METADATA_RECEIVED_TIME, recv_time);
-  librmb::RadosMetadataImpl attr4(librmb::RBOX_METADATA_VERSION, "0.1");
+  librmb::RadosMetadataImpl attr(storage_interface::RBOX_METADATA_GUID, "guid");
+  librmb::RadosMetadataImpl attr2(storage_interface::RBOX_METADATA_OLDV1_FLAGS, flags);
+  librmb::RadosMetadataImpl attr3(storage_interface::RBOX_METADATA_RECEIVED_TIME, recv_time);
+  librmb::RadosMetadataImpl attr4(storage_interface::RBOX_METADATA_VERSION, "0.1");
 
   obj.add_metadata(&attr);
   obj.add_metadata(&attr2);
@@ -373,7 +373,7 @@ TEST(librmb, json_ima) {
   EXPECT_EQ(4, attr_list.size());
 
   unsigned int uid = 10;
-  librmb::RadosMetadataImpl attr_uid(librmb::RBOX_METADATA_MAIL_UID, uid);
+  librmb::RadosMetadataImpl attr_uid(storage_interface::RBOX_METADATA_MAIL_UID, uid);
   std::cout<<"what is required by cfg??"<<std::endl;
   ms.set_metadata(&obj, &attr_uid);
   std::cout<<"Is there any problem with ms??"<<std::endl;
@@ -420,10 +420,10 @@ TEST(librmb, json_ima_2) {
   unsigned int flags = 0x18;
   long recv_time = 12345677;
   // all attributes are not updateable.
-  librmb::RadosMetadataImpl attr(librmb::RBOX_METADATA_GUID, "guid");
-  librmb::RadosMetadataImpl attr2(librmb::RBOX_METADATA_OLDV1_FLAGS, flags);
-  librmb::RadosMetadataImpl attr3(librmb::RBOX_METADATA_RECEIVED_TIME, recv_time);
-  librmb::RadosMetadataImpl attr4(librmb::RBOX_METADATA_VERSION, "0.1");
+  librmb::RadosMetadataImpl attr(storage_interface::RBOX_METADATA_GUID, "guid");
+  librmb::RadosMetadataImpl attr2(storage_interface::RBOX_METADATA_OLDV1_FLAGS, flags);
+  librmb::RadosMetadataImpl attr3(storage_interface::RBOX_METADATA_RECEIVED_TIME, recv_time);
+  librmb::RadosMetadataImpl attr4(storage_interface::RBOX_METADATA_VERSION, "0.1");
 
   obj.add_metadata(&attr);
   obj.add_metadata(&attr2);
@@ -441,7 +441,7 @@ TEST(librmb, json_ima_2) {
   EXPECT_EQ(4, attr_list.size());
 
   unsigned int uid = 10;
-  librmb::RadosMetadataImpl attr_uid(librmb::RBOX_METADATA_MAIL_UID, uid);
+  librmb::RadosMetadataImpl attr_uid(storage_interface::RBOX_METADATA_MAIL_UID, uid);
 
   ms.set_metadata(&obj, &attr_uid);
 
@@ -487,10 +487,10 @@ TEST(librmb, json_ima_3) {
   unsigned int flags = 0x18;
   long recv_time = 12345677;
   // all attributes are not updateable.
-  librmb::RadosMetadataImpl attr(librmb::RBOX_METADATA_GUID, "guid");
-  librmb::RadosMetadataImpl attr2(librmb::RBOX_METADATA_OLDV1_FLAGS, flags);
-  librmb::RadosMetadataImpl attr3(librmb::RBOX_METADATA_RECEIVED_TIME, recv_time);
-  librmb::RadosMetadataImpl attr4(librmb::RBOX_METADATA_VERSION, "0.1");
+  librmb::RadosMetadataImpl attr(storage_interface::RBOX_METADATA_GUID, "guid");
+  librmb::RadosMetadataImpl attr2(storage_interface::RBOX_METADATA_OLDV1_FLAGS, flags);
+  librmb::RadosMetadataImpl attr3(storage_interface::RBOX_METADATA_RECEIVED_TIME, recv_time);
+  librmb::RadosMetadataImpl attr4(storage_interface::RBOX_METADATA_VERSION, "0.1");
 
   obj.add_metadata(&attr);
   obj.add_metadata(&attr2);
@@ -515,7 +515,7 @@ TEST(librmb, json_ima_3) {
   EXPECT_EQ(4, attr_list.size());
 
   unsigned int uid = 10;
-  librmb::RadosMetadataImpl attr_uid(librmb::RBOX_METADATA_MAIL_UID, uid);
+  librmb::RadosMetadataImpl attr_uid(storage_interface::RBOX_METADATA_MAIL_UID, uid);
 
   ms.set_metadata(&obj, &attr_uid);
 
@@ -566,10 +566,10 @@ TEST(librmb, test_default_metadata_load_attributes) {
   unsigned int flags = 0x18;
   long recv_time = 12345677;
   // all attributes are not updateable.
-  librmb::RadosMetadataImpl attr(librmb::RBOX_METADATA_GUID, "guid");
-  librmb::RadosMetadataImpl attr2(librmb::RBOX_METADATA_OLDV1_FLAGS, flags);
-  librmb::RadosMetadataImpl attr3(librmb::RBOX_METADATA_RECEIVED_TIME, recv_time);
-  librmb::RadosMetadataImpl attr4(librmb::RBOX_METADATA_VERSION, "0.1");
+  librmb::RadosMetadataImpl attr(storage_interface::RBOX_METADATA_GUID, "guid");
+  librmb::RadosMetadataImpl attr2(storage_interface::RBOX_METADATA_OLDV1_FLAGS, flags);
+  librmb::RadosMetadataImpl attr3(storage_interface::RBOX_METADATA_RECEIVED_TIME, recv_time);
+  librmb::RadosMetadataImpl attr4(storage_interface::RBOX_METADATA_VERSION, "0.1");
 
   obj.add_metadata(&attr);
   obj.add_metadata(&attr2);
@@ -1385,7 +1385,7 @@ TEST(librmb, move_object_delete_with_save_log) {
   EXPECT_EQ(entry->get_src_ns(), "t1");
   EXPECT_EQ(entry->get_src_user(), "t1");
 
-  std::string key_guid(1, static_cast<char>(librmb::RBOX_METADATA_GUID));
+  std::string key_guid(1, static_cast<char>(storage_interface::RBOX_METADATA_GUID));
   std::list<storage_interface::RadosMetadata*>::iterator it_guid =
       std::find_if(entry->get_metadata().begin(), entry->get_metadata().end(),
                    [key_guid](storage_interface::RadosMetadata* const m) { return m->get_key() == key_guid; });

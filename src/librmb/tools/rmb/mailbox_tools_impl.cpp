@@ -99,7 +99,7 @@ int MailboxToolsImpl::build_filename(storage_interface::RadosMail* mail_obj, std
   std::stringstream ss;
   char* m_mail_uid;
   librmb::RadosUtilsImpl rados_utils;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_MAIL_UID, mail_obj->get_metadata(), &m_mail_uid);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAIL_UID, mail_obj->get_metadata(), &m_mail_uid);
   ss << m_mail_uid << ".";
   ss << *mail_obj->get_oid();
   *filename = ss.str();

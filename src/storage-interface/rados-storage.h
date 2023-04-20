@@ -19,7 +19,7 @@
 #include <rados/librados.hpp>
 #include "rados-cluster.h"
 #include "rados-mail.h"
-#include "../librmb/rados-types.h"
+#include "rados-types.h"
 #include "rbox-io-ctx.h"
 
 namespace storage_interface {
@@ -56,7 +56,7 @@ class RadosStorage {
   virtual std::string get_pool_name() = 0;
 
   /* set the wait method for async operations */
-  virtual void set_ceph_wait_method(librmb::rbox_ceph_aio_wait_method wait_method) = 0;
+  virtual void set_ceph_wait_method(storage_interface::rbox_ceph_aio_wait_method wait_method) = 0;
     
   /*! get the max operation size in mb
    * @return the maximal number of mb to write in a single write operation*/

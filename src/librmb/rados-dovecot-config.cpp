@@ -13,7 +13,7 @@
 
 #include <iostream>
 #include <sstream>
-#include "rados-types.h"
+#include "../storage-interface/rados-types.h"
 
 namespace librmb {
 
@@ -52,8 +52,8 @@ RadosConfig::RadosConfig()
   is_valid = false;
 }
 
-bool RadosConfig::string_contains_key(const std::string &str, enum rbox_metadata_key key) {
-  std::string value(librmb::rbox_metadata_key_to_char(key));
+bool RadosConfig::string_contains_key(const std::string &str, storage_interface::rbox_metadata_key key) {
+  std::string value(storage_interface::rbox_metadata_key_to_char(key));
   return str.find(value) != std::string::npos;
 }
 

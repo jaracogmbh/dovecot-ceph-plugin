@@ -15,7 +15,7 @@
 #include <string>
 
 #include <rados/librados.hpp>
-#include "rados-types.h"
+#include "../storage-interface/rados-types.h"
 #include "../storage-interface/rados-ceph-json-config.h"
 
 namespace librmb {
@@ -66,8 +66,8 @@ class RadosCephJsonConfigImpl : public storage_interface::RadosCephJsonConfig {
     updateable_attributes = updateable_attributes_;
   }
 
-  bool is_mail_attribute(enum rbox_metadata_key key) override;
-  bool is_updateable_attribute(enum rbox_metadata_key key) override;
+  bool is_mail_attribute(storage_interface::rbox_metadata_key key) override;
+  bool is_updateable_attribute(storage_interface::rbox_metadata_key key) override;
   bool is_update_attributes() override{ return update_attributes.compare("true") == 0; }
 
   void set_metadata_storage_module(const std::string& metadata_storage_module_) override{

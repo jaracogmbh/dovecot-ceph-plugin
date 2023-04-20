@@ -36,7 +36,7 @@ extern "C" {
 const char *SETTINGS_RBOX_UPDATE_IMMUTABLE = "rbox_update_immutable";
 const char *SETTINGS_DEF_UPDATE_IMMUTABLE = "false";
 
-using librmb::rbox_metadata_key;
+using storage_interface::rbox_metadata_key;
 using storage_engine::StorageBackendFactory;
 
 int rbox_mail_storage_copy(struct mail_save_context *ctx, struct mail *mail);

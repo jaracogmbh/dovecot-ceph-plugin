@@ -15,7 +15,7 @@
 #include <string>
 
 #include <rados/librados.hpp>
-#include "../librmb/rados-types.h"
+#include "rados-types.h"
 
 namespace storage_interface {
 /**
@@ -62,8 +62,8 @@ class RadosCephJsonConfig {
   virtual void set_update_attributes(const std::string& update_attributes_) = 0; 
   virtual void set_updateable_attributes(const std::string& updateable_attributes_) = 0; 
 
-  virtual bool is_mail_attribute(librmb::rbox_metadata_key key) = 0;
-  virtual bool is_updateable_attribute(librmb::rbox_metadata_key key) = 0;
+  virtual bool is_mail_attribute(enum rbox_metadata_key key) = 0;
+  virtual bool is_updateable_attribute(enum rbox_metadata_key key) = 0;
   virtual bool is_update_attributes() = 0; 
 
   virtual void set_metadata_storage_module(const std::string& metadata_storage_module_) = 0; 

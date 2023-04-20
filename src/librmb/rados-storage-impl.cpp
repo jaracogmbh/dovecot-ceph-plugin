@@ -49,7 +49,7 @@ RadosStorageImpl::RadosStorageImpl(storage_interface::RadosCluster *_cluster) {
   max_write_size = 10;
   max_object_size = 134217728; //ceph default 128MB
   io_ctx_created = false;
-  wait_method = WAIT_FOR_COMPLETE_AND_CB;
+  wait_method = storage_interface::WAIT_FOR_COMPLETE_AND_CB;
   io_ctx_wrapper=new librmb::RboxIoCtxImpl();
 }
 

@@ -12,8 +12,8 @@
 #define SRC_STORAGE_INTERFACES__RADOS_CEPH_CONFIG_H_
 
 #include <string>
-#include "../storage-interface/rados-ceph-json-config.h"
-#include "../librmb/rados-types.h"
+#include "rados-ceph-json-config.h"
+#include "rados-types.h"
 #include <rados/librados.hpp>
 #include "rados-storage.h"
 
@@ -49,8 +49,8 @@ class RadosCephConfig {
   virtual bool is_valid_key_value(const std::string &key, const std::string &value)  = 0;
   virtual bool update_valid_key_value(const std::string &key, const std::string &value) = 0;
   // virtual bool is_ceph_posix_bugfix_enabled() = 0;
-  virtual bool is_mail_attribute(librmb::rbox_metadata_key key) = 0;
-  virtual bool is_updateable_attribute(librmb::rbox_metadata_key key) = 0;
+  virtual bool is_mail_attribute(enum rbox_metadata_key key) = 0;
+  virtual bool is_updateable_attribute(enum rbox_metadata_key key) = 0;
   virtual bool is_update_attributes() = 0;
   virtual void set_update_attributes(const std::string &update_attributes_) = 0;
   

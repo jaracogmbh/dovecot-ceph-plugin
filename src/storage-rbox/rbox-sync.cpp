@@ -215,7 +215,7 @@ static int update_flags(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t s
       char *flags_metadata = NULL;
       storage_interface::RadosUtils *rados_utils=
         storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
-      rados_utils->get_metadata(librmb::RBOX_METADATA_OLDV1_FLAGS, mail_object->get_metadata(), &flags_metadata);
+      rados_utils->get_metadata(storage_interface::RBOX_METADATA_OLDV1_FLAGS, mail_object->get_metadata(), &flags_metadata);
       uint8_t flags = 0x0;
       if (rados_utils->string_to_flags(flags_metadata, &flags)) {
         if (add_flags != 0) {
@@ -228,7 +228,7 @@ static int update_flags(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t s
         if (rados_utils->flags_to_string(flags, &str_flags_metadata)) {
           storage_interface::RadosMetadata *update=
             storage_engine::StorageBackendFactory::create_metadata_string(
-              storage_engine::StorageBackendFactory::CEPH, librmb::RBOX_METADATA_OLDV1_FLAGS, str_flags_metadata);
+              storage_engine::StorageBackendFactory::CEPH, storage_interface::RBOX_METADATA_OLDV1_FLAGS, str_flags_metadata);
           ret = r_storage->ms->get_storage()->set_metadata(mail_object, update);
           if (ret < 0) {
             i_warning("updating metadata for object : oid(%s), seq (%d) failed with ceph errorcode: %d",
@@ -304,9 +304,9 @@ static int rbox_sync_index(struct rbox_sync_context *ctx) {
           if (ret < 0) {
             i_error("Error moving seq (%d) to alt storage", seq1);
           }
-        } else if (r_storage->config->is_mail_attribute(librmb::RBOX_METADATA_OLDV1_FLAGS) &&
+        } else if (r_storage->config->is_mail_attribute(storage_interface::RBOX_METADATA_OLDV1_FLAGS) &&
                    r_storage->config->is_update_attributes() &&
-                   r_storage->config->is_updateable_attribute(librmb::RBOX_METADATA_OLDV1_FLAGS)) {
+                   r_storage->config->is_updateable_attribute(storage_interface::RBOX_METADATA_OLDV1_FLAGS)) {
           if (update_flags(ctx, seq1, seq2, sync_rec.add_flags, sync_rec.remove_flags) < 0) {
             i_error("Error updating flags seq (%d)", seq1);
           }
@@ -314,9 +314,9 @@ static int rbox_sync_index(struct rbox_sync_context *ctx) {
      
         break;
       case MAIL_INDEX_SYNC_TYPE_KEYWORD_ADD:
-        if (r_storage->config->is_mail_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS) &&
+        if (r_storage->config->is_mail_attribute(storage_interface::RBOX_METADATA_OLDV1_KEYWORDS) &&
             r_storage->config->is_update_attributes() &&
-            r_storage->config->is_updateable_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS)) {
+            r_storage->config->is_updateable_attribute(storage_interface::RBOX_METADATA_OLDV1_KEYWORDS)) {
           // sync_rec.keyword_idx;
           if (update_extended_metadata(ctx, seq1, seq2, sync_rec.keyword_idx, false) < 0) {
             return -1;
@@ -324,9 +324,9 @@ static int rbox_sync_index(struct rbox_sync_context *ctx) {
         }
         break;
       case MAIL_INDEX_SYNC_TYPE_KEYWORD_REMOVE:
-        if (r_storage->config->is_mail_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS) &&
+        if (r_storage->config->is_mail_attribute(storage_interface::RBOX_METADATA_OLDV1_KEYWORDS) &&
             r_storage->config->is_update_attributes() &&
-            r_storage->config->is_updateable_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS)) {
+            r_storage->config->is_updateable_attribute(storage_interface::RBOX_METADATA_OLDV1_KEYWORDS)) {
           /* FIXME: should be bother calling sync_notify()? */
           // sync_rec.keyword_idx
           if (update_extended_metadata(ctx, seq1, seq2, sync_rec.keyword_idx, true) < 0) {

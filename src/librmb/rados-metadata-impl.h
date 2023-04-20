@@ -12,7 +12,7 @@
 #ifndef SRC_LIBRMB_RADOS_METADATA_H_
 #define SRC_LIBRMB_RADOS_METADATA_H_
 
-#include "rados-types.h"
+#include "../storage-interface/rados-types.h"
 #include <string>
 #include "time.h"
 #include <stdlib.h>
@@ -26,16 +26,16 @@ class RadosMetadataImpl : public storage_interface::RadosMetadata{
  public:
   RadosMetadataImpl() {}
   RadosMetadataImpl(std::string& key_, std::string& value_) : key(key_) { bl.append(value_.c_str(), value_.length() + 1); }
-  RadosMetadataImpl(enum rbox_metadata_key _key, const std::string& val) { convert(_key, val); }
+  RadosMetadataImpl(storage_interface::rbox_metadata_key _key, const std::string& val) { convert(_key, val); }
 
-  RadosMetadataImpl(enum rbox_metadata_key _key, const time_t& val) { convert(_key, val); }
+  RadosMetadataImpl(storage_interface::rbox_metadata_key _key, const time_t& val) { convert(_key, val); }
 
-  RadosMetadataImpl(enum rbox_metadata_key _key, const char* val) { convert(_key, val); }
+  RadosMetadataImpl(storage_interface::rbox_metadata_key _key, const char* val) { convert(_key, val); }
 
-  RadosMetadataImpl(enum rbox_metadata_key _key, const uint& val) { convert(_key, val); }
+  RadosMetadataImpl(storage_interface::rbox_metadata_key _key, const uint& val) { convert(_key, val); }
 
-  RadosMetadataImpl(enum rbox_metadata_key _key, const size_t& val) { convert(_key, val); }
-  RadosMetadataImpl(enum rbox_metadata_key _key, const int val) { convert(_key, val); }
+  RadosMetadataImpl(storage_interface::rbox_metadata_key _key, const size_t& val) { convert(_key, val); }
+  RadosMetadataImpl(storage_interface::rbox_metadata_key _key, const int val) { convert(_key, val); }
   ~RadosMetadataImpl() {}
 
   void convert(const char* value, time_t* t) override {
@@ -83,43 +83,43 @@ class RadosMetadataImpl : public storage_interface::RadosMetadata{
     this->key=key_;
   };
 
-  void convert(enum rbox_metadata_key _key, const std::string& val) override {
+  void convert(storage_interface::rbox_metadata_key _key, const std::string& val) override {
     bl.clear();
-    key = librmb::rbox_metadata_key_to_char(_key);
+    key = storage_interface::rbox_metadata_key_to_char(_key);
     bl.append(val.c_str(), val.length() + 1);
   }
 
-  void convert(enum rbox_metadata_key _key, const time_t& time) override {
+  void convert(storage_interface::rbox_metadata_key _key, const time_t& time) override {
     bl.clear();
-    key = librmb::rbox_metadata_key_to_char(_key);
+    key = storage_interface::rbox_metadata_key_to_char(_key);
     std::string time_ = std::to_string(time);
     bl.append(time_.c_str(), time_.length() + 1);
   }
 
-  void convert(enum rbox_metadata_key _key, char* value) override {
+  void convert(storage_interface::rbox_metadata_key _key, char* value) override {
     bl.clear();
-    key = librmb::rbox_metadata_key_to_char(_key);
+    key = storage_interface::rbox_metadata_key_to_char(_key);
     std::string str = value;
     bl.append(str.c_str(), str.length() + 1);
   }
 
-  void convert(enum rbox_metadata_key _key, const uint& value) override {
+  void convert(storage_interface::rbox_metadata_key _key, const uint& value) override {
     bl.clear();
-    key = librmb::rbox_metadata_key_to_char(_key);
+    key = storage_interface::rbox_metadata_key_to_char(_key);
     std::string val = std::to_string(value);
     bl.append(val.c_str(), val.length() + 1);
   }
 
-  void convert(enum rbox_metadata_key _key, const size_t& value) override {
+  void convert(storage_interface::rbox_metadata_key _key, const size_t& value) override {
     bl.clear();
-    key = librmb::rbox_metadata_key_to_char(_key);
+    key = storage_interface::rbox_metadata_key_to_char(_key);
     std::string val = std::to_string(static_cast<int>(value));
     bl.append(val.c_str(), val.length() + 1);
   }
 
-  void convert(enum rbox_metadata_key _key, const int value) override {
+  void convert(storage_interface::rbox_metadata_key _key, const int value) override {
     bl.clear();
-    key = librmb::rbox_metadata_key_to_char(_key);
+    key = storage_interface::rbox_metadata_key_to_char(_key);
     std::string val = std::to_string(value);
     bl.append(val.c_str(), val.length() + 1);
   }

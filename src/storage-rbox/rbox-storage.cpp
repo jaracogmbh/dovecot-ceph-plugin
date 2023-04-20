@@ -40,7 +40,7 @@ extern "C" {
 
 #include "rbox-copy.h"
 #include "rbox-mail.h"
-#include "../librmb/rados-types.h"
+#include "../storage-interface/rados-types.h"
 using std::string;
 class RboxGuidGenerator : public storage_interface::RadosGuidGenerator {
  public:
@@ -445,8 +445,8 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
   int ret = 0;
   try {
     rados_storage->set_ceph_wait_method(rbox->storage->config->is_ceph_aio_wait_for_safe_and_cb()
-                                            ? librmb::WAIT_FOR_SAFE_AND_CB
-                                            : librmb::WAIT_FOR_COMPLETE_AND_CB);
+                                            ? storage_interface::WAIT_FOR_SAFE_AND_CB
+                                            : storage_interface::WAIT_FOR_COMPLETE_AND_CB);
     /* open connection to primary and alternative storage */
     ret = rados_storage->open_connection(rbox->storage->config->get_pool_name(),
                                          rbox->storage->config->get_index_pool_name(), 
@@ -460,8 +460,8 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
                                                 rbox->storage->config->get_rados_username());
 
       rbox->storage->alt->set_ceph_wait_method(rbox->storage->config->is_ceph_aio_wait_for_safe_and_cb()
-                                                   ? librmb::WAIT_FOR_SAFE_AND_CB
-                                                   : librmb::WAIT_FOR_COMPLETE_AND_CB);
+                                                   ? storage_interface::WAIT_FOR_SAFE_AND_CB
+                                                   : storage_interface::WAIT_FOR_COMPLETE_AND_CB);
     }
   } catch (std::exception &e) {    
     i_error("Exception: setting up ceph connection: %s",e.what());

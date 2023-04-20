@@ -14,7 +14,7 @@
 #include <string>
 #include "../storage-interface/rados-ceph-json-config.h"
 #include "rados-ceph-json-config-impl.h"
-#include "rados-types.h"
+#include "../storage-interface/rados-types.h"
 #include <rados/librados.hpp>
 #include "../storage-interface/rados-storage.h"
 #include "../storage-interface/rados-ceph-config.h"
@@ -63,8 +63,8 @@ class RadosCephConfigImpl : public storage_interface::RadosCephConfig{
   bool is_valid_key_value(const std::string &key, const std::string &value) override;
   bool update_valid_key_value(const std::string &key, const std::string &value) override;
   // bool is_ceph_posix_bugfix_enabled() override;
-  bool is_mail_attribute(enum rbox_metadata_key key) override{ return config->is_mail_attribute(key); }
-  bool is_updateable_attribute(enum rbox_metadata_key key) override{ return config->is_updateable_attribute(key); }
+  bool is_mail_attribute(storage_interface::rbox_metadata_key key) override{ return config->is_mail_attribute(key); }
+  bool is_updateable_attribute(storage_interface::rbox_metadata_key key) override{ return config->is_updateable_attribute(key); }
   bool is_update_attributes() override{ return config->is_update_attributes(); }
   void set_update_attributes(const std::string &update_attributes_) override{
     config->set_update_attributes(update_attributes_);

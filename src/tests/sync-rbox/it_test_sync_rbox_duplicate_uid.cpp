@@ -49,7 +49,7 @@ TEST_F(SyncTest, init) {}
 static void copy_object(struct mail_namespace *_ns, struct mailbox *box) {
   struct rbox_storage *r_storage = (struct rbox_storage *)box->storage;
 
-  librmb::RadosMetadataImpl xattr(librmb::rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, box->name);
+  librmb::RadosMetadataImpl xattr(storage_interface::rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, box->name);
   std::set<std::string> mail_list = r_storage->s->find_mails(&xattr);
   std::set<std::string>::iterator mail_iter;
   std::string oid;

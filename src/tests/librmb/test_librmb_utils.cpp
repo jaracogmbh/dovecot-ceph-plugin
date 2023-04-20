@@ -19,7 +19,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "../../librmb/rados-util-impl.h"
-#include "rados-types.h"
+#include "../../storage-interface/rados-types.h"
 #include "../../storage-interface/rados-mail.h"
 #include "../../storage-engine/storage-backend-factory.h"
 #include <cstdio>
@@ -32,7 +32,7 @@ using ::testing::AtLeast;
 using ::testing::Return;
 
 TEST(librmb, get_metadata_1) {
-  enum librmb::rbox_metadata_key key = librmb::rbox_metadata_key::RBOX_METADATA_GUID;
+  enum storage_interface::rbox_metadata_key key = storage_interface::rbox_metadata_key::RBOX_METADATA_GUID;
   librmb::RadosMetadataImpl m(key, "abcdefg");
   storage_interface::RadosMail *mail=
     storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
@@ -45,81 +45,81 @@ TEST(librmb, get_metadata_1) {
 }
 
 TEST(librmb, convert_enum) {
-  enum librmb::rbox_metadata_key key = librmb::rbox_metadata_key::RBOX_METADATA_GUID;
+  enum storage_interface::rbox_metadata_key key = storage_interface::rbox_metadata_key::RBOX_METADATA_GUID;
 
-  std::string metadata_key(librmb::rbox_metadata_key_to_char(key));
+  std::string metadata_key(storage_interface::rbox_metadata_key_to_char(key));
   EXPECT_EQ("G", metadata_key);
 
-  key = librmb::RBOX_METADATA_MAILBOX_GUID;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_MAILBOX_GUID;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("M", metadata_key);
 
-  key = librmb::RBOX_METADATA_GUID;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_GUID;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("G", metadata_key);
 
-  key = librmb::RBOX_METADATA_POP3_UIDL;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_POP3_UIDL;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("P", metadata_key);
 
-  key = librmb::RBOX_METADATA_POP3_ORDER;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_POP3_ORDER;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("O", metadata_key);
 
-  key = librmb::RBOX_METADATA_RECEIVED_TIME;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_RECEIVED_TIME;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("R", metadata_key);
 
-  key = librmb::RBOX_METADATA_PHYSICAL_SIZE;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_PHYSICAL_SIZE;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("Z", metadata_key);
 
-  key = librmb::RBOX_METADATA_VIRTUAL_SIZE;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_VIRTUAL_SIZE;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("V", metadata_key);
 
-  key = librmb::RBOX_METADATA_EXT_REF;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_EXT_REF;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("X", metadata_key);
 
-  key = librmb::RBOX_METADATA_ORIG_MAILBOX;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_ORIG_MAILBOX;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("B", metadata_key);
 
-  key = librmb::RBOX_METADATA_MAIL_UID;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_MAIL_UID;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("U", metadata_key);
 
-  key = librmb::RBOX_METADATA_VERSION;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_VERSION;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("I", metadata_key);
 
-  key = librmb::RBOX_METADATA_FROM_ENVELOPE;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_FROM_ENVELOPE;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("A", metadata_key);
 
-  key = librmb::RBOX_METADATA_PVT_FLAGS;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_PVT_FLAGS;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("C", metadata_key);
 
-  key = librmb::RBOX_METADATA_OLDV1_EXPUNGED;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_OLDV1_EXPUNGED;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("E", metadata_key);
 
-  key = librmb::RBOX_METADATA_OLDV1_FLAGS;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_OLDV1_FLAGS;
+  metadata_key =storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("F", metadata_key);
 
-  key = librmb::RBOX_METADATA_OLDV1_KEYWORDS;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_OLDV1_KEYWORDS;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("K", metadata_key);
 
-  key = librmb::RBOX_METADATA_OLDV1_SAVE_TIME;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_OLDV1_SAVE_TIME;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ("S", metadata_key);
 
-  key = librmb::RBOX_METADATA_OLDV1_SPACE;
-  metadata_key = librmb::rbox_metadata_key_to_char(key);
+  key = storage_interface::RBOX_METADATA_OLDV1_SPACE;
+  metadata_key = storage_interface::rbox_metadata_key_to_char(key);
   EXPECT_EQ(" ", metadata_key);
 }
 
@@ -142,12 +142,12 @@ TEST(librmb, utils_is_numeric) {
 }
 TEST(librmb, utils_is_date_attribute) {
   librmb::RadosUtilsImpl rados_util;
-  enum librmb::rbox_metadata_key key = librmb::RBOX_METADATA_RECEIVED_TIME;
+  enum storage_interface::rbox_metadata_key key = storage_interface::RBOX_METADATA_RECEIVED_TIME;
   EXPECT_TRUE(rados_util.is_date_attribute(key));
-  enum librmb::rbox_metadata_key key2 = librmb::RBOX_METADATA_OLDV1_SAVE_TIME;
+  enum storage_interface::rbox_metadata_key key2 = storage_interface::RBOX_METADATA_OLDV1_SAVE_TIME;
   EXPECT_TRUE(rados_util.is_date_attribute(key2));
 
-  enum librmb::rbox_metadata_key key3 = librmb::RBOX_METADATA_VERSION;
+  enum storage_interface::rbox_metadata_key key3 = storage_interface::RBOX_METADATA_VERSION;
   EXPECT_FALSE(rados_util.is_date_attribute(key3));
 }
 TEST(librmb, utils_convert_string_to_date) {
@@ -176,15 +176,15 @@ TEST(librmb, config_mutable_metadata) {
   librmb::RadosCephJsonConfigImpl config;
   std::string str = "MGP";
   config.update_mail_attribute(str.c_str());
-  EXPECT_TRUE(config.is_mail_attribute(librmb::RBOX_METADATA_MAILBOX_GUID));
-  EXPECT_TRUE(config.is_mail_attribute(librmb::RBOX_METADATA_GUID));
-  EXPECT_TRUE(config.is_mail_attribute(librmb::RBOX_METADATA_POP3_UIDL));
-  EXPECT_FALSE(config.is_mail_attribute(librmb::RBOX_METADATA_ORIG_MAILBOX));
+  EXPECT_TRUE(config.is_mail_attribute(storage_interface::RBOX_METADATA_MAILBOX_GUID));
+  EXPECT_TRUE(config.is_mail_attribute(storage_interface::RBOX_METADATA_GUID));
+  EXPECT_TRUE(config.is_mail_attribute(storage_interface::RBOX_METADATA_POP3_UIDL));
+  EXPECT_FALSE(config.is_mail_attribute(storage_interface::RBOX_METADATA_ORIG_MAILBOX));
 
   // use defaults.
   librmb::RadosCephJsonConfigImpl config2;
   config2.update_mail_attribute(NULL);
-  EXPECT_TRUE(config2.is_mail_attribute(librmb::RBOX_METADATA_POP3_UIDL));
+  EXPECT_TRUE(config2.is_mail_attribute(storage_interface::RBOX_METADATA_POP3_UIDL));
 }
 
 TEST(librmb, convert_flags) {
@@ -357,16 +357,16 @@ TEST(librmb, test_mvn_option) {
   std::list<storage_interface::RadosMetadata *> metadata;
   storage_interface::RadosMetadata *guid=
     storage_engine::StorageBackendFactory::create_metadata_string(
-      storage_engine::StorageBackendFactory::CEPH, librmb::RBOX_METADATA_MAILBOX_GUID, "ABCDEFG");
+      storage_engine::StorageBackendFactory::CEPH, storage_interface::RBOX_METADATA_MAILBOX_GUID, "ABCDEFG");
 
   storage_interface::RadosMetadata *mb_name=
     storage_engine::StorageBackendFactory::create_metadata_string(
-      storage_engine::StorageBackendFactory::CEPH, librmb::RBOX_METADATA_ORIG_MAILBOX, "INBOX");
+      storage_engine::StorageBackendFactory::CEPH, storage_interface::RBOX_METADATA_ORIG_MAILBOX, "INBOX");
 
   uint uid_ = 1;
   storage_interface::RadosMetadata *uid=
     storage_engine::StorageBackendFactory::create_metadata_uint(
-      storage_engine::StorageBackendFactory::CEPH, librmb::RBOX_METADATA_MAIL_UID, uid_);
+      storage_engine::StorageBackendFactory::CEPH, storage_interface::RBOX_METADATA_MAIL_UID, uid_);
 
   metadata.push_back(guid);
   metadata.push_back(mb_name);

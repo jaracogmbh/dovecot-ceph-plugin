@@ -145,25 +145,25 @@ TEST_F(StorageTest, move_mail_test) {
   char *val = NULL;
   char *val2 = NULL;
 
-  rados_utils.get_metadata(librmb::RBOX_METADATA_MAIL_UID, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAIL_UID, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_GUID, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_GUID, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_MAILBOX_GUID, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAILBOX_GUID, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_PHYSICAL_SIZE, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_PHYSICAL_SIZE, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_VIRTUAL_SIZE, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_VIRTUAL_SIZE, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_RECEIVED_TIME, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_ORIG_MAILBOX, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_ORIG_MAILBOX, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
 
   ASSERT_EQ(1, (int)box->index->map->hdr.messages_count);

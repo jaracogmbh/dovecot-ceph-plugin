@@ -11,7 +11,7 @@
 #ifndef SRC_STORAGE_INTERFACES_RADOS_DOVECOT_CEPH_CFG_H_
 #define SRC_STORAGE_INTERFACES_RADOS_DOVECOT_CEPH_CFG_H_
 
-#include "../librmb/rados-types.h"
+#include "rados-types.h"
 #include <string>
 #include <map>
 #include <iostream>
@@ -35,8 +35,8 @@ class RadosDovecotCephCfg {
   virtual const std::string &get_rados_cluster_name() = 0;
   virtual const std::string &get_rados_username() = 0;
   virtual const std::string &get_rados_save_log_file() = 0;
-  virtual bool is_mail_attribute(librmb::rbox_metadata_key key) = 0;
-  virtual bool is_updateable_attribute(librmb::rbox_metadata_key key) = 0;
+  virtual bool is_mail_attribute(enum rbox_metadata_key key) = 0;
+  virtual bool is_updateable_attribute(enum rbox_metadata_key key) = 0;
   virtual void set_update_attributes(const std::string &update_attributes_) = 0;
   virtual void update_mail_attributes(const char *value) = 0;
   virtual void update_updatable_attributes(const char *value) = 0;

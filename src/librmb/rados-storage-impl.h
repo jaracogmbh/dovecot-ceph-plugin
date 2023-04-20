@@ -48,7 +48,7 @@ class RadosStorageImpl : public storage_interface::RadosStorage {
   std::string get_namespace() override { return nspace; }
   std::string get_pool_name() override { return pool_name; }
 
-  void set_ceph_wait_method(enum rbox_ceph_aio_wait_method wait_method_) override { this->wait_method = wait_method_; }
+  void set_ceph_wait_method(storage_interface::rbox_ceph_aio_wait_method wait_method_) override { this->wait_method = wait_method_; }
   int get_max_write_size() override { return max_write_size; }
   int get_max_write_size_bytes() override { return max_write_size * 1024 * 1024; }
   int get_max_object_size() override {return max_object_size;}
@@ -112,7 +112,7 @@ class RadosStorageImpl : public storage_interface::RadosStorage {
  
   bool io_ctx_created;
   std::string pool_name;
-  enum rbox_ceph_aio_wait_method wait_method;
+  storage_interface::rbox_ceph_aio_wait_method wait_method;
 
   static const char *CFG_OSD_MAX_WRITE_SIZE;
   static const char *CFG_OSD_MAX_OBJECT_SIZE;

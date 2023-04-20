@@ -9,10 +9,10 @@
  * Foundation.  See file COPYING.
  */
 
-#ifndef SRC_LIBRMB_RADOS_TYPES_H_
-#define SRC_LIBRMB_RADOS_TYPES_H_
+#ifndef SRC_STORAGE_INTERFACES_RADOS_TYPES_H_
+#define SRC_STORAGE_INTERFACES_RADOS_TYPES_H_
 
-namespace librmb {
+namespace storage_interface {
 #define GUID_128_SIZE 16
 /**
  * The available metadata keys used as rados
@@ -123,4 +123,4 @@ static const char *rbox_metadata_key_to_char(rbox_metadata_key type) {
 }
 enum rbox_ceph_aio_wait_method { WAIT_FOR_COMPLETE_AND_CB, WAIT_FOR_SAFE_AND_CB };
 }  // namespace
-#endif /* SRC_LIBRMB_RADOS_TYPES_H_ */
+#endif /* SRC_STORAGE_INTERFACES_RADOS_TYPES_H_ */

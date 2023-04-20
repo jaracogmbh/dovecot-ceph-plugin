@@ -24,7 +24,7 @@
 #include "../../librmb/tools/rmb/mailbox_tools_impl.h"
 #include "../../librmb/tools/rmb/rados-mail-box-impl.h"
 #include "mock_test.h"
-#include "../../librmb/rados-types.h"
+#include "../../storage-interface/rados-types.h"
 #include "../../storage-interface/rados-mail.h"
 #include "../../librmb/rados-metadata-impl.h"
 
@@ -50,8 +50,8 @@ TEST(rmb, test_cmd_parser) {
   EXPECT_TRUE(parser.contains_key(key2));
   EXPECT_TRUE(parser.contains_key(key3));
 
-  librmb::rbox_metadata_key k = static_cast<librmb::rbox_metadata_key>('M');
-  EXPECT_EQ(k, librmb::RBOX_METADATA_MAILBOX_GUID);
+  storage_interface::rbox_metadata_key k = static_cast<storage_interface::rbox_metadata_key>('M');
+  EXPECT_EQ(k, storage_interface::RBOX_METADATA_MAILBOX_GUID);
   storage_interface::Predicate *p = parser.get_predicate(key);
   std::string value = "abc";
   EXPECT_TRUE(p->eval(value));

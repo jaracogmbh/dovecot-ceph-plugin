@@ -19,7 +19,7 @@
 #include "../librmb/rados-ceph-config-impl.h"
 #include "../storage-interface/rados-metadata.h"
 #include "../librmb/rados-metadata-impl.h"
-#include "../librmb/rados-types.h"
+#include "../storage-interface/rados-types.h"
 #include "../librmb/rados-dovecot-config.h"
 #include "../storage-interface/tools/rmb/rmb-commands.h"
 #include "../librmb/tools/rmb/rmb-commands-impl.h"
@@ -129,7 +129,7 @@ class StorageBackendFactory {
   }
 
   static storage_interface::RadosMetadata *create_metadata_string(
-    StorageType storage_type,librmb::rbox_metadata_key _key,const std::string& val){
+    StorageType storage_type,storage_interface::rbox_metadata_key _key,const std::string& val){
 
     storage_interface::RadosMetadata *metadata;
     if(storage_type==CEPH){
@@ -139,7 +139,7 @@ class StorageBackendFactory {
   }
 
   static storage_interface::RadosMetadata *create_metadata_time(
-    StorageType storage_type,librmb::rbox_metadata_key _key,const time_t& val){
+    StorageType storage_type,storage_interface::rbox_metadata_key _key,const time_t& val){
 
     storage_interface::RadosMetadata *metadata;
     if(storage_type==CEPH){
@@ -149,7 +149,7 @@ class StorageBackendFactory {
   }
 
   static storage_interface::RadosMetadata *create_metadata_char(
-    StorageType storage_type,librmb::rbox_metadata_key _key,const char* val){
+    StorageType storage_type,storage_interface::rbox_metadata_key _key,const char* val){
 
     storage_interface::RadosMetadata *metadata;
     if(storage_type==CEPH){
@@ -159,7 +159,7 @@ class StorageBackendFactory {
   }
   
   static storage_interface::RadosMetadata *create_metadata_uint(
-    StorageType storage_type,librmb::rbox_metadata_key _key,const uint& val){
+    StorageType storage_type,storage_interface::rbox_metadata_key _key,const uint& val){
 
     storage_interface::RadosMetadata *metadata;
     if(storage_type==CEPH){
@@ -169,7 +169,7 @@ class StorageBackendFactory {
   }
 
   static storage_interface::RadosMetadata *create_metadata_size_t(
-    StorageType storage_type,librmb::rbox_metadata_key _key,const size_t& val){
+    StorageType storage_type,storage_interface::rbox_metadata_key _key,const size_t& val){
 
     storage_interface::RadosMetadata *metadata;
     if(storage_type==CEPH){
@@ -179,7 +179,7 @@ class StorageBackendFactory {
   }
   
   static storage_interface::RadosMetadata *create_metadata_int(
-    StorageType storage_type,librmb::rbox_metadata_key _key,const int val){
+    StorageType storage_type,storage_interface::rbox_metadata_key _key,const int val){
 
     storage_interface::RadosMetadata *metadata;
     if(storage_type==CEPH){

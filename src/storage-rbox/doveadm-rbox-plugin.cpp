@@ -568,8 +568,8 @@ static int doveadm_rmb_mail_next_user(struct doveadm_mail_cmd_context *ctx,
   for (std::list<storage_interface::RadosSaveLogEntry*>::iterator it = entries->begin(); it != entries->end(); ++it) {
     // do something here!
 
-    std::string key_guid(1, static_cast<char>(librmb::RBOX_METADATA_GUID));
-    std::string key_mbox_name(1, static_cast<char>(librmb::RBOX_METADATA_ORIG_MAILBOX));
+    std::string key_guid(1, static_cast<char>(storage_interface::RBOX_METADATA_GUID));
+    std::string key_mbox_name(1, static_cast<char>(storage_interface::RBOX_METADATA_ORIG_MAILBOX));
 
     std::list<storage_interface::RadosMetadata*>::iterator it_guid =
         std::find_if((*it)->get_metadata().begin(), (*it)->get_metadata().end(),

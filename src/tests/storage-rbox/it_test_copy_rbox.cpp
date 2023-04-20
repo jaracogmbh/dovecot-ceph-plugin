@@ -42,7 +42,7 @@ extern "C" {
 #include "../test-utils/it_utils.h"
 #include "../../librmb/rados-util-impl.h"
 #include "../../storage-engine/storage-backend-factory.h"
-
+#include "../../storage-interface/rados-types.h"
 using ::testing::AtLeast;
 using ::testing::Return;
 
@@ -148,68 +148,68 @@ TEST_F(StorageTest, mail_copy_mail_in_inbox) {
 
   char *val = NULL;
   char *val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_OLDV1_FLAGS, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_OLDV1_FLAGS, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_OLDV1_FLAGS, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_OLDV1_FLAGS, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
 
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_EXT_REF, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_EXT_REF, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_EXT_REF, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_EXT_REF, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
 
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_FROM_ENVELOPE, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_FROM_ENVELOPE, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_FROM_ENVELOPE, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_FROM_ENVELOPE, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
 
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_GUID, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_GUID, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_GUID, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_GUID, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_MAILBOX_GUID, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_MAILBOX_GUID, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAILBOX_GUID, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAILBOX_GUID, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_ORIG_MAILBOX, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_ORIG_MAILBOX, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_ORIG_MAILBOX, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_ORIG_MAILBOX, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_PHYSICAL_SIZE, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_PHYSICAL_SIZE, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_PHYSICAL_SIZE, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_PHYSICAL_SIZE, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
 
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_POP3_ORDER, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_POP3_ORDER, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_POP3_ORDER, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_POP3_ORDER, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_POP3_UIDL, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_POP3_UIDL, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_POP3_UIDL, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_POP3_UIDL, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_PVT_FLAGS, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_PVT_FLAGS, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_PVT_FLAGS, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_PVT_FLAGS, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_RECEIVED_TIME, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_RECEIVED_TIME, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_VERSION, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_VERSION, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_VERSION, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_VERSION, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_VIRTUAL_SIZE, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_VIRTUAL_SIZE, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_VIRTUAL_SIZE, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_VIRTUAL_SIZE, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_OLDV1_SAVE_TIME, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_OLDV1_SAVE_TIME, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_OLDV1_SAVE_TIME, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_OLDV1_SAVE_TIME, mail2->get_metadata(), &val2);
   ASSERT_STREQ(val, val2);
   val = val2 = NULL;
-  rados_utils.get_metadata(librmb::RBOX_METADATA_MAIL_UID, mail1->get_metadata(), &val);
-  rados_utils.get_metadata(librmb::RBOX_METADATA_MAIL_UID, mail2->get_metadata(), &val2);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAIL_UID, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAIL_UID, mail2->get_metadata(), &val2);
   ASSERT_STRNE(val, val2);
 
   ASSERT_EQ(2, (int)box->index->map->hdr.messages_count);

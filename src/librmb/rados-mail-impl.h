@@ -17,7 +17,7 @@
 #include <sstream>
 #include <map>
 #include "../storage-interface/rados-metadata.h"
-#include "rados-types.h"
+#include "../storage-interface/rados-types.h"
 #include <rados/librados.hpp>
 #include "../storage-interface/rados-mail.h"
 

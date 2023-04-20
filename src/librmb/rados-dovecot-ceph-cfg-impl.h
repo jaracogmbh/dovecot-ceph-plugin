@@ -85,8 +85,8 @@ class RadosDovecotCephCfgImpl : public storage_interface::RadosDovecotCephCfg {
     rados_cfg->set_update_attributes(update_attributes_);
   }
 
-  bool is_mail_attribute(enum rbox_metadata_key key) override { return rados_cfg->is_mail_attribute(key); }
-  bool is_updateable_attribute(enum rbox_metadata_key key) override { return rados_cfg->is_updateable_attribute(key); }
+  bool is_mail_attribute(storage_interface::rbox_metadata_key key) override { return rados_cfg->is_mail_attribute(key); }
+  bool is_updateable_attribute(storage_interface::rbox_metadata_key key) override { return rados_cfg->is_updateable_attribute(key); }
   void update_mail_attributes(const char *value) override { rados_cfg->update_mail_attribute(value); }
   void update_updatable_attributes(const char *value) override { rados_cfg->update_updateable_attribute(value); }
   bool is_update_attributes() override { return rados_cfg->is_update_attributes(); }

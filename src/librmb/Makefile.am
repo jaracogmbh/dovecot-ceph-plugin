@@ -19,7 +19,6 @@ headers = \
 	rados-mail-impl.h \
 	rados-util-impl.h \
 	rados-metadata-impl.h \
-	rados-types.h \
 	rados-dovecot-config.h \
 	rados-namespace-manager-impl.h\
 	rados-dovecot-ceph-cfg-impl.h \

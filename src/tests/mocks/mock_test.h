@@ -12,7 +12,7 @@
 #include <map>
 #include <string>
 #include <list>
-#include "rados-types.h"
+#include "../../storage-interface/rados-types.h"
 #include "../../storage-interface/rados-cluster.h"
 #include "../../storage-interface/rados-dictionary.h"
 #include "../../librmb/rados-dovecot-config.h"
@@ -90,7 +90,7 @@ class RadosStorageMock : public RadosStorage {
                int(const std::string &poolname, const std::string &clustername, const std::string &rados_username));
                
   MOCK_METHOD0(close_connection, void());
-  MOCK_METHOD1(set_ceph_wait_method, void(enum librmb::rbox_ceph_aio_wait_method wait_method));
+  MOCK_METHOD1(set_ceph_wait_method, void(enum storage_interface::rbox_ceph_aio_wait_method wait_method));
   MOCK_METHOD3(read_mail, int(const std::string &oid, storage_interface::RadosMail* mail,int try_counter));
   MOCK_METHOD6(move, int(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
                          std::list<storage_interface::RadosMetadata*> &to_update, bool delete_source));
@@ -179,8 +179,8 @@ class RadosDovecotCephCfgMock : public RadosDovecotCephCfg {
   MOCK_METHOD0(get_rados_save_log_file, const std::string &());
 
   // dovecot configuration
-  MOCK_METHOD1(is_mail_attribute, bool(enum librmb::rbox_metadata_key key));
-  MOCK_METHOD1(is_updateable_attribute, bool(enum librmb::rbox_metadata_key key));
+  MOCK_METHOD1(is_mail_attribute, bool(enum storage_interface::rbox_metadata_key key));
+  MOCK_METHOD1(is_updateable_attribute, bool(enum storage_interface::rbox_metadata_key key));
   MOCK_METHOD1(set_update_attributes, void(const std::string &update_attributes_));
   MOCK_METHOD0(is_ceph_posix_bugfix_enabled, bool());
   MOCK_METHOD0(is_ceph_aio_wait_for_safe_and_cb, bool());

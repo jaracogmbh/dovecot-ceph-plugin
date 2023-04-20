@@ -25,7 +25,7 @@
 #include <rados/librados.hpp>
 #include "../storage-interface/rados-storage.h"
 #include "../storage-interface/rados-metadata-storage.h"
-#include "rados-types.h"
+#include "../storage-interface/rados-types.h"
 #include "../storage-interface/rados-util.h"
 
 namespace librmb {
@@ -63,7 +63,7 @@ class RadosUtilsImpl : public storage_interface::RadosUtils {
   /*!
    * checks if key is a data attribute
    */
-  bool is_date_attribute(const rbox_metadata_key &key) override;
+  bool is_date_attribute(const storage_interface::rbox_metadata_key &key) override;
   /*!
    * converts given data_string to numeric string
    * @param[in] date_string Date format: %Y-%m-%d %H:%M:%S
@@ -184,7 +184,7 @@ class RadosUtilsImpl : public storage_interface::RadosUtils {
    * @param[int] valid pointer to metadata map
    * @return the metadata value
    */
-  void get_metadata(rbox_metadata_key key, std::map<std::string, ceph::bufferlist> *metadata, char **value) override;
+  void get_metadata(storage_interface::rbox_metadata_key key, std::map<std::string, ceph::bufferlist> *metadata, char **value) override;
 
 
   /**

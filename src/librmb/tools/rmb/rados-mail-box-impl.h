@@ -65,9 +65,9 @@ class RadosMailBoxImpl : public storage_interface::RadosMailBox {
   inline std::string to_string() {
     std::ostringstream ss;
     ss << std::endl
-       << "MAILBOX: " << static_cast<char>(RBOX_METADATA_MAILBOX_GUID) << "(mailbox_guid)=" << this->mailbox_guid
+       << "MAILBOX: " << static_cast<char>(storage_interface::RBOX_METADATA_MAILBOX_GUID) << "(mailbox_guid)=" << this->mailbox_guid
        << std::endl
-       << "         " << static_cast<char>(RBOX_METADATA_ORIG_MAILBOX) << "(mailbox_orig_name)=" << mbox_orig_name
+       << "         " << static_cast<char>(storage_interface::RBOX_METADATA_ORIG_MAILBOX) << "(mailbox_orig_name)=" << mbox_orig_name
        << std::endl
 
        << "         mail_total=" << total_mails << ", mails_displayed=" << mails.size() << std::endl

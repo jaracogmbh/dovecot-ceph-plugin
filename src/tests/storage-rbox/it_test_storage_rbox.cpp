@@ -12,6 +12,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include "TestCase.h"
+#include "../../storage-interface/rados-types.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"           // turn off warnings for Dovecot :-(
@@ -159,11 +160,11 @@ TEST_F(StorageTest, mail_save_to_inbox_with_flags) {
   struct istream *input = i_stream_create_from_data(message, strlen(message));
 
 #ifdef DOVECOT_CEPH_PLUGIN_HAVE_MAIL_STORAGE_TRANSACTION_OLD_SIGNATURE
-  struct mailbox_transaction_context *trans = mailbox_transaction_begin(box, MAILBOX_TRANSACTION_FLAG_EXTERNAL);
+  struct mailbox_transaction_context *trans = mailbox_transaction_begin(box,MAILBOX_TRANSACTION_FLAG_EXTERNAL);
 #else
   char reason[256];
   memset(reason, '\0', sizeof(reason));
-  struct mailbox_transaction_context *trans = mailbox_transaction_begin(box, MAILBOX_TRANSACTION_FLAG_EXTERNAL, reason);
+  struct mailbox_transaction_context *trans = mailbox_transaction_begin(box,MAILBOX_TRANSACTION_FLAG_EXTERNAL, reason);
 #endif
   struct mail_save_context *save_ctx = mailbox_save_alloc(trans);
   struct rbox_save_context *r_ctx = (struct rbox_save_context *)save_ctx;
@@ -230,7 +231,7 @@ TEST_F(StorageTest, mail_save_to_inbox_with_flags) {
       r_storage->ms->get_storage()->load_metadata(&obj);
       char *str;
       librmb::RadosUtilsImpl rados_utils;
-      rados_utils.get_metadata(librmb::RBOX_METADATA_OLDV1_FLAGS, obj.get_metadata(), &str);
+      rados_utils.get_metadata(storage_interface::RBOX_METADATA_OLDV1_FLAGS, obj.get_metadata(), &str);
       uint8_t flags;
       rados_utils.string_to_flags(str, &flags);
       EXPECT_EQ(0x01, flags);
@@ -260,11 +261,11 @@ TEST_F(StorageTest, mail_save_to_inbox_reuse_save_context) {
       "body\n";
 
 #ifdef DOVECOT_CEPH_PLUGIN_HAVE_MAIL_STORAGE_TRANSACTION_OLD_SIGNATURE
-  struct mailbox_transaction_context *trans = mailbox_transaction_begin(box, MAILBOX_TRANSACTION_FLAG_EXTERNAL);
+  struct mailbox_transaction_context *trans = mailbox_transaction_begin(box,MAILBOX_TRANSACTION_FLAG_EXTERNAL);
 #else
   char reason[256];
   memset(reason, '\0', sizeof(reason));
-  struct mailbox_transaction_context *trans = mailbox_transaction_begin(box, MAILBOX_TRANSACTION_FLAG_EXTERNAL, reason);
+  struct mailbox_transaction_context *trans = mailbox_transaction_begin(box,MAILBOX_TRANSACTION_FLAG_EXTERNAL, reason);
 #endif
   struct mail_save_context *save_ctx = NULL;
   ssize_t ret;
