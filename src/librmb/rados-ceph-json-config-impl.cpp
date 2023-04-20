@@ -9,14 +9,14 @@
  * Foundation.  See file COPYING.
  */
 
-#include "rados-ceph-json-config.h"
+#include "rados-ceph-json-config-impl.h"
 #include <jansson.h>
 #include <string>
 #include <sstream>
 
 namespace librmb {
 
-RadosCephJsonConfig::RadosCephJsonConfig()
+RadosCephJsonConfigImpl::RadosCephJsonConfigImpl()
     : cfg_object_name("rbox_cfg"),
       valid(false),
       user_mapping("false"),
@@ -39,7 +39,7 @@ RadosCephJsonConfig::RadosCephJsonConfig()
   set_default_updateable_attributes();
 }
 
-void RadosCephJsonConfig::set_default_mail_attributes() {
+void RadosCephJsonConfigImpl::set_default_mail_attributes() {
   mail_attributes.append(std::string(1, static_cast<char>(RBOX_METADATA_MAILBOX_GUID)));
   mail_attributes.append(std::string(1, static_cast<char>(RBOX_METADATA_GUID)));
   mail_attributes.append(std::string(1, static_cast<char>(RBOX_METADATA_POP3_UIDL)));
@@ -52,11 +52,11 @@ void RadosCephJsonConfig::set_default_mail_attributes() {
   mail_attributes.append(std::string(1, static_cast<char>(RBOX_METADATA_VERSION)));
 }
 
-void RadosCephJsonConfig::set_default_updateable_attributes() {
+void RadosCephJsonConfigImpl::set_default_updateable_attributes() {
   updateable_attributes.append(std::string(1, static_cast<char>(RBOX_METADATA_ORIG_MAILBOX)));
 }
 
-bool RadosCephJsonConfig::from_json(librados::bufferlist *buffer) {
+bool RadosCephJsonConfigImpl::from_json(librados::bufferlist *buffer) {
   json_t *root;
   json_error_t error;
   bool ret = false;
@@ -97,7 +97,7 @@ bool RadosCephJsonConfig::from_json(librados::bufferlist *buffer) {
   return ret;
 }
 
-bool RadosCephJsonConfig::to_json(librados::bufferlist *buffer) {
+bool RadosCephJsonConfigImpl::to_json(librados::bufferlist *buffer) {
   json_t *root = json_object();
 
   json_object_set_new(root, key_user_mapping.c_str(), json_string(user_mapping.c_str()));
@@ -118,7 +118,7 @@ bool RadosCephJsonConfig::to_json(librados::bufferlist *buffer) {
   return true;
 }
 
-std::string RadosCephJsonConfig::to_string() {
+std::string RadosCephJsonConfigImpl::to_string() {
   std::ostringstream ss;
   ss << "Configuration : " << cfg_object_name << std::endl;
   ss << "  " << key_user_mapping << "=" << user_mapping << std::endl;
@@ -133,21 +133,21 @@ std::string RadosCephJsonConfig::to_string() {
   return ss.str();
 }
 
-bool RadosCephJsonConfig::is_mail_attribute(enum rbox_metadata_key key) {
+bool RadosCephJsonConfigImpl::is_mail_attribute(enum rbox_metadata_key key) {
   return mail_attributes.find_first_of(librmb::rbox_metadata_key_to_char(key), 0) != std::string::npos;
 }
 
-bool RadosCephJsonConfig::is_updateable_attribute(enum rbox_metadata_key key) {
+bool RadosCephJsonConfigImpl::is_updateable_attribute(enum rbox_metadata_key key) {
   return updateable_attributes.find_first_of(librmb::rbox_metadata_key_to_char(key), 0) != std::string::npos;
 }
 
-void RadosCephJsonConfig::update_mail_attribute(const char *value) {
+void RadosCephJsonConfigImpl::update_mail_attribute(const char *value) {
   if (value == NULL) {
     return;
   }
   mail_attributes = value;
 }
-void RadosCephJsonConfig::update_updateable_attribute(const char *value) {
+void RadosCephJsonConfigImpl::update_updateable_attribute(const char *value) {
   if (value == NULL) {
     return;
   }

@@ -28,15 +28,20 @@
 #include "../../rados-storage-impl.h"
 #include "../../rados-metadata-storage-ima.h"
 #include "../../../storage-interface/rados-metadata-storage-module.h"
-#include "ls_cmd_parser.h"
-#include "mailbox_tools.h"
-#include "rados-util.h"
+#include "../../../storage-interface/tools/rmb/ls_cmd_parser.h"
+#include "../../tools/rmb/ls_cmd_parser_impl.h"
+#include "../../../storage-interface/tools/rmb/mailbox_tools.h"
+#include "../../../storage-interface/rados-util.h"
 #include "../../rados-namespace-manager-impl.h"
 #include "../../../storage-interface/rados-dovecot-ceph-cfg.h"
-#include "rados-dovecot-ceph-cfg-impl.h"
-#include "rados-metadata-storage-default.h"
-#include "rmb-commands.h"
-#include "../../../storage-engine/storage-backend-factory.h"
+#include "../../rados-dovecot-ceph-cfg-impl.h"
+#include "../../rados-metadata-storage-default.h"
+#include "../../../storage-interface/tools/rmb/rmb-commands.h"
+#include "../../tools/rmb/rmb-commands-impl.h"
+#include "../../../storage-interface/rados-save-log.h"
+#include "../../../storage-interface/rados-ceph-config.h"
+#include "../../rados-ceph-config-impl.h"
+
 #undef PACKAGE_BUGREPORT
 #undef PACKAGE_NAME
 #undef PACKAGE_STRING
@@ -289,7 +294,8 @@ int main(int argc, const char **argv) {
   std::map<std::string, std::string> opts;
   std::map<std::string, std::string> metadata;
   std::string sort_type;
-  librmb::RmbCommands *rmb_commands = nullptr;
+  storage_interface::RmbCommands *rmb_commands = nullptr;
+  storage_interface::RmbCommands *temp_rmb_commands= new librmb::RmbCommandsImpl();
 
   bool is_config_option = false;
   bool create_config = false;
@@ -324,8 +330,14 @@ int main(int argc, const char **argv) {
 
   if (!remove_save_log.empty()) {
     if (confirmed) {
-      std::map<std::string, std::list<librmb::RadosSaveLogEntry>> moved_items;
-      return librmb::RmbCommands::delete_with_save_log(remove_save_log, rados_cluster, rados_user, &moved_items);
+      std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>> moved_items;
+      int ret= temp_rmb_commands->delete_with_save_log(remove_save_log, rados_cluster, rados_user, &moved_items);
+      std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>>::iterator it=moved_items.begin();
+      for(std::list<storage_interface::RadosSaveLogEntry*>::iterator iter = it->second.begin();iter != it->second.end(); ++iter){
+        delete *iter;
+        *iter=nullptr;
+      }
+      return ret;
     } else {
       std::cout << "WARNING:" << std::endl;
       std::cout << "Performing this command, will delete all mail objects from ceph object store which are "
@@ -339,9 +351,10 @@ int main(int argc, const char **argv) {
   std::string pool_name(opts.find("pool") == opts.end() ? "mail_storage" : opts["pool"]);
 
   if (is_lspools_cmd) {
-    return librmb::RmbCommands::lspools();
+    return temp_rmb_commands->lspools();
   }
-
+  delete temp_rmb_commands;
+  temp_rmb_commands=nullptr;
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
   int open_connection = storage.open_connection(pool_name, rados_cluster, rados_user);
@@ -352,8 +365,7 @@ int main(int argc, const char **argv) {
   }
 
   // initialize configuration
-  storage_interface::RadosCephConfig *ceph_cfg=
-    storage_engine::StorageBackendFactory::create_ceph_config_io(storage_engine::StorageBackendFactory::CEPH,&storage.get_io_ctx());
+  storage_interface::RadosCephConfig *ceph_cfg=new librmb::RadosCephConfigImpl(&storage.get_io_ctx());
   // set config object
   config_obj = opts.find("cfg_obj") != opts.end() ? opts["cfg_obj"] : ceph_cfg->get_cfg_object_name();
   ceph_cfg->set_cfg_object_name(config_obj);
@@ -377,7 +389,7 @@ int main(int argc, const char **argv) {
   }
 
   // connection to rados is established!
-  rmb_commands = new librmb::RmbCommands(&storage, &cluster, &opts);
+  rmb_commands =new librmb::RmbCommandsImpl(&storage, &cluster, &opts);
   if (is_config_option) {
     if (rmb_commands->configuration(confirmed, ceph_cfg) < 0) {
       std::cerr << "error processing config option" << std::endl;
@@ -428,7 +440,7 @@ int main(int argc, const char **argv) {
       std::cerr << "error renaming user" << std::endl;
     }
   } else if (opts.find("ls") != opts.end()) {
-    librmb::CmdLineParser parser(opts["ls"]);
+    librmb::CmdLineParserImpl parser(opts["ls"]);
     if (opts["ls"].compare("all") == 0 || opts["ls"].compare("-") == 0 || parser.parse_ls_string()) {
       rmb_commands->load_objects(ms, mail_objects, sort_type);
       rmb_commands->query_mail_storage(&mail_objects, &parser, false, false);
@@ -437,7 +449,7 @@ int main(int argc, const char **argv) {
                 << std::endl;
     }
   } else if (opts.find("get") != opts.end()) {
-    librmb::CmdLineParser parser(opts["get"]);
+    librmb::CmdLineParserImpl parser(opts["get"]);
 
     rmb_commands->set_output_path(&parser);
 

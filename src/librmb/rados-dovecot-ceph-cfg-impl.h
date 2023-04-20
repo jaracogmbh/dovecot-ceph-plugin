@@ -26,7 +26,12 @@ class RadosDovecotCephCfgImpl : public storage_interface::RadosDovecotCephCfg {
  public:
   explicit RadosDovecotCephCfgImpl(librados::IoCtx *io_ctx_);
   RadosDovecotCephCfgImpl(RadosConfig &dovecot_cfg_, storage_interface::RadosCephConfig *rados_cfg_);
-  virtual ~RadosDovecotCephCfgImpl() {}
+  virtual ~RadosDovecotCephCfgImpl() {
+    if(rados_cfg!=nullptr){
+      delete rados_cfg;
+      rados_cfg=nullptr;
+    }
+  }
 
   // dovecot config
 
@@ -65,7 +70,7 @@ class RadosDovecotCephCfgImpl : public storage_interface::RadosDovecotCephCfg {
   void set_rbox_cfg_object_name(const std::string &value) override { dovecot_cfg.set_rbox_cfg_object_name(value); }
 
   std::map<std::string, std::string> *get_config() override { return dovecot_cfg.get_config(); }
-  void set_io_ctx_wrapper(librmb::RboxIoCtx &io_ctx_wrapper) override { rados_cfg->set_io_ctx(&io_ctx_wrapper.get_io_ctx()); }
+  void set_io_ctx_wrapper(storage_interface::RboxIoCtx *io_ctx_wrapper) override { rados_cfg->set_io_ctx(&io_ctx_wrapper->get_io_ctx()); }
   int load_rados_config() override {
     //  return dovecot_cfg.is_config_valid() ? rados_cfg->load_cfg() : -1;
     return rados_cfg->load_cfg();

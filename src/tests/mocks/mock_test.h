@@ -20,8 +20,7 @@
 #include "../../storage-interface/rados-dovecot-ceph-cfg.h"
 #include "../../librmb/rados-metadata-storage-impl.h"
 #include "../../storage-interface/rados-mail.h"
-#include "../../storage-engine/storage-backend-factory.h"
-#include "../../librmb/rbox-io-ctx.h"
+#include "../../storage-interface/rbox-io-ctx.h"
 #include "gmock/gmock.h"
 #include "../../storage-interface/rados-metadata.h"
 
@@ -31,7 +30,7 @@ using storage_interface::RadosMetadata;
 using storage_interface::RadosMetadataStorage;
 using storage_interface::RadosStorage;
 using storage_interface::RadosStorageMetadataModule;
-using librmb::RboxIoCtx;
+using storage_interface::RboxIoCtx;
 
 class RboxIoCtxMock : public RboxIoCtx{
   public:
@@ -70,7 +69,7 @@ class RboxIoCtxMock : public RboxIoCtx{
 
 class RadosStorageMock : public RadosStorage {
  public:
-  MOCK_METHOD0(get_io_ctx_wrapper,librmb::RboxIoCtx& ());
+  MOCK_METHOD0(get_io_ctx_wrapper,storage_interface::RboxIoCtx* ());
   MOCK_METHOD3(stat_mail, int(const std::string &oid, uint64_t *psize, time_t *pmtime));
   MOCK_METHOD1(set_namespace, void(const std::string &nspace));
   MOCK_METHOD0(get_namespace, std::string());
@@ -116,7 +115,7 @@ class RadosStorageMock : public RadosStorage {
 
 class RadosStorageMetadataMock : public RadosStorageMetadataModule {
  public:
-  MOCK_METHOD1(set_io_ctx, void(librmb::RboxIoCtx &io_ctx_wrapper));
+  MOCK_METHOD1(set_io_ctx, void(storage_interface::RboxIoCtx *io_ctx_wrapper));
   MOCK_METHOD1(load_metadata, int(storage_interface::RadosMail *mail));
   MOCK_METHOD2(set_metadata, int(storage_interface::RadosMail *mail, storage_interface::RadosMetadata *xattr));
   MOCK_METHOD2(update_metadata, bool(const std::string &oid, std::list<storage_interface::RadosMetadata*> &to_update));
@@ -129,7 +128,7 @@ class RadosStorageMetadataMock : public RadosStorageMetadataModule {
 class RadosMetadataStorageProducerMock : public RadosMetadataStorage {
  public:
   MOCK_METHOD2(create_metadata_storage,
-               RadosStorageMetadataModule *(librmb::RboxIoCtx &io_ctx_wrapper, storage_interface::RadosDovecotCephCfg *cfg_));
+               RadosStorageMetadataModule* (storage_interface::RboxIoCtx *io_ctx_wrapper, storage_interface::RadosDovecotCephCfg *cfg_));
   MOCK_METHOD0(get_storage, RadosStorageMetadataModule *());
 };
 
@@ -142,12 +141,12 @@ class RadosDictionaryMock : public RadosDictionary {
   MOCK_METHOD0(get_private_oid, const std::string());
   MOCK_METHOD0(get_oid, const std::string &());
   MOCK_METHOD0(get_username, const std::string &());
-  MOCK_METHOD0(get_io_ctx_wrapper, librmb::RboxIoCtx &());
+  MOCK_METHOD0(get_io_ctx_wrapper,storage_interface::RboxIoCtx*());
   MOCK_METHOD0(get_poolname,const std::string& ());
-  MOCK_METHOD0(get_shared_io_ctx_wrapper,librmb::RboxIoCtx& ());
-  MOCK_METHOD0(get_private_io_ctx_wrapper,librmb::RboxIoCtx& ());
-  MOCK_METHOD1(remove_completion, void(librmb::RboxIoCtx &remove_completion_wrapper));
-  MOCK_METHOD1(push_back_completion, void(librmb::RboxIoCtx &push_back_completion_wrapper));
+  MOCK_METHOD0(get_shared_io_ctx_wrapper,storage_interface::RboxIoCtx*());
+  MOCK_METHOD0(get_private_io_ctx_wrapper,storage_interface::RboxIoCtx*());
+  MOCK_METHOD1(remove_completion, void(storage_interface::RboxIoCtx *remove_completion_wrapper));
+  MOCK_METHOD1(push_back_completion, void(storage_interface::RboxIoCtx *push_back_completion_wrapper));
   MOCK_METHOD0(wait_for_completions, void());
   MOCK_METHOD2(get, int(const std::string &key, std::string *value_r));
 };
@@ -161,9 +160,9 @@ class RadosClusterMock : public RadosCluster {
 
   MOCK_METHOD0(deinit, void());
   MOCK_METHOD1(pool_create, int(const std::string &pool));
-  MOCK_METHOD2(recovery_index_io_ctx, int(const std::string &pool,librmb::RboxIoCtx &io_ctx_wrapper));
+  MOCK_METHOD2(recovery_index_io_ctx, int(const std::string &pool,storage_interface::RboxIoCtx *io_ctx_wrapper));
 
-  MOCK_METHOD2(io_ctx_create,int (const std::string &pool, librmb::RboxIoCtx &io_ctx_wrapper));
+  MOCK_METHOD2(io_ctx_create,int (const std::string &pool,storage_interface::RboxIoCtx *io_ctx_wrapper));
   MOCK_METHOD2(get_config_option, int(const char *option, std::string *value));
   MOCK_METHOD0(is_connected, bool());
   MOCK_METHOD2(set_config_option, void(const char *option, const char *value));
@@ -215,7 +214,7 @@ class RadosDovecotCephCfgMock : public RadosDovecotCephCfg {
   MOCK_METHOD1(set_rbox_cfg_object_name, void(const std::string &value));
 
   // ceph configuration
-  MOCK_METHOD1(set_io_ctx_wrapper,void(librmb::RboxIoCtx &io_ctx_wrapper));
+  MOCK_METHOD1(set_io_ctx_wrapper,void(storage_interface::RboxIoCtx *io_ctx_wrapper));
   MOCK_METHOD0(load_rados_config, int());
   MOCK_METHOD0(save_default_rados_config, int());
 

@@ -8,11 +8,11 @@
  * License version 2.1, as published by the Free Software
  * Foundation.  See file COPYING.
  */
-#ifndef SRC_STORAGE_INTERFACE_RADOS_CEPH_CONFIG_H_
-#define SRC_STORAGE_INTERFACE_RADOS_CEPH_CONFIG_H_
+#ifndef SRC_STORAGE_INTERFACES__RADOS_CEPH_CONFIG_H_
+#define SRC_STORAGE_INTERFACES__RADOS_CEPH_CONFIG_H_
 
 #include <string>
-#include "../librmb/rados-ceph-json-config.h"
+#include "../storage-interface/rados-ceph-json-config.h"
 #include "../librmb/rados-types.h"
 #include <rados/librados.hpp>
 #include "rados-storage.h"
@@ -44,7 +44,7 @@ class RadosCephConfig {
   virtual void set_public_namespace(const std::string &public_namespace_) = 0;
   virtual void set_cfg_object_name(const std::string &cfg_object_name_) = 0;
   virtual std::string get_cfg_object_name() = 0;
-  virtual librmb::RadosCephJsonConfig *get_config() = 0;
+  virtual storage_interface::RadosCephJsonConfig *get_config() = 0;
 
   virtual bool is_valid_key_value(const std::string &key, const std::string &value)  = 0;
   virtual bool update_valid_key_value(const std::string &key, const std::string &value) = 0;
@@ -70,4 +70,4 @@ class RadosCephConfig {
 
 } /* namespace storage_interface */
 
-#endif /*SRC_STORAGE_INTERFACE_RADOS_CEPH_CONFIG_H_*/
+#endif /*SRC_STORAGE_INTERFACES__RADOS_CEPH_CONFIG_H_*/

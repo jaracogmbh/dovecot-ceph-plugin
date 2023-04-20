@@ -10,19 +10,19 @@
  */
 
 #include "rados-metadata-storage-ima.h"
-#include "rados-util.h"
+#include "rados-util-impl.h"
 #include <string.h>
 #include <utility>
 #include <unistd.h>
 #include "../storage-interface/rados-mail.h"
-#include "../storage-engine/storage-backend-factory.h"
+#include "rados-mail-impl.h"
 
 std::string librmb::RadosMetadataStorageIma::module_name = "ima";
 std::string librmb::RadosMetadataStorageIma::keyword_key = "K";
 namespace librmb {
 
-RadosMetadataStorageIma::RadosMetadataStorageIma(librmb::RboxIoCtx &io_ctx_wrapper_, storage_interface::RadosDovecotCephCfg *cfg_) {
-  this->io_ctx_wrapper = &io_ctx_wrapper_;
+RadosMetadataStorageIma::RadosMetadataStorageIma(storage_interface::RboxIoCtx *io_ctx_wrapper_, storage_interface::RadosDovecotCephCfg *cfg_) {
+  this->io_ctx_wrapper = io_ctx_wrapper_;
   this->cfg = cfg_;
 }
 
@@ -103,7 +103,8 @@ int RadosMetadataStorageIma::load_metadata(storage_interface::RadosMail *mail) {
 
   // load other omap values.
   if (cfg->is_updateable_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS)) {
-    ret = RadosUtils::get_all_keys_and_values(&io_ctx_wrapper->get_io_ctx(), *mail->get_oid(), mail->get_extended_metadata());
+    librmb::RadosUtilsImpl rados_utils;
+    ret = rados_utils.get_all_keys_and_values(&io_ctx_wrapper->get_io_ctx(), *mail->get_oid(), mail->get_extended_metadata());
   }
 
   return ret;
@@ -166,7 +167,7 @@ bool RadosMetadataStorageIma::update_metadata(const std::string &oid, std::list<
     return true;
   }
 
-  storage_interface::RadosMail *obj=storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+  storage_interface::RadosMail *obj=new librmb::RadosMailImpl();
   obj->set_oid(oid);
   load_metadata(obj);
 

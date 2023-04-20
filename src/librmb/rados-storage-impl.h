@@ -24,10 +24,10 @@
 #include <rados/librados.hpp>
 
 #include "../storage-interface/rados-mail.h"
-#include "rbox-io-ctx.h"
+#include "../storage-interface/rbox-io-ctx.h"
 #include "../storage-interface/rados-storage.h"
 #include "../storage-interface/rados-metadata.h"
-#include "rbox-io-ctx.h"
+
 
 namespace librmb {
 class RadosStorageImpl : public storage_interface::RadosStorage {
@@ -35,8 +35,8 @@ class RadosStorageImpl : public storage_interface::RadosStorage {
   explicit RadosStorageImpl(storage_interface::RadosCluster *cluster);
   virtual ~RadosStorageImpl();
   librados::IoCtx &get_io_ctx();
-  librmb::RboxIoCtx& get_io_ctx_wrapper()override;
-  void set_io_ctx_wrapper(librmb::RboxIoCtx* io_ctx_){
+  storage_interface::RboxIoCtx* get_io_ctx_wrapper()override;
+  void set_io_ctx_wrapper(storage_interface::RboxIoCtx* io_ctx_){
     if(io_ctx_wrapper!=nullptr){
       delete io_ctx_wrapper;
       io_ctx_wrapper=io_ctx_;
@@ -108,7 +108,7 @@ class RadosStorageImpl : public storage_interface::RadosStorage {
   int max_write_size;
   int max_object_size;
   std::string nspace;
-  librmb::RboxIoCtx* io_ctx_wrapper;
+  storage_interface::RboxIoCtx* io_ctx_wrapper;
  
   bool io_ctx_created;
   std::string pool_name;

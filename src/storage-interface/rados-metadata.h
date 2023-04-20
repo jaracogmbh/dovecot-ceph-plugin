@@ -9,16 +9,16 @@
  * Foundation.  See file COPYING.
  */
 
-#ifndef SRC_STORAGE_INTERFACE_RADOS_METADATA_H_
-#define SRC_STORAGE_INTERFACE_RADOS_METADATA_H_
+#ifndef SRC_STORAGE_INTERFACES_RADOS_METADATA_H_
+#define SRC_STORAGE_INTERFACES_RADOS_METADATA_H_
 
-#include "../librmb/rados-types.h"
+
 #include <string>
-#include "time.h"
+#include <time.h>
 #include <stdlib.h>
 #include <sstream>
 #include <rados/librados.hpp>
-
+#include "../librmb/rados-types.h"
 namespace storage_interface {
 
 class RadosMetadata {
@@ -40,4 +40,4 @@ class RadosMetadata {
   virtual void set_key(std::string& key_) = 0;
 };
 }  // end namespace
-#endif /* SRC_STORAGE_INTERFACE_RADOS_METADATA_H_ */
+#endif /* SRC_STORAGE_INTERFACES_RADOS_METADATA_H_ */

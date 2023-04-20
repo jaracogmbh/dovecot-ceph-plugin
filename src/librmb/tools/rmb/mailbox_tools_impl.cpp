@@ -14,12 +14,12 @@
 #include <unistd.h>
 #include <fstream>
 #include <iostream>
-#include "mailbox_tools.h"
-#include "rados-util.h"
+#include "mailbox_tools_impl.h"
+#include "../../rados-util-impl.h"
 
 namespace librmb {
 
-MailboxTools::MailboxTools(librmb::RadosMailBox* mailbox, const std::string& base) : mbox(mailbox), base_path(base) {
+MailboxToolsImpl::MailboxToolsImpl(storage_interface::RadosMailBox* mailbox, const std::string& base) : mbox(mailbox), base_path(base) {
   if (base_path.empty()) {
     mailbox_path = this->mbox->get_mailbox_guid();
   } else if (base_path[base_path.length() - 1] == '/') {
@@ -29,7 +29,7 @@ MailboxTools::MailboxTools(librmb::RadosMailBox* mailbox, const std::string& bas
   }
 }
 
-int MailboxTools::init_mailbox_dir() {
+int MailboxToolsImpl::init_mailbox_dir() {
   struct stat st = {0};
 
   if (stat(this->base_path.c_str(), &st) == -1) {
@@ -47,7 +47,7 @@ int MailboxTools::init_mailbox_dir() {
   return 0;
 }
 
-int MailboxTools::delete_mail(storage_interface::RadosMail* mail_obj) {
+int MailboxToolsImpl::delete_mail(storage_interface::RadosMail* mail_obj) {
   if (mail_obj == nullptr) {
     return -1;
   }
@@ -59,7 +59,7 @@ int MailboxTools::delete_mail(storage_interface::RadosMail* mail_obj) {
   return unlink(file_path.c_str());
 }
 
-int MailboxTools::delete_mailbox_dir() {
+int MailboxToolsImpl::delete_mailbox_dir() {
   if (this->mailbox_path.empty() || this->base_path.empty()) {
     return -1;
   }
@@ -72,7 +72,7 @@ int MailboxTools::delete_mailbox_dir() {
   return 0;
 }
 
-int MailboxTools::save_mail(storage_interface::RadosMail* mail_obj) {
+int MailboxToolsImpl::save_mail(storage_interface::RadosMail* mail_obj) {
   if (mail_obj == nullptr) {
     return -1;
   }
@@ -91,14 +91,15 @@ int MailboxTools::save_mail(storage_interface::RadosMail* mail_obj) {
   return 0;
 }
 
-int MailboxTools::build_filename(storage_interface::RadosMail* mail_obj, std::string* filename) {
+int MailboxToolsImpl::build_filename(storage_interface::RadosMail* mail_obj, std::string* filename) {
   if (mail_obj == nullptr || !filename->empty()) {
     return -1;
   }
 
   std::stringstream ss;
   char* m_mail_uid;
-  RadosUtils::get_metadata(librmb::RBOX_METADATA_MAIL_UID, mail_obj->get_metadata(), &m_mail_uid);
+  librmb::RadosUtilsImpl rados_utils;
+  rados_utils.get_metadata(librmb::RBOX_METADATA_MAIL_UID, mail_obj->get_metadata(), &m_mail_uid);
   ss << m_mail_uid << ".";
   ss << *mail_obj->get_oid();
   *filename = ss.str();

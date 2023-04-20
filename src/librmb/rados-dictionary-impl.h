@@ -16,7 +16,7 @@
 #include <string>
 #include <cstdint>
 #include <mutex>  // NOLINT
-#include "rbox-io-ctx.h"
+#include "../storage-interface/rbox-io-ctx.h"
 #include <rados/librados.hpp>
 #include "../storage-interface/rados-cluster.h"
 #include "../storage-interface/rados-dictionary.h"
@@ -43,18 +43,18 @@ class RadosDictionaryImpl : public storage_interface::RadosDictionary {
   const std::string& get_username() override { return username; }
   const std::string& get_poolname() override { return poolname; }
 
-  librmb::RboxIoCtx& get_io_ctx_wrapper(const std::string& key) override;
-  librmb::RboxIoCtx& get_shared_io_ctx_wrapper() override;
-  librmb::RboxIoCtx& get_private_io_ctx_wrapper() override;
+  storage_interface::RboxIoCtx* get_io_ctx_wrapper(const std::string& key) override;
+  storage_interface::RboxIoCtx* get_shared_io_ctx_wrapper() override;
+  storage_interface::RboxIoCtx* get_private_io_ctx_wrapper() override;
 
-  void remove_completion(librmb::RboxIoCtx &remove_completion_wrapper) override;
-  void push_back_completion(librmb::RboxIoCtx &push_back_completion_wrapper) override;
+  void remove_completion(storage_interface::RboxIoCtx* remove_completion_wrapper) override;
+  void push_back_completion(storage_interface::RboxIoCtx* push_back_completion_wrapper) override;
   void wait_for_completions() override;
 
   int get(const std::string& key, std::string* value_r) override;
     
-  librmb::RboxIoCtx* RadosDictionary::remove_completion_wrapper;
-  librmb::RboxIoCtx* RadosDictionary::push_back_completion_wrapper;
+  storage_interface::RboxIoCtx* RadosDictionary::remove_completion_wrapper;
+  storage_interface::RboxIoCtx* RadosDictionary::push_back_completion_wrapper;
 
  private:
   bool load_configuration(librados::IoCtx* io_ctx);
@@ -68,12 +68,12 @@ class RadosDictionaryImpl : public storage_interface::RadosDictionary {
 
   std::string shared_oid;
   librados::IoCtx shared_io_ctx;
-  librmb::RboxIoCtx* shared_io_ctx_wrapper;
+  storage_interface::RboxIoCtx* shared_io_ctx_wrapper;
   bool shared_io_ctx_created;
 
   std::string private_oid;
   librados::IoCtx private_io_ctx;
-  librmb::RboxIoCtx* private_io_ctx_wrapper;
+  storage_interface::RboxIoCtx* private_io_ctx_wrapper;
   bool private_io_ctx_created;
 
   std::list<librados::AioCompletion*> completions;

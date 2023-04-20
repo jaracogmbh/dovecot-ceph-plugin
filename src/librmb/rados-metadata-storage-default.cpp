@@ -10,14 +10,14 @@
  */
 
 #include "rados-metadata-storage-default.h"
-#include "rados-util.h"
+#include "rados-util-impl.h"
 #include <utility>
 #include "../storage-interface/rados-mail.h"
 namespace librmb {
 
 std::string RadosMetadataStorageDefault::module_name = "default";
 
-RadosMetadataStorageDefault::RadosMetadataStorageDefault(librmb::RboxIoCtx &io_ctx_wrapper) { this->io_ctx_wrapper = &io_ctx_wrapper; }
+RadosMetadataStorageDefault::RadosMetadataStorageDefault(storage_interface::RboxIoCtx *io_ctx_wrapper) { this->io_ctx_wrapper = io_ctx_wrapper; }
 
 RadosMetadataStorageDefault::~RadosMetadataStorageDefault() {}
 
@@ -32,7 +32,8 @@ int RadosMetadataStorageDefault::load_metadata(storage_interface::RadosMail *mai
   ret = io_ctx_wrapper->getxattrs(*mail->get_oid(), *mail->get_metadata());
 
   if (ret >= 0) {
-    ret = RadosUtils::get_all_keys_and_values(&io_ctx_wrapper->get_io_ctx(), *mail->get_oid(), mail->get_extended_metadata());
+    librmb::RadosUtilsImpl rados_utils;
+    ret = rados_utils.get_all_keys_and_values(&io_ctx_wrapper->get_io_ctx(), *mail->get_oid(), mail->get_extended_metadata());
   }
   return ret;
 }

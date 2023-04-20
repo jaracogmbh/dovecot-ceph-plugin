@@ -18,7 +18,7 @@
 #include <rados/librados.hpp>
 #include <map>
 #include "../storage-interface/rados-cluster.h"
-#include "rbox-io-ctx.h"
+#include "../storage-interface/rbox-io-ctx.h"
 namespace librmb {
 
 class RadosClusterImpl : public storage_interface::RadosCluster {
@@ -33,8 +33,8 @@ class RadosClusterImpl : public storage_interface::RadosCluster {
   void deinit() override;
 
   int pool_create(const std::string &pool) override;
-  int io_ctx_create(const std::string &pool, librmb::RboxIoCtx &io_ctx_wrapper) override;
-  int recovery_index_io_ctx(const std::string &pool, librmb::RboxIoCtx &io_ctx_wrapper) override;
+  int io_ctx_create(const std::string &pool, storage_interface::RboxIoCtx *io_ctx_wrapper) override;
+  int recovery_index_io_ctx(const std::string &pool, storage_interface::RboxIoCtx *io_ctx_wrapper) override;
   
   int get_config_option(const char *option, std::string *value) override;
   int dictionary_create(const std::string &pool, const std::string &username, const std::string &oid,

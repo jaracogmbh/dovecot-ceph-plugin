@@ -17,8 +17,8 @@
 
 #include "rados-dictionary-impl.h"
 #include "rados-storage-impl.h"
-#include "rados-util.h"
-#include "rbox-io-ctx.h"
+#include "rados-util-impl.h"
+#include "rbox-io-ctx-impl.h"
 using std::list;
 using std::pair;
 using std::string;
@@ -93,8 +93,8 @@ std::vector<std::string> RadosClusterImpl::list_pgs_for_pool(std::string &pool_n
     librados::bufferlist inbl;
     librados::bufferlist outbl;
     RadosClusterImpl::cluster->mon_command(cmd, inbl, &outbl, nullptr);
-    
-    std::vector<std::string> list = RadosUtils::extractPgs(std::string(outbl.c_str()));
+    librmb::RadosUtilsImpl rados_utils;
+    std::vector<std::string> list = rados_utils.extractPgs(std::string(outbl.c_str()));
   
     for (auto const &token: list) {
           std::cout << token << std::endl;        
@@ -117,7 +117,8 @@ std::map<std::string, std::vector<std::string>> RadosClusterImpl::list_pgs_osd_f
     librados::bufferlist inbl;
     librados::bufferlist outbl;
     RadosClusterImpl::cluster->mon_command(cmd, inbl, &outbl, nullptr);
-    return RadosUtils::extractPgAndPrimaryOsd(std::string(outbl.c_str()));
+    librmb::RadosUtilsImpl rados_utils;
+    return rados_utils.extractPgAndPrimaryOsd(std::string(outbl.c_str()));
 }
 int RadosClusterImpl::initialize() {
   int ret = 0;
@@ -201,9 +202,9 @@ int RadosClusterImpl::pool_create(const string &pool) {
   return ret;
 }
 
-int RadosClusterImpl::io_ctx_create(const string &pool, librmb::RboxIoCtx &io_ctx_wrapper) {
+int RadosClusterImpl::io_ctx_create(const string &pool, storage_interface::RboxIoCtx *io_ctx_wrapper) {
   int ret = 0;
-  librados::IoCtx *io_ctx_create=&io_ctx_wrapper.get_io_ctx();
+  librados::IoCtx *io_ctx_create=&io_ctx_wrapper->get_io_ctx();
   assert(io_ctx_create != nullptr);
  
   if (RadosClusterImpl::cluster_ref_count == 0) {
@@ -224,8 +225,8 @@ int RadosClusterImpl::io_ctx_create(const string &pool, librmb::RboxIoCtx &io_ct
   return ret;
 }
 int RadosClusterImpl::recovery_index_io_ctx(const std::string &pool, 
-  librmb::RboxIoCtx &io_ctx_wrapper) {
-    librados::IoCtx *io_ctx_recovery=&io_ctx_wrapper.get_recovery_io_ctx();
+  storage_interface::RboxIoCtx *io_ctx_wrapper) {
+    librados::IoCtx *io_ctx_recovery=&io_ctx_wrapper->get_recovery_io_ctx();
     if(!is_connected()) {
       return -1;
     }

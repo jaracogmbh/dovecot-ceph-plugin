@@ -47,7 +47,8 @@ extern "C" {
 #include "../librmb/rados-dictionary-impl.h"
 #include "../storage-interface/rados-cluster.h"
 #include "../storage-interface/rados-guid-generator.h"
-#include "../librmb/rados-util.h"
+#include "../storage-interface/rados-util.h"
+#include "../storage-engine/storage-backend-factory.h"
 
 #if DOVECOT_PREREQ(2, 3)
 #define dict_lookup(dict, pool, key, value_r, error_r) dict_lookup(dict, pool, key, value_r, error_r)
@@ -289,7 +290,7 @@ void rados_dict_lookup_async(struct dict *_dict, const char *key, dict_lookup_ca
   lc->callback = callback;
   lc->read_op.omap_get_vals_by_keys(keys, &lc->result_map, &lc->r_val);
 
-  int err = d->get_io_ctx_wrapper(key).aio_operate(d->get_full_oid(key), lc->completion, &lc->read_op,
+  int err = d->get_io_ctx_wrapper(key)->aio_operate(d->get_full_oid(key), lc->completion, &lc->read_op,
                                            LIBRADOS_OPERATION_NOFLAG, &lc->bl);
 
   if (err < 0) {
@@ -304,7 +305,7 @@ void rados_dict_lookup_async(struct dict *_dict, const char *key, dict_lookup_ca
     lc = nullptr;
   } else {
     d->push_back_completion_wrapper->set_push_back_completion(*lc->completion);
-    d->push_back_completion(*d->push_back_completion_wrapper);
+    d->push_back_completion(d->push_back_completion_wrapper);
   }
 }
 
@@ -324,7 +325,7 @@ int rados_dict_lookup(struct dict *_dict, pool_t pool, const char *key, const ch
   *value_r = nullptr;
   *error_r = nullptr;
 
-  int err = d->get_io_ctx_wrapper(key).omap_get_vals_by_keys(d->get_full_oid(key), keys, &result_map);
+  int err = d->get_io_ctx_wrapper(key)->omap_get_vals_by_keys(d->get_full_oid(key), keys, &result_map);
   if (err == 0) {
     auto value = result_map.find(key);
     if (value != result_map.end()) {
@@ -453,7 +454,7 @@ class rados_dict_transaction_context {
 #ifdef DEBUG
         i_debug("deploy_set_map_value: %s , oid=%s", bl.to_str().c_str(), oid.c_str());
 #endif
-        if ((is_private(key) ? d->get_private_io_ctx_wrapper().get_io_ctx() : d->get_shared_io_ctx_wrapper().get_io_ctx()).omap_set(oid, map) < 0) {
+        if ((is_private(key) ? d->get_private_io_ctx_wrapper()->get_io_ctx() : d->get_shared_io_ctx_wrapper()->get_io_ctx()).omap_set(oid, map) < 0) {
           i_error("unable to set key(%s), oid(%s), is_private(%d)", key.c_str(), oid.c_str(), is_private(key));
         }
       }
@@ -474,8 +475,13 @@ class rados_dict_transaction_context {
         const string key = it->first;
         std::string oid = is_private(key) ? d->get_private_oid() : d->get_shared_oid();
         // it->second is a signed long int
-        librmb::RadosUtils::osd_add(&(is_private(key) ? d->get_private_io_ctx_wrapper().get_io_ctx() : d->get_shared_io_ctx_wrapper().get_io_ctx()), oid, key,
+        storage_interface::RadosUtils *rados_util=
+          storage_engine::StorageBackendFactory::create_rados_utils(
+            storage_engine::StorageBackendFactory::CEPH);
+        rados_util->osd_add(&(is_private(key) ? d->get_private_io_ctx_wrapper()->get_io_ctx() : d->get_shared_io_ctx_wrapper()->get_io_ctx()), oid, key,
                                     it->second);
+        delete rados_util;
+        rados_util=nullptr;                            
       }
       atomic_inc_map.clear();
     }
@@ -496,7 +502,7 @@ class rados_dict_transaction_context {
 #ifdef DEBUG
         i_debug("deploy_unset_map_value key: %s , oid=%s", key.c_str(), oid.c_str());
 #endif
-        if ((is_private(key) ? d->get_private_io_ctx_wrapper().get_io_ctx() : d->get_shared_io_ctx_wrapper().get_io_ctx()).omap_rm_keys(oid, keys) < 0) {
+        if ((is_private(key) ? d->get_private_io_ctx_wrapper()->get_io_ctx() : d->get_shared_io_ctx_wrapper()->get_io_ctx()).omap_rm_keys(oid, keys) < 0) {
           i_error("unable to unset key(%s), oid(%s), is_private(%d)", key.c_str(), oid.c_str(), is_private(key));
         }
       }
@@ -716,7 +722,7 @@ struct dict_iterate_context *rados_dict_iterate_init(struct dict *_dict, const c
         }
       }
 
-      int err = d->get_private_io_ctx_wrapper().aio_operate(d->get_private_oid(), private_read_completion, &private_read_op,
+      int err = d->get_private_io_ctx_wrapper()->aio_operate(d->get_private_oid(), private_read_completion, &private_read_op,
                                                     &bl_private);
 #ifdef DEBUG
       i_debug("rados_dict_iterate_init(): private err=%d(%s)", err, strerror(-err));
@@ -747,7 +753,7 @@ struct dict_iterate_context *rados_dict_iterate_init(struct dict *_dict, const c
       }
 
       int err =
-          d->get_shared_io_ctx_wrapper().aio_operate(d->get_shared_oid(), shared_read_completion, &shared_read_op, &bl_shared);
+          d->get_shared_io_ctx_wrapper()->aio_operate(d->get_shared_oid(), shared_read_completion, &shared_read_op, &bl_shared);
 #ifdef DEBUG
       i_debug("rados_dict_iterate_init(): shared err=%d(%s)", err, strerror(-err));
 #endif

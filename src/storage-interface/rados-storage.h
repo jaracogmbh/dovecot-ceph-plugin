@@ -19,7 +19,7 @@
 #include <rados/librados.hpp>
 #include "rados-cluster.h"
 #include "rados-mail.h"
-#include "rados-types.h"
+#include "../librmb/rados-types.h"
 #include "rbox-io-ctx.h"
 
 namespace storage_interface {
@@ -35,7 +35,7 @@ class RadosStorage {
   /*!
    * if connected, return the valid ioCtx
    */
-  virtual librmb::RboxIoCtx& get_io_ctx_wrapper() = 0;
+  virtual storage_interface::RboxIoCtx* get_io_ctx_wrapper() = 0;
   /*! get the object size and object save date
    * @param[in] oid unique ident for the object
    * @param[out] psize size of the object

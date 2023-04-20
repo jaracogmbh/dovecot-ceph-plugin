@@ -17,19 +17,18 @@ headers = \
 	rados-storage-impl.h \
 	rados-dictionary-impl.h \
 	rados-mail-impl.h \
-	rados-util.h \
+	rados-util-impl.h \
 	rados-metadata-impl.h \
 	rados-types.h \
 	rados-dovecot-config.h \
 	rados-namespace-manager-impl.h\
 	rados-dovecot-ceph-cfg-impl.h \
 	rados-ceph-config-impl.h \
-	rados-ceph-json-config.h \
+	rados-ceph-json-config-impl.h \
 	rados-metadata-storage-impl.h \
 	rados-metadata-storage-default.h \
 	rados-metadata-storage-ima.h \
-	rados-save-log.h \
-	rbox-io-ctx.h \
+	rados-save-log-impl.h \
 	rbox-io-ctx-impl.h
 		
 	
@@ -40,15 +39,15 @@ librmb_la_SOURCES = \
 	rados-storage-impl.cpp \
 	rados-dictionary-impl.cpp \
 	rados-mail-impl.cpp \
-	rados-util.cpp \
+	rados-util-impl.cpp \
 	rados-dovecot-config.cpp \
 	rados-namespace-manager-impl.cpp\
 	rados-ceph-config-impl.cpp \
 	rados-dovecot-ceph-cfg-impl.cpp \
-	rados-ceph-json-config.cpp \
+	rados-ceph-json-config-impl.cpp \
 	rados-metadata-storage-default.cpp \
 	rados-metadata-storage-ima.cpp \
-	rados-save-log.cpp
+	rados-save-log-impl.cpp
 	
 AM_LDFLAGS = $(JANSSON_LIBS)
 AM_CFLAGS = $(JANSSON_CFLAGS)

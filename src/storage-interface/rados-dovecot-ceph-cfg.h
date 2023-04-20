@@ -11,12 +11,13 @@
 #ifndef SRC_STORAGE_INTERFACES_RADOS_DOVECOT_CEPH_CFG_H_
 #define SRC_STORAGE_INTERFACES_RADOS_DOVECOT_CEPH_CFG_H_
 
-#include "rados-types.h"
+#include "../librmb/rados-types.h"
 #include <string>
 #include <map>
 #include <iostream>
 #include "rados-storage.h"
 #include "rados-ceph-config.h"
+#include "rbox-io-ctx.h"
 namespace storage_interface {
 
 /**
@@ -71,7 +72,7 @@ class RadosDovecotCephCfg {
 
   virtual std::string &get_key_prefix_keywords() = 0;
 
-  virtual void set_io_ctx_wrapper(librmb::RboxIoCtx &io_ctx_wrapper) = 0;
+  virtual void set_io_ctx_wrapper(storage_interface::RboxIoCtx *io_ctx_wrapper) = 0;
   virtual int load_rados_config() = 0;
   virtual int save_default_rados_config() = 0;
   virtual void set_user_mapping(bool value_) = 0;

@@ -9,8 +9,8 @@
  * Foundation.  See file COPYING.
  */
 
-#ifndef SRC_STORAGE_INTERFACE_RADOS_MAIL_INTERFACE_H_
-#define SRC_STORAGE_INTERFACE_RADOS_MAIL_INTERFACE_H_
+#ifndef SRC_STORAGE_INTERFACES_RADOS_MAIL_INTERFACE_H_
+#define SRC_STORAGE_INTERFACES_RADOS_MAIL_INTERFACE_H_
 
 #include <string>
 #include <iostream>
@@ -73,4 +73,4 @@ class RadosMail{
 
 }  // namespace storage_interface
 
-#endif  // SRC_STORAGE_INTERFACE_RADOS_MAIL_INTERFACE_H_
+#endif  // SRC_STORAGE_INTERFACES_RADOS_MAIL_INTERFACE_H_

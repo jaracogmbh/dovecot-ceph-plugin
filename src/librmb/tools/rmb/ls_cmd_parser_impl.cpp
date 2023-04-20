@@ -9,37 +9,37 @@
  * Foundation.  See file COPYING.
  */
 
-#include "ls_cmd_parser.h"
+#include "ls_cmd_parser_impl.h"
 
 #include <iostream>
 #include <string>
 
 namespace librmb {
 
-CmdLineParser::~CmdLineParser() {
+CmdLineParserImpl::~CmdLineParserImpl() {
   for (auto &it : predicates) {
     delete it.second;
   }
 }
 
-Predicate *CmdLineParser::create_predicate(const std::string &_ls_value) {
-  Predicate *p = new Predicate();
+storage_interface::Predicate *CmdLineParserImpl::create_predicate(const std::string &_ls_value) {
+  storage_interface::Predicate *p = new librmb::PredicateImpl();
 
   size_t pos = _ls_value.find("=");
   pos = (pos == std::string::npos) ? _ls_value.find(">") : pos;
   pos = (pos == std::string::npos) ? _ls_value.find("<") : pos;
 
-  p->key = _ls_value.substr(0, pos);
-  p->op = _ls_value[pos];
-  p->value = _ls_value.substr(pos + 1, _ls_value.length());
-  p->valid = true;
+  p->get_key() = _ls_value.substr(0, pos);
+  p->get_op() = _ls_value[pos];
+  p->get_value() = _ls_value.substr(pos + 1, _ls_value.length());
+  p->get_valid() = true;
 
-  this->keys += p->key + " ";
+  this->keys += p->get_key() + " ";
   // std::cout << " predicate: key " << p->key << " op " << p->op << " value " << p->value << std::endl;
   return p;
 }
 
-void CmdLineParser::set_output_dir(const std::string& out) {
+void CmdLineParserImpl::set_output_dir(const std::string& out) {
   if (out.length() > 0 && out.at(0) == '~') {
     // Convert tilde to $HOME path (if exists)
     char *home = getenv("HOME");
@@ -61,17 +61,17 @@ void CmdLineParser::set_output_dir(const std::string& out) {
   }
 }
 
-bool CmdLineParser::parse_ls_string() {
+bool CmdLineParserImpl::parse_ls_string() {
   std::string pred_sep = ";";
 
   size_t pos = ls_value.find(pred_sep);
   if (pos == std::string::npos) {
     // single condition.
-    Predicate *p = create_predicate(ls_value);
-    if (p->valid) {
-      predicates[p->key] = p;
+    storage_interface::Predicate *p = create_predicate(ls_value);
+    if (p->get_valid()) {
+      predicates[p->get_key()] = p;
     }
-    return p->valid;
+    return p->get_valid();
 
   } else {
     int offset = 0;
@@ -79,20 +79,20 @@ bool CmdLineParser::parse_ls_string() {
     while (pos != std::string::npos) {
       tmp = tmp.substr(0, pos);
 
-      Predicate *p = create_predicate(tmp);
-      if (p->valid) {
-        predicates[p->key] = p;
+      storage_interface::Predicate *p = create_predicate(tmp);
+      if (p->get_valid()) {
+        predicates[p->get_key()] = p;
       }
 
       tmp = ls_value.substr(offset + pos + 1, ls_value.length());
       offset += pos + 1;
       pos = tmp.find(pred_sep);
     }
-    Predicate *p = create_predicate(tmp);
-    if (p->valid) {
-      predicates[p->key] = p;
+    storage_interface::Predicate *p = create_predicate(tmp);
+    if (p->get_valid()) {
+      predicates[p->get_key()] = p;
     }
-    return p->valid;
+    return p->get_valid();
   }
 }
 }  // namespace librmb

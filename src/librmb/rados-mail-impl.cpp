@@ -15,7 +15,7 @@
 
 #include <cstring>
 #include <sstream>
-#include "rados-util.h"
+#include "rados-util-impl.h"
 
 using std::endl;
 using std::ostringstream;
@@ -35,31 +35,32 @@ RadosMailImpl::RadosMailImpl()
 RadosMailImpl::~RadosMailImpl() {}
 
 std::string RadosMailImpl::to_string(const string& padding) {
+  librmb::RadosUtilsImpl rados_utils;
   char* uid = NULL;
-  RadosUtils::get_metadata(RBOX_METADATA_MAIL_UID, &attrset, &uid);
+  rados_utils.get_metadata(RBOX_METADATA_MAIL_UID, &attrset, &uid);
   char* recv_time_str = NULL;
-  RadosUtils::get_metadata(RBOX_METADATA_RECEIVED_TIME, &attrset, &recv_time_str);
+  rados_utils.get_metadata(RBOX_METADATA_RECEIVED_TIME, &attrset, &recv_time_str);
   char* p_size = NULL;
-  RadosUtils::get_metadata(RBOX_METADATA_PHYSICAL_SIZE, &attrset, &p_size);
+  rados_utils.get_metadata(RBOX_METADATA_PHYSICAL_SIZE, &attrset, &p_size);
   char* v_size = NULL;
-  RadosUtils::get_metadata(RBOX_METADATA_VIRTUAL_SIZE, &attrset, &v_size);
+  rados_utils.get_metadata(RBOX_METADATA_VIRTUAL_SIZE, &attrset, &v_size);
 
   char* rbox_version = NULL;
-  RadosUtils::get_metadata(RBOX_METADATA_VERSION, &attrset, &rbox_version);
+  rados_utils.get_metadata(RBOX_METADATA_VERSION, &attrset, &rbox_version);
   char* mailbox_guid = NULL;
-  RadosUtils::get_metadata(RBOX_METADATA_MAILBOX_GUID, &attrset, &mailbox_guid);
+  rados_utils.get_metadata(RBOX_METADATA_MAILBOX_GUID, &attrset, &mailbox_guid);
   char* mail_guid = NULL;
-  RadosUtils::get_metadata(RBOX_METADATA_GUID, &attrset, &mail_guid);
+  rados_utils.get_metadata(RBOX_METADATA_GUID, &attrset, &mail_guid);
   char* mb_orig_name = NULL;
-  RadosUtils::get_metadata(RBOX_METADATA_ORIG_MAILBOX, &attrset, &mb_orig_name);
+  rados_utils.get_metadata(RBOX_METADATA_ORIG_MAILBOX, &attrset, &mb_orig_name);
 
   // string keywords = get_metadata(RBOX_METADATA_OLDV1_KEYWORDS);
   char* flags = NULL;
-  RadosUtils::get_metadata(RBOX_METADATA_OLDV1_FLAGS, &attrset, &flags);
+  rados_utils.get_metadata(RBOX_METADATA_OLDV1_FLAGS, &attrset, &flags);
   char* pvt_flags = NULL;
-  RadosUtils::get_metadata(RBOX_METADATA_PVT_FLAGS, &attrset, &pvt_flags);
+  rados_utils.get_metadata(RBOX_METADATA_PVT_FLAGS, &attrset, &pvt_flags);
   char* from_envelope = NULL;
-  RadosUtils::get_metadata(RBOX_METADATA_FROM_ENVELOPE, &attrset, &from_envelope);
+  rados_utils.get_metadata(RBOX_METADATA_FROM_ENVELOPE, &attrset, &from_envelope);
 
   time_t ts = -1;
   if (recv_time_str != NULL) {
@@ -85,7 +86,7 @@ std::string RadosMailImpl::to_string(const string& padding) {
   }
   ss << "oid = " << oid << endl;
   string recv_time;
-  if (RadosUtils::convert_time_t_to_str(ts, &recv_time) >= 0) {
+  if (rados_utils.convert_time_t_to_str(ts, &recv_time) >= 0) {
     ss << padding << "        " << static_cast<char>(RBOX_METADATA_RECEIVED_TIME) << "(receive_time)=" << recv_time
        << "\n";
   } else {
@@ -96,7 +97,7 @@ std::string RadosMailImpl::to_string(const string& padding) {
     }
   }
   string save_time;
-  if (RadosUtils::convert_time_t_to_str(save_date_rados, &save_time) >= 0) {
+  if (rados_utils.convert_time_t_to_str(save_date_rados, &save_time) >= 0) {
     ss << padding << "        "
        << "save_time=" << save_time << "\n";
   } else {
@@ -134,9 +135,9 @@ std::string RadosMailImpl::to_string(const string& padding) {
 
   if (flags != NULL) {
     uint8_t flags_;
-    if (RadosUtils::string_to_flags(flags, &flags_)) {
+    if (rados_utils.string_to_flags(flags, &flags_)) {
       std::string resolved_flags;
-      RadosUtils::resolve_flags(flags_, &resolved_flags);
+      rados_utils.resolve_flags(flags_, &resolved_flags);
       ss << padding << "        " << static_cast<char>(RBOX_METADATA_OLDV1_FLAGS) << "(flags): " << resolved_flags
          << std::endl;
     }

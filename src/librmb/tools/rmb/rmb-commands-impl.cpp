@@ -8,15 +8,14 @@
  * License version 2.1, as published by the Free Software
  * Foundation.  See file COPYING.
  */
-
-#include "rmb-commands.h"
+#include "rmb-commands-impl.h"
 #include <time.h>
 #include <algorithm>  // std::sort
 #include <cstdio>
 
 #include "../../rados-cluster-impl.h"
 #include "../../rados-storage-impl.h"
-#include "rados-util.h"
+#include "../../rados-util-impl.h"
 #include "../../rados-dovecot-config.h"
 #include "../../rados-dovecot-ceph-cfg-impl.h"
 #include "../../rados-namespace-manager-impl.h"
@@ -24,11 +23,14 @@
 #include "../../rados-metadata-storage-default.h"
 #include "../../rados-metadata-impl.h"
 #include "../../../storage-interface/rados-dovecot-ceph-cfg.h"
-#include "ls_cmd_parser.h"
+#include "../../rados-save-log-impl.h"
+#include "ls_cmd_parser_impl.h"
+#include "rados-mail-box-impl.h"
+#include "mailbox_tools_impl.h"
 
 namespace librmb {
-
-RmbCommands::RmbCommands(storage_interface::RadosStorage *storage_, storage_interface::RadosCluster *cluster_,
+  
+RmbCommandsImpl::RmbCommandsImpl(storage_interface::RadosStorage *storage_, storage_interface::RadosCluster *cluster_,
                          std::map<std::string, std::string> *opts_) {
   this->storage = storage_;
   this->cluster = cluster_;
@@ -37,16 +39,16 @@ RmbCommands::RmbCommands(storage_interface::RadosStorage *storage_, storage_inte
     is_debug = ((*opts).find("debug") != (*opts).end()) ? true : false;
   }
 }
-RmbCommands::~RmbCommands() {}
+RmbCommandsImpl::~RmbCommandsImpl() {}
 
-void RmbCommands::print_debug(const std::string &msg) {
+void RmbCommandsImpl::print_debug(const std::string &msg) {
   if (this->is_debug) {
     std::cout << msg << std::endl;
   }
 }
-int RmbCommands::delete_with_save_log(const std::string &save_log, const std::string &rados_cluster,
+int RmbCommandsImpl::delete_with_save_log(const std::string &save_log, const std::string &rados_cluster,
                                       const std::string &rados_user,
-                                      std::map<std::string, std::list<librmb::RadosSaveLogEntry>> *moved_items) {
+                                      std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>> *moved_items) {
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
   int count = 0;
@@ -64,7 +66,7 @@ int RmbCommands::delete_with_save_log(const std::string &save_log, const std::st
   int line_count = 0;
   while (true) {
     line_count++;
-    librmb::RadosSaveLogEntry entry;
+    librmb::RadosSaveLogEntryImpl entry;
     read >> entry;
     if (read.eof()) {
       break;
@@ -74,38 +76,38 @@ int RmbCommands::delete_with_save_log(const std::string &save_log, const std::st
       break;
     }
 
-    if (storage.get_pool_name().compare(entry.pool) != 0) {
+    if (storage.get_pool_name().compare(entry.get_pool()) != 0) {
       // close connection before open a new one.
       // TODO(jrse): worst case are alternating pool entries e.g. mail_storage ,
       //       mail_storage_alt.... maybe we should group the entries by pool...
       storage.close_connection();
-      int open_connection = storage.open_connection(entry.pool, rados_cluster, rados_user);
+      int open_connection = storage.open_connection(entry.get_pool(), rados_cluster, rados_user);
       if (open_connection < 0) {
         std::cerr << " error opening rados connection. Errorcode: " << open_connection << std::endl;
         cluster.deinit();
         return -1;
       }
     }
-    storage.set_namespace(entry.ns);
-    if (entry.op.compare("save") == 0 || entry.op.compare("cpy") == 0) {
-      int ret_delete = storage.delete_mail(entry.oid);
+    storage.set_namespace(entry.get_ns());
+    if (entry.get_op().compare("save") == 0 || entry.get_op().compare("cpy") == 0) {
+      int ret_delete = storage.delete_mail(entry.get_oid());
       if (ret_delete < 0) {
-        std::cout << "Object " << entry.oid << " not deleted: errorcode: " << ret_delete << std::endl;
+        std::cout << "Object " << entry.get_oid()<< " not deleted: errorcode: " << ret_delete << std::endl;
       } else {
-        std::cout << "Object " << entry.oid << " successfully deleted" << std::endl;
+        std::cout << "Object " << entry.get_oid()<< " successfully deleted" << std::endl;
         count++;
       }
     } else {
-      int ret = storage.move(entry.oid, entry.ns.c_str(), entry.src_oid, entry.src_ns.c_str(), entry.metadata, true);
+      int ret = storage.move(entry.get_oid(), entry.get_ns().c_str(), entry.get_src_oid(), entry.get_src_ns().c_str(), entry.get_metadata(), true);
       if (ret < 0) {
-        std::cerr << "moving : " << entry.oid << " to " << entry.src_oid << " failed ! ret code: " << ret << std::endl;
+        std::cerr << "moving : " << entry.get_oid() << " to " << entry.get_src_oid() << " failed ! ret code: " << ret << std::endl;
       } else {
-        if (moved_items->find(entry.src_user) == moved_items->end()) {
-          std::list<librmb::RadosSaveLogEntry> entries;
-          entries.push_back(entry);
-          (*moved_items)[entry.src_user] = entries;
+        if (moved_items->find(entry.get_src_user()) == moved_items->end()) {
+          std::list<storage_interface::RadosSaveLogEntry*> entries;
+          entries.push_back(&entry);
+          (*moved_items)[entry.get_src_user()] = entries;
         } else {
-          (*moved_items)[entry.src_user].push_back(entry);
+          (*moved_items)[entry.get_src_user()].push_back(&entry);
         }
       }
       count++;
@@ -117,7 +119,7 @@ int RmbCommands::delete_with_save_log(const std::string &save_log, const std::st
   return count;
 }
 
-int RmbCommands::lspools() {
+int RmbCommandsImpl::lspools() {
   librmb::RadosClusterImpl cluster;
 
   cluster.init();
@@ -136,13 +138,13 @@ int RmbCommands::lspools() {
   return 0;
 }
 
-int RmbCommands::delete_namespace(storage_interface::RadosStorageMetadataModule *ms, std::list<storage_interface::RadosMail *> &mail_objects,
+int RmbCommandsImpl::delete_namespace(storage_interface::RadosStorageMetadataModule *ms, std::list<storage_interface::RadosMail *> &mail_objects,
                                   storage_interface::RadosCephConfig *cfg, bool confirmed) {
   if (ms == nullptr || cfg == nullptr) {
     return -1;
   }
 
-  librmb::CmdLineParser parser("-");
+  librmb::CmdLineParserImpl parser("-");
   if (parser.parse_ls_string()) {
     std::string sort_type = "uid";
     int ret = load_objects(ms, mail_objects, sort_type);
@@ -166,7 +168,7 @@ int RmbCommands::delete_namespace(storage_interface::RadosStorageMetadataModule 
   }
   return 0;
 }
-int RmbCommands::delete_mail(bool confirmed) {
+int RmbCommandsImpl::delete_mail(bool confirmed) {
   int ret = -1;
   print_debug("entry: delete_mail");
   if (!confirmed) {
@@ -187,7 +189,7 @@ int RmbCommands::delete_mail(bool confirmed) {
   return ret;
 }
 
-int RmbCommands::rename_user(storage_interface::RadosCephConfig *cfg, bool confirmed, const std::string &uid) {
+int RmbCommandsImpl::rename_user(storage_interface::RadosCephConfig *cfg, bool confirmed, const std::string &uid) {
   print_debug("entry: rename_user");
   if (cfg == nullptr) {
     return -1;
@@ -248,7 +250,7 @@ int RmbCommands::rename_user(storage_interface::RadosCephConfig *cfg, bool confi
   return ret;
 }
 
-int RmbCommands::configuration(bool confirmed, storage_interface::RadosCephConfig *ceph_cfg) {
+int RmbCommandsImpl::configuration(bool confirmed, storage_interface::RadosCephConfig *ceph_cfg) {
   print_debug("entry: configuration");
   bool has_update = (*opts).find("update") != (*opts).end();
   bool has_ls = (*opts).find("print_cfg") != (*opts).end();
@@ -313,72 +315,75 @@ int RmbCommands::configuration(bool confirmed, storage_interface::RadosCephConfi
   return 0;
 }
 
-bool RmbCommands::sort_uid(storage_interface::RadosMail *i, storage_interface::RadosMail *j) {
+bool RmbCommandsImpl::sort_uid(storage_interface::RadosMail *i, storage_interface::RadosMail *j) {
   std::string::size_type sz;  // alias of size_t
   char *t;
   if (i == nullptr || j == nullptr) {
     return false;
   }
-  RadosUtils::get_metadata(librmb::RBOX_METADATA_MAIL_UID, i->get_metadata(), &t);
+  librmb::RadosUtilsImpl rados_utils;
+  rados_utils.get_metadata(librmb::RBOX_METADATA_MAIL_UID, i->get_metadata(), &t);
   try {
     uint64_t i_uid = std::stol(t, &sz);
     char *m_mail_uid;
-    RadosUtils::get_metadata(librmb::RBOX_METADATA_MAIL_UID, i->get_metadata(), &m_mail_uid);
+    rados_utils.get_metadata(librmb::RBOX_METADATA_MAIL_UID, i->get_metadata(), &m_mail_uid);
     uint64_t j_uid = std::stol(m_mail_uid, &sz);
 
     return i_uid < j_uid;
   } catch (std::exception &e) {
     char *uid;
-    RadosUtils::get_metadata(librmb::RBOX_METADATA_MAIL_UID, i->get_metadata(), &uid);
+    rados_utils.get_metadata(librmb::RBOX_METADATA_MAIL_UID, i->get_metadata(), &uid);
     std::cerr << " sort_uid: " << t << "(" << *i->get_oid() << ") or " << uid << " (" << j->get_oid()
               << ") is not a number" << std::endl;
     return false;
   }
 }
 
-bool RmbCommands::sort_recv_date(storage_interface::RadosMail *i, storage_interface::RadosMail *j) {
+bool RmbCommandsImpl::sort_recv_date(storage_interface::RadosMail *i, storage_interface::RadosMail *j) {
   std::string::size_type sz;  // alias of size_t
   char *t;
   if (i == nullptr || j == nullptr) {
     return false;
   }
-  RadosUtils::get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, i->get_metadata(), &t);
+  librmb::RadosUtilsImpl rados_utils;
+  rados_utils.get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, i->get_metadata(), &t);
   try {
     int64_t i_uid = std::stol(t, &sz);
     char *m_time;
-    RadosUtils::get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, i->get_metadata(), &m_time);
+    rados_utils.get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, i->get_metadata(), &m_time);
     int64_t j_uid = std::stol(m_time, &sz);
     return i_uid < j_uid;
   } catch (std::exception &e) {
     char *m_recv_time;
-    RadosUtils::get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, i->get_metadata(), &m_recv_time);
+    rados_utils.get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, i->get_metadata(), &m_recv_time);
     std::cerr << " sort_recv_date: " << t << " or " << m_recv_time << " is not a number" << std::endl;
     return false;
   }
 }
 
-bool RmbCommands::sort_phy_size(storage_interface::RadosMail *i, storage_interface::RadosMail *j) {
+bool RmbCommandsImpl::sort_phy_size(storage_interface::RadosMail *i, storage_interface::RadosMail *j) {
   std::string::size_type sz;  // alias of size_t
   char *t;
   if (i == nullptr || j == nullptr) {
     return false;
   }
-  RadosUtils::get_metadata(librmb::RBOX_METADATA_PHYSICAL_SIZE, i->get_metadata(), &t);
+  librmb::RadosUtilsImpl rados_utils;
+  rados_utils.get_metadata(librmb::RBOX_METADATA_PHYSICAL_SIZE, i->get_metadata(), &t);
   try {
     uint64_t i_uid = std::stol(t, &sz);
     char *m_phy_size;
-    RadosUtils::get_metadata(librmb::RBOX_METADATA_PHYSICAL_SIZE, i->get_metadata(), &m_phy_size);
+    rados_utils.get_metadata(librmb::RBOX_METADATA_PHYSICAL_SIZE, i->get_metadata(), &m_phy_size);
     uint64_t j_uid = std::stol(m_phy_size, &sz);
     return i_uid < j_uid;
   } catch (std::exception &e) {
     char *m_phy_size;
-    RadosUtils::get_metadata(librmb::RBOX_METADATA_PHYSICAL_SIZE, i->get_metadata(), &m_phy_size);
+    rados_utils.get_metadata(librmb::RBOX_METADATA_PHYSICAL_SIZE, i->get_metadata(), &m_phy_size);
     std::cerr << " sort_physical_size: " << t << " or " << m_phy_size << " is not a number" << std::endl;
     return false;
   }
 }
 
-bool RmbCommands::sort_save_date(storage_interface::RadosMail *i, storage_interface::RadosMail *j) {
+bool RmbCommandsImpl::sort_save_date(storage_interface::RadosMail *i, storage_interface::RadosMail *j) {
   if (i == nullptr || j == nullptr) {
     return false;
   }
@@ -396,6 +401,7 @@ struct AioStat {
 };
 
 static void aio_cb(rados_completion_t cb, void *arg) {
+  librmb::RadosUtilsImpl rados_utils;
   if (arg == nullptr) {
     return;
   }
@@ -415,7 +421,7 @@ static void aio_cb(rados_completion_t cb, void *arg) {
       if (stat->mail->get_metadata()->empty()) {
         stat->mail->set_valid(false);
       }
-      if (!librmb::RadosUtils::validate_metadata(stat->mail->get_metadata())) {
+      if (!rados_utils.validate_metadata(stat->mail->get_metadata())) {
         stat->mail->set_valid(false);
       }
     }
@@ -426,10 +432,11 @@ static void aio_cb(rados_completion_t cb, void *arg) {
   delete stat;
 }
 
-int RmbCommands::overwrite_ceph_object_index(std::set<std::string> &mail_oids){
+int RmbCommandsImpl::overwrite_ceph_object_index(std::set<std::string> &mail_oids){
     return storage->ceph_index_overwrite(mail_oids);
 }
-std::set<std::string> RmbCommands::load_objects(storage_interface::RadosStorageMetadataModule *ms){
+std::set<std::string> RmbCommandsImpl::load_objects(storage_interface::RadosStorageMetadataModule *ms){
+  librmb::RadosUtilsImpl rados_utils;
   std::set<std::string> mail_list;
   mail_list = storage->find_mails(nullptr);
   std::set<std::string>::iterator it;
@@ -438,7 +445,7 @@ std::set<std::string> RmbCommands::load_objects(storage_interface::RadosStorageM
       mail->set_oid(*it);
      
       int load_metadata_ret = ms->load_metadata(mail); 
-      if (load_metadata_ret < 0 || !librmb::RadosUtils::validate_metadata(mail->get_metadata())) {    
+      if (load_metadata_ret < 0 || !rados_utils.validate_metadata(mail->get_metadata())) {    
          std::cerr << "metadata for object : " << mail->get_oid()->c_str() << " is not valid, skipping object " << std::endl;    
          continue;
       }
@@ -447,14 +454,14 @@ std::set<std::string> RmbCommands::load_objects(storage_interface::RadosStorageM
   } 
   return mail_list;
 }
-int RmbCommands::remove_ceph_object_index(){
+int RmbCommandsImpl::remove_ceph_object_index(){
   return storage->ceph_index_delete();
 }
-int RmbCommands::append_ceph_object_index(const std::set<std::string> &mail_oids){
+int RmbCommandsImpl::append_ceph_object_index(const std::set<std::string> &mail_oids){
   return storage->ceph_index_append(mail_oids);
 }
 
-int RmbCommands::load_objects(storage_interface::RadosStorageMetadataModule *ms, std::list<storage_interface::RadosMail *> &mail_objects,
+int RmbCommandsImpl::load_objects(storage_interface::RadosStorageMetadataModule *ms, std::list<storage_interface::RadosMail *> &mail_objects,
                               std::string &sort_string, bool load_metadata) {
   time_t begin = time(NULL);
 
@@ -477,7 +484,7 @@ int RmbCommands::load_objects(storage_interface::RadosStorageMetadataModule *ms,
     stat->ms = ms;
     std::string oid = *mail_iter;
     stat->completion = librados::Rados::aio_create_completion(static_cast<void *>(stat), aio_cb, NULL);
-    int ret = storage->get_io_ctx_wrapper().aio_stat(oid, stat->completion, &stat->object_size, &stat->save_date_rados);
+    int ret = storage->get_io_ctx_wrapper()->aio_stat(oid, stat->completion, &stat->object_size, &stat->save_date_rados);
     if (ret != 0) {
       std::cout << " object '" << oid << "' is not a valid mail object, size = 0, ret code: " << ret << std::endl;
       delete mail;
@@ -519,18 +526,20 @@ int RmbCommands::load_objects(storage_interface::RadosStorageMetadataModule *ms,
   return 0;
 }
 
-int RmbCommands::print_mail(std::map<std::string, librmb::RadosMailBox *> *mailbox, std::string &output_dir,
+int RmbCommandsImpl::print_mail(std::map<std::string, storage_interface::RadosMailBox *> *mailbox, std::string &output_dir,
                             bool download) {
   print_debug("entry:: print_mail");
-  for (std::map<std::string, librmb::RadosMailBox *>::iterator it = mailbox->begin(); it != mailbox->end(); ++it) {
+  for (std::map<std::string, storage_interface::RadosMailBox *>::iterator it = mailbox->begin(); it != mailbox->end(); ++it) {
     if (it->second->get_mail_count() == 0) {
       continue;
     }
-    std::cout << it->second->to_string() << std::endl;
+    librmb::RadosMailBoxImpl it_impl=*(dynamic_cast<librmb::RadosMailBoxImpl*>(it->second));
+    std::cout << it_impl.to_string() << std::endl;
     if (!download) {
       continue;
     }
-    librmb::MailboxTools tools(it->second, output_dir);
+    
+    librmb::MailboxToolsImpl tools(it->second, output_dir);
     if (tools.init_mailbox_dir() < 0) {
       std::cout << " error initializing output dir : " << output_dir << std::endl;
       break;
@@ -550,18 +559,18 @@ int RmbCommands::print_mail(std::map<std::string, librmb::RadosMailBox *> *mailb
   return 0;
 }
 
-int RmbCommands::query_mail_storage(std::list<storage_interface::RadosMail *> *mail_objects, librmb::CmdLineParser *parser,
+int RmbCommandsImpl::query_mail_storage(std::list<storage_interface::RadosMail *> *mail_objects, storage_interface::CmdLineParser *parser,
                                     bool download, bool silent) {
   print_debug("entry: query_mail_storage");
-
-  std::map<std::string, librmb::RadosMailBox *> mailbox;
+  librmb::RadosUtilsImpl rados_utils;
+  std::map<std::string, storage_interface::RadosMailBox*> mailbox;
   for (std::list<storage_interface::RadosMail *>::iterator it = mail_objects->begin(); it != mail_objects->end(); ++it) {
     std::string mailbox_key = std::string(1, static_cast<char>(librmb::RBOX_METADATA_MAILBOX_GUID));
     char *mailbox_guid = NULL;
-    RadosUtils::get_metadata(mailbox_key, (*it)->get_metadata(), &mailbox_guid);
+    rados_utils.get_metadata(mailbox_key, (*it)->get_metadata(), &mailbox_guid);
     std::string mailbox_orig_name_key = std::string(1, static_cast<char>(librmb::RBOX_METADATA_ORIG_MAILBOX));
     char *mailbox_orig_name = NULL;
-    RadosUtils::get_metadata(mailbox_orig_name_key, (*it)->get_metadata(), &mailbox_orig_name);
+    rados_utils.get_metadata(mailbox_orig_name_key, (*it)->get_metadata(), &mailbox_orig_name);
 
     if (mailbox_guid == NULL || mailbox_orig_name == NULL) {
       std::cout << " mail " << *(*it)->get_oid() << " with empty mailbox guid is not valid: " << std::endl;
@@ -569,7 +578,7 @@ int RmbCommands::query_mail_storage(std::list<storage_interface::RadosMail *> *m
     }
 
     if (parser->contains_key(mailbox_key)) {
-      librmb::Predicate *p = parser->get_predicate(mailbox_key);
+      storage_interface::Predicate *p = parser->get_predicate(mailbox_key);
       if (!p->eval(mailbox_guid)) {
         continue;
       }
@@ -578,7 +587,7 @@ int RmbCommands::query_mail_storage(std::list<storage_interface::RadosMail *> *m
       mailbox[mailbox_guid]->add_mail((*it));
       mailbox[mailbox_guid]->add_to_mailbox_size((*it)->get_mail_size());
     } else {
-      mailbox[mailbox_guid] = new librmb::RadosMailBox(mailbox_guid, 1, mailbox_orig_name);
+      mailbox[mailbox_guid] = new librmb::RadosMailBoxImpl(mailbox_guid, 1, mailbox_orig_name);
       mailbox[mailbox_guid]->set_xattr_filter(parser);
       mailbox[mailbox_guid]->add_mail((*it));
       mailbox[mailbox_guid]->add_to_mailbox_size((*it)->get_mail_size());
@@ -596,7 +605,7 @@ int RmbCommands::query_mail_storage(std::list<storage_interface::RadosMail *> *m
   return ret;
 }
 
-storage_interface::RadosStorageMetadataModule *RmbCommands::init_metadata_storage_module(storage_interface::RadosCephConfig *ceph_cfg,
+storage_interface::RadosStorageMetadataModule *RmbCommandsImpl::init_metadata_storage_module(storage_interface::RadosCephConfig *ceph_cfg,
                                                                       std::string *uid) {
   print_debug("entry: init_metadata_storage_module");
   librmb::RadosConfig dovecot_cfg;
@@ -638,18 +647,19 @@ storage_interface::RadosStorageMetadataModule *RmbCommands::init_metadata_storag
   print_debug("end: init_metadata_storage_module");
   return ms;
 }
-int RmbCommands::update_attributes(storage_interface::RadosStorageMetadataModule *ms,
+int RmbCommandsImpl::update_attributes(storage_interface::RadosStorageMetadataModule *ms,
                                    std::map<std::string, std::string> *metadata) {
   std::string oid = (*opts)["set"];
+  librmb::RadosUtilsImpl rados_utils;
   if (!oid.empty() && metadata->size() > 0) {
     for (std::map<std::string, std::string>::iterator it = metadata->begin(); it != metadata->end(); ++it) {
       std::cout << oid << "=> " << it->first << " = " << it->second << '\n';
       librmb::rbox_metadata_key ke = static_cast<librmb::rbox_metadata_key>(it->first[0]);
       std::string value = it->second;
-      if (librmb::RadosUtils::is_date_attribute(ke)) {
-        if (!librmb::RadosUtils::is_numeric(value.c_str())) {
+      if (rados_utils.is_date_attribute(ke)) {
+        if (!rados_utils.is_numeric(value.c_str())) {
           std::string date;
-          if (librmb::RadosUtils::convert_string_to_date(value, &date)) {
+          if (rados_utils.convert_string_to_date(value, &date)) {
             value = date;
           }
         }
@@ -671,7 +681,7 @@ int RmbCommands::update_attributes(storage_interface::RadosStorageMetadataModule
   }
   return 0;
 }
-void RmbCommands::set_output_path(librmb::CmdLineParser *parser) {
+void RmbCommandsImpl::set_output_path(storage_interface::CmdLineParser *parser) {
   if ((*opts).find("out") != (*opts).end()) {
     parser->set_output_dir((*opts)["out"]);
   } else {

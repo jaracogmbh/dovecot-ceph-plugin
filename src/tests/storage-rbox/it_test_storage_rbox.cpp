@@ -35,7 +35,8 @@ extern "C" {
 #include "rbox-storage.hpp"
 #include "../mocks/mock_test.h"
 #include "rbox-save.h"
-#include "rados-util.h"
+#include "../../librmb/rados-util-impl.h"
+#include "../../librmb/rados-mail-impl.h"
 
 using ::testing::AtLeast;
 using ::testing::Return;
@@ -221,16 +222,17 @@ TEST_F(StorageTest, mail_save_to_inbox_with_flags) {
   }
   i_stream_unref(&input);
 
-  librados::NObjectIterator iter(r_storage->s->get_io_ctx_wrapper().nobjects_begin());
-  while (iter != r_storage->s->get_io_ctx_wrapper().nobjects_end()) {
+  librados::NObjectIterator iter(r_storage->s->get_io_ctx_wrapper()->nobjects_begin());
+  while (iter != r_storage->s->get_io_ctx_wrapper()->nobjects_end()) {
     if (test_oid.compare((*iter).get_oid()) == 0) {
       librmb::RadosMailImpl obj;
       obj.set_oid((*iter).get_oid());
       r_storage->ms->get_storage()->load_metadata(&obj);
       char *str;
-      librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_OLDV1_FLAGS, obj.get_metadata(), &str);
+      librmb::RadosUtilsImpl rados_utils;
+      rados_utils.get_metadata(librmb::RBOX_METADATA_OLDV1_FLAGS, obj.get_metadata(), &str);
       uint8_t flags;
-      librmb::RadosUtils::string_to_flags(str, &flags);
+      rados_utils.string_to_flags(str, &flags);
       EXPECT_EQ(0x01, flags);
     }
     iter++;

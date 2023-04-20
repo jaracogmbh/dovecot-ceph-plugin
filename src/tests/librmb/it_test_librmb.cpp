@@ -20,12 +20,13 @@
 #include "../../librmb/rados-metadata-storage-default.h"
 #include "../../librmb/rados-metadata-storage-ima.h"
 #include "../../librmb/rados-dovecot-ceph-cfg-impl.h"
-#include "../../librmb/rados-util.h"
-#include "../../librmb/tools/rmb/rmb-commands.h"
+#include "../../librmb/rados-util-impl.h"
+#include "../../librmb/tools/rmb/rmb-commands-impl.h"
 #include "../../librmb/rados-mail-impl.h"
 #include "../../storage-interface/rados-mail.h"
 #include "../../storage-engine/storage-backend-factory.h"
-#include "../../librmb/rados-save-log.h"
+#include "../../librmb/rados-save-log-impl.h"
+#include "../../storage-interface/rados-save-log.h"
 #include "../../librmb/rados-metadata-impl.h"
 #include "../../storage-interface/rados-dovecot-ceph-cfg.h"
 
@@ -686,7 +687,8 @@ TEST(librmb, increment_add_to_non_existing_key) {
   EXPECT_EQ(true,storage.save_mail(&obj));
 
   long val = 10;  // value to add
-  int ret = librmb::RadosUtils::osd_add(&storage.get_io_ctx(), *obj.get_oid(), key, val);
+  librmb::RadosUtilsImpl rados_utils;
+  int ret = rados_utils.osd_add(&storage.get_io_ctx(), *obj.get_oid(), key, val);
   ASSERT_EQ(0, ret);
   // get the value!
   std::set<std::string> keys;
@@ -727,9 +729,10 @@ TEST(librmb, increment_add_to_non_existing_object) {
   obj2.set_oid("myobject");
 
   long val = 10;  // value to add
-  int ret = librmb::RadosUtils::osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
+  librmb::RadosUtilsImpl rados_utils;
+  int ret = rados_utils.osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
   ASSERT_EQ(0, ret);
-  ret = librmb::RadosUtils::osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
+  ret = rados_utils.osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
   ASSERT_EQ(0, ret);
   // get the value!
   std::set<std::string> keys;
@@ -773,9 +776,10 @@ TEST(librmb, increment_add_to_existing_key) {
   obj2.set_oid("test_oid");
   EXPECT_EQ(true,storage.save_mail(&obj2));
   long val = 10;  // value to add
-  int ret = librmb::RadosUtils::osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
+  librmb::RadosUtilsImpl rados_utils;
+  int ret = rados_utils.osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
   ASSERT_EQ(0, ret);
-  ret = librmb::RadosUtils::osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
+  ret = rados_utils.osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
   ASSERT_EQ(0, ret);
   // get the value!
   std::set<std::string> keys;
@@ -822,10 +826,11 @@ TEST(librmb, increment_sub_from_existing_key) {
   EXPECT_EQ(true,storage.save_mail(&obj2));
 
   long val = 10;  // value to add
-  int ret = librmb::RadosUtils::osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
+  librmb::RadosUtilsImpl rados_utils;
+  int ret = rados_utils.osd_add(&storage.get_io_ctx(), *obj2.get_oid(), key, val);
   ASSERT_EQ(0, ret);
   long sub_val = 5;  // value to add
-  ret = librmb::RadosUtils::osd_sub(&storage.get_io_ctx(), *obj2.get_oid(), key, sub_val);
+  ret = rados_utils.osd_sub(&storage.get_io_ctx(), *obj2.get_oid(), key, sub_val);
   // get the value!
   ASSERT_EQ(0, ret);
   std::set<std::string> keys;
@@ -869,7 +874,7 @@ TEST(librmb, rmb_load_objects) {
   opts["print_cfg"] = "true";
   opts["cfg_obj"] = ceph_cfg->get_cfg_object_name();
 
-  librmb::RmbCommands rmb_commands(&storage, &cluster, &opts);
+  librmb::RmbCommandsImpl rmb_commands(&storage, &cluster, &opts);
 
   /* update config
   rmb_commands.configuration(false, ceph_cfg);
@@ -935,7 +940,7 @@ TEST(librmb, rmb_load_objects_valid_metadata) {
   opts["print_cfg"] = "true";
   opts["cfg_obj"] = ceph_cfg->get_cfg_object_name();
 
-  librmb::RmbCommands rmb_commands(&storage, &cluster, &opts);
+  librmb::RmbCommandsImpl rmb_commands(&storage, &cluster, &opts);
 
   // load metadata info
   std::string uid;
@@ -1075,7 +1080,7 @@ TEST(librmb, rmb_load_objects_invalid_metadata) {
   opts["print_cfg"] = "true";
   opts["cfg_obj"] = ceph_cfg->get_cfg_object_name();
 
-  librmb::RmbCommands rmb_commands(&storage, &cluster, &opts);
+  librmb::RmbCommandsImpl rmb_commands(&storage, &cluster, &opts);
 
   // load metadata info
   std::string uid;
@@ -1208,9 +1213,9 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file) {
   storage.set_namespace(ns);
 
   std::string test_file_name = "test1.log";
-  librmb::RadosSaveLog log_file(test_file_name);
+  librmb::RadosSaveLogImpl log_file(test_file_name);
   EXPECT_EQ(true, log_file.open());
-  log_file.append(librmb::RadosSaveLogEntry("abc", "t1", "rmb_tool_tests", "save"));
+  log_file.append(&librmb::RadosSaveLogEntryImpl("abc", "t1", "rmb_tool_tests", "save"));
   EXPECT_EQ(true, log_file.close());
 
   librmb::RadosMailImpl obj;
@@ -1223,12 +1228,20 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file) {
   obj.set_oid("abc");
   storage.save_mail(&obj);
 
-  std::map<std::string, std::list<librmb::RadosSaveLogEntry>> moved_items;
-  EXPECT_EQ(1, librmb::RmbCommands::delete_with_save_log("test1.log", "ceph", "client.admin", &moved_items));
+  std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>> moved_items;
+  storage_interface::RmbCommands *rmb_cmds=storage_engine::StorageBackendFactory::create_rmb_commands_default(
+    storage_engine::StorageBackendFactory::CEPH);
+  EXPECT_EQ(1, rmb_cmds->delete_with_save_log("test1.log", "ceph", "client.admin", &moved_items));
   std::remove(test_file_name.c_str());
 
   cluster.deinit();
+  delete rmb_cmds;
   delete obj.get_mail_buffer();
+  std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>>::iterator it=moved_items.begin();
+  for(std::list<storage_interface::RadosSaveLogEntry*>::iterator iter = it->second.begin();iter != it->second.end(); ++iter){
+    delete *iter;
+    *iter=nullptr;
+  } 
 }
 /**
  * Test RmbCommands
@@ -1238,14 +1251,22 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file_file_not_found) {
   std::string ns("t1");
 
   std::string test_file_name = "test1.log";
-  librmb::RadosSaveLog log_file(test_file_name);
+  librmb::RadosSaveLogImpl log_file(test_file_name);
   EXPECT_EQ(true, log_file.open());
-  log_file.append(librmb::RadosSaveLogEntry("abc", "t1", "rmb_tool_tests", "save"));
+  log_file.append(&librmb::RadosSaveLogEntryImpl("abc", "t1", "rmb_tool_tests", "save"));
   EXPECT_EQ(true, log_file.close());
-  std::map<std::string, std::list<librmb::RadosSaveLogEntry>> moved_items;
-
-  EXPECT_EQ(0, librmb::RmbCommands::delete_with_save_log("test1.log", "ceph", "client.admin", &moved_items));
+  std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>> moved_items;
+  storage_interface::RmbCommands *rmb_cmds=storage_engine::StorageBackendFactory::create_rmb_commands_default(
+    storage_engine::StorageBackendFactory::CEPH);
+  EXPECT_EQ(0, rmb_cmds->delete_with_save_log("test1.log", "ceph", "client.admin", &moved_items));
   std::remove(test_file_name.c_str());
+  delete rmb_cmds;
+  std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>>::iterator it=moved_items.begin();
+  for(std::list<storage_interface::RadosSaveLogEntry*>::iterator iter = it->second.begin();iter != it->second.end(); ++iter){
+    delete *iter;
+    *iter=nullptr;
+  }
+  
 }
 /**
  * Test RmbCommands
@@ -1255,14 +1276,21 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file_invalid_file) {
   std::string ns("t1");
 
   std::string test_file_name = "test1.log";
-  librmb::RadosSaveLog log_file(test_file_name);
+  librmb::RadosSaveLogImpl log_file(test_file_name);
   EXPECT_EQ(true, log_file.open());
-  log_file.append(librmb::RadosSaveLogEntry("abc", "t1", "rmb_tool_tests", "save"));
+  log_file.append(&librmb::RadosSaveLogEntryImpl("abc", "t1", "rmb_tool_tests", "save"));
   EXPECT_EQ(true, log_file.close());
-  std::map<std::string, std::list<librmb::RadosSaveLogEntry>> moved_items;
-
-  EXPECT_EQ(-1, librmb::RmbCommands::delete_with_save_log("test12.log", "ceph", "client.admin", &moved_items));
+  std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>> moved_items;
+  storage_interface::RmbCommands *rmb_cmds=storage_engine::StorageBackendFactory::create_rmb_commands_default(
+    storage_engine::StorageBackendFactory::CEPH);
+  EXPECT_EQ(-1,rmb_cmds->delete_with_save_log("test12.log", "ceph", "client.admin", &moved_items));
   std::remove(test_file_name.c_str());
+  delete rmb_cmds;
+  std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>>::iterator it=moved_items.begin();
+  for(std::list<storage_interface::RadosSaveLogEntry*>::iterator iter = it->second.begin();iter != it->second.end(); ++iter){
+    delete *iter;
+    *iter=nullptr;
+  }
 }
 /**
  * Test RmbCommands
@@ -1278,11 +1306,11 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file_invalid_entry) {
   storage.set_namespace(ns);
 
   std::string test_file_name = "test1.log";
-  librmb::RadosSaveLog log_file(test_file_name);
+  librmb::RadosSaveLogImpl log_file(test_file_name);
   EXPECT_EQ(true, log_file.open());
   log_file.append(
-      librmb::RadosSaveLogEntry("abc2", "t1", "2,2,2rmb_tool_tests", "save"));  // -> stop processing (invalid entry)!
-  log_file.append(librmb::RadosSaveLogEntry("abc2", "t1", "rmb_tool_tests", "save"));
+      &librmb::RadosSaveLogEntryImpl("abc2", "t1", "2,2,2rmb_tool_tests", "save"));  // -> stop processing (invalid entry)!
+  log_file.append(&librmb::RadosSaveLogEntryImpl("abc2", "t1", "rmb_tool_tests", "save"));
   EXPECT_EQ(true, log_file.close());
 
   librmb::RadosMailImpl obj;
@@ -1294,9 +1322,10 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file_invalid_entry) {
  
   obj.set_oid("abc2");
   EXPECT_EQ(true,storage.save_mail(&obj));
-  std::map<std::string, std::list<librmb::RadosSaveLogEntry>> moved_items;
-
-  EXPECT_EQ(0, librmb::RmbCommands::delete_with_save_log("test1.log", "ceph", "client.admin",
+  std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>> moved_items;
+  storage_interface::RmbCommands *rmb_cmds=storage_engine::StorageBackendFactory::create_rmb_commands_default(
+    storage_engine::StorageBackendFactory::CEPH);
+  EXPECT_EQ(0, rmb_cmds->delete_with_save_log("test1.log", "ceph", "client.admin",
                                                          &moved_items));  // -> due to invalid entry in object list
   std::remove(test_file_name.c_str());
 
@@ -1306,6 +1335,12 @@ TEST(librmb, delete_objects_via_rmb_tool_and_save_log_file_invalid_entry) {
   EXPECT_EQ(storage.delete_mail("abc2"), 0);  // check that save log processing does stop at invalid line!
   cluster.deinit();
   delete obj.get_mail_buffer();
+  delete rmb_cmds;
+  std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>>::iterator it=moved_items.begin();
+  for(std::list<storage_interface::RadosSaveLogEntry*>::iterator iter = it->second.begin();iter != it->second.end(); ++iter){
+    delete *iter;
+    *iter=nullptr;
+  }
 }
 /**
  * Test RmbCommands
@@ -1321,9 +1356,9 @@ TEST(librmb, move_object_delete_with_save_log) {
   storage.set_namespace(ns);
 
   std::string test_file_name = "test1.log";
-  librmb::RadosSaveLog log_file(test_file_name);
+  librmb::RadosSaveLogImpl log_file(test_file_name);
   EXPECT_EQ(true, log_file.open());
-  log_file.append(librmb::RadosSaveLogEntry("abc3", "t1", "rmb_tool_tests",
+  log_file.append(&librmb::RadosSaveLogEntryImpl("abc3", "t1", "rmb_tool_tests",
                                             "mv:t1:abc3:t1;M=123:B=INBOX:U=1:G=0246da2269ac1f5b3e1700009c60b9f7"));
   EXPECT_EQ(true, log_file.close());
   librmb::RadosMailImpl obj;
@@ -1337,20 +1372,22 @@ TEST(librmb, move_object_delete_with_save_log) {
   EXPECT_EQ(true,storage.save_mail(&obj));
   cluster.deinit();
 
-  std::map<std::string, std::list<librmb::RadosSaveLogEntry>> moved_items;
-  EXPECT_EQ(1, librmb::RmbCommands::delete_with_save_log("test1.log", "ceph", "client.admin", &moved_items));
+  std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>> moved_items;
+  storage_interface::RmbCommands *rmb_cmds=storage_engine::StorageBackendFactory::create_rmb_commands_default(
+    storage_engine::StorageBackendFactory::CEPH);
+  EXPECT_EQ(1, rmb_cmds->delete_with_save_log("test1.log", "ceph", "client.admin", &moved_items));
   EXPECT_EQ(1, moved_items.size());
-  std::list<librmb::RadosSaveLogEntry> list = moved_items["t1"];
+  std::list<storage_interface::RadosSaveLogEntry*> list = moved_items["t1"];
   EXPECT_EQ(1, list.size());
-  librmb::RadosSaveLogEntry entry = list.front();
+  storage_interface::RadosSaveLogEntry* entry = list.front();
 
-  EXPECT_EQ(entry.src_oid, "abc3");
-  EXPECT_EQ(entry.src_ns, "t1");
-  EXPECT_EQ(entry.src_user, "t1");
+  EXPECT_EQ(entry->get_src_oid(), "abc3");
+  EXPECT_EQ(entry->get_src_ns(), "t1");
+  EXPECT_EQ(entry->get_src_user(), "t1");
 
   std::string key_guid(1, static_cast<char>(librmb::RBOX_METADATA_GUID));
   std::list<storage_interface::RadosMetadata*>::iterator it_guid =
-      std::find_if(entry.metadata.begin(), entry.metadata.end(),
+      std::find_if(entry->get_metadata().begin(), entry->get_metadata().end(),
                    [key_guid](storage_interface::RadosMetadata* const m) { return m->get_key() == key_guid; });
   EXPECT_EQ("0246da2269ac1f5b3e1700009c60b9f7", (*it_guid)->get_buffer().to_str());
 
@@ -1361,6 +1398,12 @@ TEST(librmb, move_object_delete_with_save_log) {
   EXPECT_EQ(storage.delete_mail("abc3"), 0);  // move does not delete the object
   cluster.deinit();
   delete obj.get_mail_buffer();
+  delete rmb_cmds;
+  std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>>::iterator it=moved_items.begin();
+  for(std::list<storage_interface::RadosSaveLogEntry*>::iterator iter = it->second.begin();iter != it->second.end(); ++iter){
+    delete *iter;
+    *iter=nullptr;
+  }
 }
 TEST(librmb, mock_obj) {}
 int main(int argc, char **argv) {

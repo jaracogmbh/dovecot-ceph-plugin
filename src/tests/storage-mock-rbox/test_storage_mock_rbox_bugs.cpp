@@ -105,7 +105,7 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
 
 
   librmb::RboxIoCtxImpl test_ioctx;
-  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(ReturnRef(test_ioctx));
+  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(Return(&test_ioctx));
 
   EXPECT_CALL(*storage_mock, set_ceph_wait_method(_)).Times(1);
 
@@ -253,7 +253,7 @@ TEST_F(StorageTest, save_mail_success) {
 
   librmb::RboxIoCtxImpl io_ctx;
 
-  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(ReturnRef(io_ctx));
+  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(Return(&io_ctx));
 
   EXPECT_CALL(*storage_mock, set_ceph_wait_method(_)).Times(1);
 

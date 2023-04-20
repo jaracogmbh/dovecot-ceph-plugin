@@ -1,16 +1,16 @@
-// -*- mode:C++; tab-width:8; c-basic-offset:2; indent-tabs-mode:t -*-
+// -*- mode:C++ ; tab-width:8 ; c-basic-offset:2 ; indent-tabs-mode:t -*-
 // vim: ts=8 sw=2 smarttab
 /*
  * Copyright (c) 2017-2018 Tallence AG and the authors
  *
- * This is free software; you can redistribute it and/or
+ * This is free software ; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License version 2.1, as published by the Free Software
  * Foundation.  See file COPYING.
  */
 
-#ifndef SRC_LIBRMB_RADOS_UTIL_H_
-#define SRC_LIBRMB_RADOS_UTIL_H_
+#ifndef SRC_LIBRMB_RADOS_UTIL_IMPL_H_
+#define SRC_LIBRMB_RADOS_UTIL_IMPL_H_
 
 #include <string.h>
 #include <time.h>
@@ -22,11 +22,11 @@
 #include <regex>
 
 #include <string>
-#include <map>
 #include <rados/librados.hpp>
 #include "../storage-interface/rados-storage.h"
 #include "../storage-interface/rados-metadata-storage.h"
 #include "rados-types.h"
+#include "../storage-interface/rados-util.h"
 
 namespace librmb {
 
@@ -36,10 +36,10 @@ namespace librmb {
  * Utility class with usefull helper functions.
  *
  */
-class RadosUtils {
+class RadosUtilsImpl : public storage_interface::RadosUtils {
  public:
-  RadosUtils();
-  virtual ~RadosUtils();
+  RadosUtilsImpl() ;
+  virtual ~RadosUtilsImpl();
   /*!
    * convert given date string to time_t
    *
@@ -47,43 +47,43 @@ class RadosUtils {
    * @param[out] val ptr to time_t.
    * @return true if sucessfull.
    */
-  static bool convert_str_to_time_t(const std::string &date, time_t *val);
+  bool convert_str_to_time_t(const std::string &date, time_t *val) override;
   /*!
    * check if given string is a numeric value.
    * @param[in] s string if s is empty => false
    * @return true if given string is numeric.
    */
-  static bool is_numeric(const char *s);
+  bool is_numeric(const char *s) override;
   /*!
    * check if given string is a numeric value.
    * @param[in] text string, if string is empty => true
    * @return true if given string is numeric.
    */
-  static bool is_numeric_optional(const char *text);
+  bool is_numeric_optional(const char *text) override;
   /*!
    * checks if key is a data attribute
    */
-  static bool is_date_attribute(const rbox_metadata_key &key);
+  bool is_date_attribute(const rbox_metadata_key &key) override;
   /*!
    * converts given data_string to numeric string
    * @param[in] date_string Date format: %Y-%m-%d %H:%M:%S
    * @param[out] date : unix timestamp.
    */
-  static bool convert_string_to_date(const std::string &date_string, std::string *date);
+  bool convert_string_to_date(const std::string &date_string, std::string *date) override;
   /*!
    * converts given time_to to string %Y-%m-%d %H:%M:%S
    * @param[in] t time_t
    * @param[out] ret_val : ptr to valid string buffer.
    * @return <0 error
    */
-  static int convert_time_t_to_str(const time_t &t, std::string *ret_val);
+  int convert_time_t_to_str(const time_t &t, std::string *ret_val) override;
   /*!
    * converts flags to hex string
    * @param[in] flags flags
    * @param[out] ptr to string buffer:
    * @return false if not sucessful
    */
-  static bool flags_to_string(const uint8_t &flags, std::string *flags_str);
+  bool flags_to_string(const uint8_t &flags, std::string *flags_str) override;
 
   /*!
    * converts hex string to uint8_t
@@ -91,7 +91,7 @@ class RadosUtils {
    * @param[out] flags to uint8_t
    * @return false if not sucessful
    */
-  static bool string_to_flags(const std::string &flags_str, uint8_t *flags);
+  bool string_to_flags(const std::string &flags_str, uint8_t *flags) override;
 
   /*!
    * replace string in text.
@@ -99,7 +99,7 @@ class RadosUtils {
    * @param[in] find : text to find.
    * @param[in] replace: text to replace.
    */
-  static void find_and_replace(std::string *source, std::string const &find, std::string const &replace);
+  void find_and_replace(std::string *source, std::string const &find, std::string const &replace) override;
 
   /*!
    * get a list of key value pairs
@@ -107,14 +107,14 @@ class RadosUtils {
    * @param[in] oid: unique identifier
    * @param[out] kv_map valid ptr to key value map.
    */
-  static int get_all_keys_and_values(librados::IoCtx *io_ctx, const std::string &oid,
-                                     std::map<std::string, librados::bufferlist> *kv_map);
+  int get_all_keys_and_values(librados::IoCtx *io_ctx, const std::string &oid,
+                                     std::map<std::string, librados::bufferlist> *kv_map) override;
   /*!
    * get the text representation of uint flags.
    * @param[in] flags
    * @param[out] flat : string representation
    */
-  static void resolve_flags(const uint8_t &flags, std::string *flat);
+  void resolve_flags(const uint8_t &flags, std::string *flat) override;
   /*!
    * copy object to alternative storage
    * @param[in] src_oid
@@ -125,8 +125,8 @@ class RadosUtils {
    * @param[in] bool inverse if true, copy from alt to primary.
    * @return linux error code or 0 if sucessful
    */
-  static int copy_to_alt(std::string &src_oid, std::string &dest_oid, storage_interface::RadosStorage *primary, storage_interface::RadosStorage *alt_storage,
-                         storage_interface::RadosMetadataStorage *metadata, bool inverse);
+  int copy_to_alt(std::string &src_oid, std::string &dest_oid, storage_interface::RadosStorage *primary, storage_interface::RadosStorage *alt_storage,
+                         storage_interface::RadosMetadataStorage *metadata, bool inverse) override;
   /*!
    * move object to alternative storage
    * @param[in] src_oid
@@ -137,8 +137,8 @@ class RadosUtils {
    * @param[in] bool inverse if true, move from alt to primary.
    * @return linux error code or 0 if sucessful
    */
-  static int move_to_alt(std::string &oid, storage_interface::RadosStorage *primary, storage_interface::RadosStorage *alt_storage,
-                         storage_interface::RadosMetadataStorage *metadata, bool inverse);
+  int move_to_alt(std::string &oid, storage_interface::RadosStorage *primary, storage_interface::RadosStorage *alt_storage,
+                         storage_interface::RadosMetadataStorage *metadata, bool inverse) override;
   /*!
    * increment (add) value directly on osd
    * @param[in] ioctx
@@ -148,7 +148,7 @@ class RadosUtils {
    *
    * @return linux error code or 0 if sucessful
    */
-  static int osd_add(librados::IoCtx *ioctx, const std::string &oid, const std::string &key, long long value_to_add);
+  int osd_add(librados::IoCtx *ioctx, const std::string &oid, const std::string &key, long long value_to_add) override;
   /*!
    * decrement (sub) value directly on osd
    * @param[in] ioctx
@@ -158,8 +158,8 @@ class RadosUtils {
    *
    * @return linux error code or 0 if sucessful
    */
-  static int osd_sub(librados::IoCtx *ioctx, const std::string &oid, const std::string &key,
-                     long long value_to_subtract);
+  int osd_sub(librados::IoCtx *ioctx, const std::string &oid, const std::string &key,
+                     long long value_to_subtract) override;
 
   /*!
    * check all given metadata key is valid
@@ -167,7 +167,7 @@ class RadosUtils {
    * @param[in] metadata
    * @return true if all keys and value are correct. (type, name, value)
    */
-  static bool validate_metadata(std::map<std::string, ceph::bufferlist> *metadata);
+  bool validate_metadata(std::map<std::string, ceph::bufferlist> *metadata) override;
   /*!
    * get metadata
    *
@@ -175,7 +175,7 @@ class RadosUtils {
    * @param[int] valid pointer to metadata map
    * @return the metadata value
    */
-  static void get_metadata(const std::string &key, std::map<std::string, ceph::bufferlist> *metadata, char **value);
+  void get_metadata(const std::string &key, std::map<std::string, ceph::bufferlist> *metadata, char **value) override;
 
   /*!
    * get metadata
@@ -184,25 +184,25 @@ class RadosUtils {
    * @param[int] valid pointer to metadata map
    * @return the metadata value
    */
-  static void get_metadata(rbox_metadata_key key, std::map<std::string, ceph::bufferlist> *metadata, char **value);
+  void get_metadata(rbox_metadata_key key, std::map<std::string, ceph::bufferlist> *metadata, char **value) override;
 
 
   /**
    * POC Implemnentation to extract pgs and primary osds from mon_command output!
    **/
-  static std::vector<std::string> extractPgs(const std::string& str);
+  std::vector<std::string> extractPgs(const std::string& str) override;
 
-  static std::map<std::string, std::vector<std::string>> extractPgAndPrimaryOsd(const std::string& str);
+  std::map<std::string, std::vector<std::string>> extractPgAndPrimaryOsd(const std::string& str) override;
 
-  static std::vector<std::string> split(std::string str_to_split, char delimiter);
+  std::vector<std::string> split(std::string str_to_split, char delimiter) override;
 
 
-  static std::string convert_to_ceph_index(const std::set<std::string> &list);
-  static std::string convert_to_ceph_index(const std::string &str);
+  std::string convert_to_ceph_index(const std::set<std::string> &list) override;
+  std::string convert_to_ceph_index(const std::string &str) override;
 
-  static std::set<std::string> ceph_index_to_set(const std::string &str);
+  std::set<std::string> ceph_index_to_set(const std::string &str) override;
 };
 
 }  // namespace librmb
 
-#endif  // SRC_LIBRMB_RADOS_UTIL_H_
+#endif  // SRC_LIBRMB_RADOS_UTIL_IMPL_H_

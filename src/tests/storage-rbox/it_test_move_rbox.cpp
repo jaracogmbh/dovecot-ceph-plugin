@@ -41,7 +41,8 @@ extern "C" {
 #include "dovecot-ceph-plugin-config.h"
 #include "../test-utils/it_utils.h"
 
-#include "rados-util.h"
+#include "../../librmb/rados-util-impl.h"
+#include "../../storage-engine/storage-backend-factory.h"
 
 using ::testing::AtLeast;
 using ::testing::Return;
@@ -66,7 +67,7 @@ TEST_F(StorageTest, move_mail_test) {
   struct mail_search_context *search_ctx;
   struct mail_search_args *search_args;
   struct mail_search_arg *sarg;
-
+  librmb::RadosUtilsImpl rados_utils;
   const char *message =
       "From: user@domain.org\n"
       "Date: Sat, 24 Mar 2017 23:00:00 +0200\n"
@@ -125,9 +126,9 @@ TEST_F(StorageTest, move_mail_test) {
   }
   
   struct rbox_storage *r_storage = (struct rbox_storage *)box->storage;
-  librados::NObjectIterator iter(r_storage->s->get_io_ctx_wrapper().nobjects_begin());
+  librados::NObjectIterator iter(r_storage->s->get_io_ctx_wrapper()->nobjects_begin());
   std::vector<storage_interface::RadosMail *> objects;
-  while (iter != r_storage->s->get_io_ctx_wrapper().nobjects_end()) {
+  while (iter != r_storage->s->get_io_ctx_wrapper()->nobjects_end()) {
     storage_interface::RadosMail *obj =
       storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
     obj->set_oid((*iter).get_oid());
@@ -144,25 +145,25 @@ TEST_F(StorageTest, move_mail_test) {
   char *val = NULL;
   char *val2 = NULL;
 
-  librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_MAIL_UID, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(librmb::RBOX_METADATA_MAIL_UID, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
   val = val2 = NULL;
-  librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_GUID, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(librmb::RBOX_METADATA_GUID, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
   val = val2 = NULL;
-  librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_MAILBOX_GUID, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(librmb::RBOX_METADATA_MAILBOX_GUID, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
   val = val2 = NULL;
-  librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_PHYSICAL_SIZE, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(librmb::RBOX_METADATA_PHYSICAL_SIZE, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
   val = val2 = NULL;
-  librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_VIRTUAL_SIZE, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(librmb::RBOX_METADATA_VIRTUAL_SIZE, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
   val = val2 = NULL;
-  librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
   val = val2 = NULL;
-  librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_ORIG_MAILBOX, mail1->get_metadata(), &val);
+  rados_utils.get_metadata(librmb::RBOX_METADATA_ORIG_MAILBOX, mail1->get_metadata(), &val);
   ASSERT_STRNE(val, val2);
 
   ASSERT_EQ(1, (int)box->index->map->hdr.messages_count);

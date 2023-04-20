@@ -9,8 +9,8 @@
  * Foundation.  See file COPYING.
  */
 
-#ifndef SRC_LIBRMB_TOOLS_RMB_LS_CMD_PARSER_H_
-#define SRC_LIBRMB_TOOLS_RMB_LS_CMD_PARSER_H_
+#ifndef SRC_LIBRMB_TOOLS_RMB_LS_CMD_PARSER_IMPL_H_
+#define SRC_LIBRMB_TOOLS_RMB_LS_CMD_PARSER_IMPL_H_
 
 #include <string>
 #include <list>
@@ -19,7 +19,8 @@
 #include <map>
 
 #include "../../../storage-interface/rados-mail.h"
-#include "rados-util.h"
+#include "../../../storage-interface/tools/rmb/ls_cmd_parser.h"
+#include "../../rados-util-impl.h"
 
 #ifndef PATH_MAX
 #define PATH_MAX 256
@@ -27,14 +28,14 @@
 
 namespace librmb {
 
-class Predicate {
+class PredicateImpl : public storage_interface::Predicate {
  public:
-  std::string key;
-  std::string op;
-  std::string value;  // value to check against e.g. key > value
-  bool valid;
+  std::string& get_key() override{ return key;}
+  std::string& get_op() override{ return op;}
+  std::string& get_value() override{ return value;}
+  bool& get_valid() override{ return valid;}
 
-  bool eval(const std::string &_p_value) {
+  bool eval(const std::string &_p_value) override{
     rbox_metadata_key rbox_key = static_cast<librmb::rbox_metadata_key>(*key.c_str());
 
     if (rbox_key == RBOX_METADATA_RECEIVED_TIME || rbox_key == RBOX_METADATA_OLDV1_SAVE_TIME) {
@@ -92,39 +93,46 @@ class Predicate {
     return false;
   }
 
-  bool convert_str_to_time_t(const std::string &date, time_t *val) {
-    return librmb::RadosUtils::convert_str_to_time_t(date, val);
+  bool convert_str_to_time_t(const std::string &date, time_t *val) override{
+    librmb::RadosUtilsImpl rados_util;
+    return rados_util.convert_str_to_time_t(date, val);
   }
-  int convert_time_t_to_str(const time_t &t, std::string *ret_val) {
-    return librmb::RadosUtils::convert_time_t_to_str(t, ret_val);
+  int convert_time_t_to_str(const time_t &t, std::string *ret_val) override{
+    librmb::RadosUtilsImpl rados_util;
+    return rados_util.convert_time_t_to_str(t, ret_val);
   }
+ private:
+  std::string key;
+  std::string op;
+  std::string value;  // value to check against e.g. key > value
+  bool valid; 
 };
 
-class CmdLineParser {
+class CmdLineParserImpl : public storage_interface::CmdLineParser{
  public:
-  explicit CmdLineParser(const std::string &_ls_value) {
+  explicit CmdLineParserImpl(const std::string &_ls_value) {
     size_t pos = ls_value.find("\"");
     if (pos != std::string::npos) {
       this->ls_value = _ls_value.substr(1, _ls_value.length() - 1);
     }
     this->ls_value = _ls_value;
   }
-  ~CmdLineParser();
-  bool parse_ls_string();
-  std::map<std::string, Predicate *> &get_predicates() { return this->predicates; }
+  ~CmdLineParserImpl();
+  bool parse_ls_string() override;
+  std::map<std::string, storage_interface::Predicate *> &get_predicates() override{ return this->predicates; }
 
-  bool contains_key(const std::string &key) { return keys.find(key) != keys.npos ? true : false; }
-  Predicate *get_predicate(const std::string &key) { return predicates[key]; }
-  Predicate *create_predicate(const std::string &ls_value);
+  bool contains_key(const std::string &key) override{ return keys.find(key) != keys.npos ? true : false; }
+  storage_interface::Predicate *get_predicate(const std::string &key) override{ return predicates[key]; }
+  storage_interface::Predicate *create_predicate(const std::string &ls_value) override;
 
-  void set_output_dir(const std::string &out);
-  std::string &get_output_dir() { return this->out_dir; }
+  void set_output_dir(const std::string &out) override;
+  std::string &get_output_dir() override{ return this->out_dir; }
 
  private:
-  std::map<std::string, Predicate *> predicates;
+  std::map<std::string, storage_interface::Predicate *> predicates;
   std::string ls_value;
   std::string keys;
   std::string out_dir;
 };
 };      // namespace librmb
-#endif  // SRC_LIBRMB_TOOLS_RMB_LS_CMD_PARSER_H_
+#endif  // SRC_LIBRMB_TOOLS_RMB_LS_CMD_PARSER_IMPL_H_

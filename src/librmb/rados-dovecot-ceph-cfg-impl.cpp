@@ -11,7 +11,7 @@
 
 #include "rados-dovecot-ceph-cfg-impl.h"
 #include "../storage-interface/rados-ceph-config.h"
-#include "../storage-engine/storage-backend-factory.h"
+#include "rados-ceph-config-impl.h"
 
 namespace librmb {
 
@@ -20,7 +20,7 @@ RadosDovecotCephCfgImpl::RadosDovecotCephCfgImpl(librados::IoCtx *io_ctx_) {
     rados_cfg->set_io_ctx(io_ctx_);
   }else{
     rados_cfg=
-      storage_engine::StorageBackendFactory::create_ceph_config_io(storage_engine::StorageBackendFactory::CEPH,io_ctx_);
+      new librmb::RadosCephConfigImpl(io_ctx_);
   }
 }
 

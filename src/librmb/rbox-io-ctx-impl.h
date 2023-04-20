@@ -16,9 +16,9 @@
 #include <string>
 #include <rados/librados.hpp>
 
-#include "rbox-io-ctx.h"
+#include "../storage-interface/rbox-io-ctx.h"
 namespace librmb{
-class RboxIoCtxImpl:public RboxIoCtx{
+class RboxIoCtxImpl:public storage_interface::RboxIoCtx{
     public:
     virtual ~RboxIoCtxImpl(){}
     RboxIoCtxImpl(){}

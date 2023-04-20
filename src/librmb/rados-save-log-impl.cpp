@@ -9,23 +9,25 @@
  * Foundation.  See file COPYING.
  */
 
-#include "rados-save-log.h"
+#include "rados-save-log-impl.h"
 
 namespace librmb {
 
-bool RadosSaveLog::open() {
+bool RadosSaveLogImpl::open() {
   if (this->log_active && !ofs.is_open()) {
     ofs.open(this->logfile, std::ofstream::out | std::ofstream::app);
     this->log_active = ofs.is_open();
   }
   return this->log_active;
 }
-void RadosSaveLog::append(const RadosSaveLogEntry &entry) {
+void RadosSaveLogImpl::append(const storage_interface::RadosSaveLogEntry *entry) {
   if (this->log_active && ofs.is_open()) {
-    ofs << entry;
+    const RadosSaveLogEntryImpl &entry_impl=
+      *(dynamic_cast<const librmb::RadosSaveLogEntryImpl*>(entry));
+    ofs << entry_impl;
   }
 }
-bool RadosSaveLog::close() {
+bool RadosSaveLogImpl::close() {
   if (this->log_active && ofs.is_open()) {
     ofs.close();
     return !ofs.is_open();

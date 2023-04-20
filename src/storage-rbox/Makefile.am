@@ -13,9 +13,9 @@ shlibs = \
 	$(top_builddir)/src/librmb/librmb.la
 
 rmbtoollibs = \
-	$(top_builddir)/src/librmb/tools/rmb/ls_cmd_parser.o \
-	$(top_builddir)/src/librmb/tools/rmb/mailbox_tools.o \
-	$(top_builddir)/src/librmb/tools/rmb/rmb-commands.o 
+	$(top_builddir)/src/librmb/tools/rmb/ls_cmd_parser_impl.o \
+	$(top_builddir)/src/librmb/tools/rmb/mailbox_tools_impl.o \
+	$(top_builddir)/src/librmb/tools/rmb/rmb-commands-impl.o 
 
 libstorage_rbox_plugin_la_CPPFLAGS = \
 	$(LIBDOVECOT_INCLUDE) \

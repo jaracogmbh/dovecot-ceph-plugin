@@ -190,8 +190,8 @@ TEST_F(StorageTest,second_cluster_connectio){
   librmbtest::RboxIoCtxMock *io_ctx_mock=new librmbtest::RboxIoCtxMock();
   under_test.set_io_ctx_wrapper(io_ctx_mock);
   librados::IoCtx io_ctx;
-  librmb::RadosMetadataStorageDefault rados_metadata_storage (*io_ctx_mock);
-  rados_metadata_storage.set_io_ctx(*io_ctx_mock);
+  librmb::RadosMetadataStorageDefault rados_metadata_storage (io_ctx_mock);
+  rados_metadata_storage.set_io_ctx(io_ctx_mock);
   EXPECT_CALL(*io_ctx_mock,append(_,_,_)).Times(0);
   EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(0).WillOnce(Return(0));
   ON_CALL(*io_ctx_mock,get_io_ctx()).WillByDefault(ReturnRef(io_ctx)); 
@@ -232,8 +232,8 @@ TEST_F(StorageTest,true_cluster_connection){
   librmbtest::RboxIoCtxMock *io_ctx_mock=new librmbtest::RboxIoCtxMock();
   under_test.set_io_ctx_wrapper(io_ctx_mock);
   librados::IoCtx io_ctx;
-  librmb::RadosMetadataStorageDefault rados_metadata_storage (*io_ctx_mock);
-  rados_metadata_storage.set_io_ctx(*io_ctx_mock);
+  librmb::RadosMetadataStorageDefault rados_metadata_storage (io_ctx_mock);
+  rados_metadata_storage.set_io_ctx(io_ctx_mock);
   EXPECT_CALL(*io_ctx_mock,append(_,_,_)).Times(0);
   EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(1).WillOnce(Return(0));
   ON_CALL(*io_ctx_mock,get_io_ctx()).WillByDefault(ReturnRef(io_ctx)); 
@@ -273,8 +273,8 @@ TEST_F(StorageTest,split_buffer){
   NiceMock<librmbtest::RboxIoCtxMock>* io_ctx_mock=new librmbtest::RboxIoCtxMock();
   under_test.set_io_ctx_wrapper(io_ctx_mock);
   librados::IoCtx io_ctx;
-  librmb::RadosMetadataStorageDefault rados_metadata_storage (*io_ctx_mock);
-  rados_metadata_storage.set_io_ctx(*io_ctx_mock);
+  librmb::RadosMetadataStorageDefault rados_metadata_storage (io_ctx_mock);
+  rados_metadata_storage.set_io_ctx(io_ctx_mock);
   EXPECT_CALL(*io_ctx_mock,append(_,_,_)).Times(4).WillRepeatedly(Return(true));
   EXPECT_CALL(*io_ctx_mock,operate(_,_)).Times(0).WillOnce(Return(0));
   ON_CALL(*io_ctx_mock,get_io_ctx()).WillByDefault(ReturnRef(io_ctx)); 

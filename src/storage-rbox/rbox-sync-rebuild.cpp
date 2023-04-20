@@ -26,7 +26,7 @@ extern "C" {
 #include "rbox-mail.h"
 #include "encoding.h"
 #include "../storage-interface/rados-mail.h"
-#include "../librmb/rados-util.h"
+#include "../storage-interface/rados-util.h"
 #include "rados-types.h"
 #include "../storage-engine/storage-backend-factory.h"
 
@@ -36,12 +36,14 @@ using librmb::rbox_metadata_key;
 int rbox_sync_add_object(struct index_rebuild_context *ctx, const std::string &oi, storage_interface::RadosMail *mail_obj,
                          bool alt_storage, uint32_t next_uid) {
   FUNC_START();
+  storage_interface::RadosUtils *rados_utils=
+    storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
   struct rbox_mailbox *rbox = (struct rbox_mailbox *)ctx->box;
   char *xattr_mail_uid = NULL;
-  librmb::RadosUtils::get_metadata(rbox_metadata_key::RBOX_METADATA_MAIL_UID, mail_obj->get_metadata(),
+  rados_utils->get_metadata(rbox_metadata_key::RBOX_METADATA_MAIL_UID, mail_obj->get_metadata(),
                                    &xattr_mail_uid);
   char *xattr_guid = NULL;
-  librmb::RadosUtils::get_metadata(rbox_metadata_key::RBOX_METADATA_GUID, mail_obj->get_metadata(), &xattr_guid);
+  rados_utils->get_metadata(rbox_metadata_key::RBOX_METADATA_GUID, mail_obj->get_metadata(), &xattr_guid);
   struct mail_storage *storage = ctx->box->storage;
   struct rbox_storage *r_storage = (struct rbox_storage *)storage;
   uint32_t seq;
@@ -95,6 +97,8 @@ int rbox_sync_add_object(struct index_rebuild_context *ctx, const std::string &o
   }
   delete mail_uid;
   mail_uid=nullptr;
+  delete rados_utils;
+  rados_utils=nullptr;
   FUNC_END();
   return 0;
 }
@@ -107,7 +111,8 @@ std::map<std::string, std::list<storage_interface::RadosMail*>> load_rados_mail_
   std::map<std::string, std::list<storage_interface::RadosMail*>> rados_mails;
   std::set<std::string>::iterator it;
   for(it=mail_list.begin(); it!=mail_list.end(); ++it){          
-    
+    storage_interface::RadosUtils *rados_utils=
+      storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
     storage_interface::RadosMail *mail_object=
       storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
     mail_object->set_oid((*it));
@@ -115,15 +120,14 @@ std::map<std::string, std::list<storage_interface::RadosMail*>> load_rados_mail_
     if (alt_storage) {
       r_storage->ms->get_storage()->set_io_ctx(r_storage->alt->get_io_ctx_wrapper());
     }
-
     int load_metadata_ret = r_storage->ms->get_storage()->load_metadata(mail_object); 
-    if (load_metadata_ret < 0 || !librmb::RadosUtils::validate_metadata(mail_object->get_metadata())) {    
+    if (load_metadata_ret < 0 || !rados_utils->validate_metadata(mail_object->get_metadata())) {    
       i_debug("metadata for object : %s is not valid, skipping object ", mail_object->get_oid()->c_str());
       continue;
     }
     
     char *mailbox_guid = NULL;
-    librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_MAILBOX_GUID, 
+    rados_utils->get_metadata(librmb::RBOX_METADATA_MAILBOX_GUID, 
                                       mail_object->get_metadata(), 
                                       &mailbox_guid
                                     );
@@ -137,7 +141,8 @@ std::map<std::string, std::list<storage_interface::RadosMail*>> load_rados_mail_
       list_mail_objects.push_back(mail_object);
       rados_mails[mailbox_guid]= list_mail_objects;
     }
-  
+    delete rados_utils;
+    rados_utils=nullptr;  
   }
   return rados_mails;
 }
@@ -327,7 +332,7 @@ int rbox_storage_rebuild_in_context(struct rbox_storage *r_storage, bool force, 
         write_mail_uid.setxattr(metadata_uid->get_key().c_str(), metadata_uid->get_buffer());
         write_mail_uid.setxattr(metadata->get_key().c_str(), metadata->get_buffer());
 
-        if (r_storage->s->get_io_ctx_wrapper().operate(*(*list_it)->get_oid(), &write_mail_uid) < 0) {
+        if (r_storage->s->get_io_ctx_wrapper()->operate(*(*list_it)->get_oid(), &write_mail_uid) < 0) {
             i_debug("Unable to reset metadata to guid : %s",last_known_mailbox_guid.c_str());
         }else {
             i_debug("(%d) Mailbox guid for mail (oid=%s) restored to %s (INBOX) => re-run force-resync to assign them ",unassigned_counter, (*list_it)->get_oid()->c_str(),last_known_mailbox_guid.c_str());

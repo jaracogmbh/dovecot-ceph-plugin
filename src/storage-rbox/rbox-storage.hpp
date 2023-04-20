@@ -24,12 +24,10 @@
 #define RBOX_MAILDIR_NAME "rbox-Mails"
 
 #ifdef __cplusplus
-#include "../librmb/rados-cluster-impl.h"
-#include "../librmb/rados-storage-impl.h"
 #include "../storage-interface/rados-namespace-manager.h"
 #include "../storage-interface/rados-dovecot-ceph-cfg.h"
-#include "../librmb/rados-metadata-storage-impl.h"
-#include "../librmb/rados-save-log.h"
+#include "../storage-interface/rados-metadata-storage.h"
+#include "../storage-interface/rados-save-log.h"
 #include "rbox-storage-struct.h"
 
 struct rbox_storage {
@@ -41,7 +39,7 @@ struct rbox_storage {
   storage_interface::RadosNamespaceManager *ns_mgr;
   storage_interface::RadosMetadataStorage *ms;
   storage_interface::RadosStorage *alt;
-  librmb::RadosSaveLog *save_log;
+  storage_interface::RadosSaveLog *save_log;
 
   uint32_t corrupted_rebuild_count;
   bool corrupted;

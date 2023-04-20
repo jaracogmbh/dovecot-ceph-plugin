@@ -38,7 +38,7 @@ extern "C" {
 #include "../storage-interface/rados-mail.h"
 #include "rbox-storage.hpp"
 #include "rbox-save.h"
-#include "rados-util.h"
+#include "../storage-interface/rados-util.h"
 #include "rbox-mail.h"
 #include "ostream-bufferlist.h"
 #include "../storage-engine/storage-backend-factory.h"
@@ -95,8 +95,12 @@ void setup_mail_object(struct mail_save_context *_ctx) {
     if (str.find("-")<str.length()) {
       r_ctx->rados_mail->set_deprecated_uid(true);
     }
-    librmb::RadosUtils::find_and_replace(&str, "-", "");  // remove hyphens if they exist
+    storage_interface::RadosUtils *rados_utils=
+      storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
+    rados_utils->find_and_replace(&str, "-", "");  // remove hyphens if they exist
     mail_generate_guid_128_hash(str.c_str(), r_ctx->mail_guid);
+    delete rados_utils;
+    rados_utils = nullptr;
   } else {
     guid_128_generate(r_ctx->mail_guid);
   }
@@ -172,8 +176,12 @@ void rbox_move_index(struct mail_save_context *_ctx, struct mail *src_mail) {
     if (str.find("-")<str.length()) {
       r_ctx->rados_mail->set_deprecated_uid(true);
     }
-    librmb::RadosUtils::find_and_replace(&str, "-", "");  // remove hyphens if they exist
+    storage_interface::RadosUtils *rados_utils=
+      storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
+    rados_utils->find_and_replace(&str, "-", "");  // remove hyphens if they exist
     mail_generate_guid_128_hash(str.c_str(), r_ctx->mail_guid);
+    delete rados_utils;
+    rados_utils=nullptr;
   } else {
     guid_128_generate(r_ctx->mail_guid);
   }
@@ -302,7 +310,8 @@ static int rbox_save_mail_set_metadata(struct rbox_save_context *r_ctx, storage_
 
   struct mail_save_data *mdata = &r_ctx->ctx.data;
   struct rbox_storage *r_storage = (struct rbox_storage *)&r_ctx->mbox->storage->storage;
-
+  storage_interface::RadosUtils *rados_utils=
+      storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
   if (r_storage->config->is_mail_attribute(rbox_metadata_key::RBOX_METADATA_VERSION)) {
     RadosMetadata *xattr=
       StorageBackendFactory::create_metadata_char(
@@ -413,7 +422,7 @@ static int rbox_save_mail_set_metadata(struct rbox_save_context *r_ctx, storage_
   if (r_storage->config->is_mail_attribute(rbox_metadata_key::RBOX_METADATA_OLDV1_FLAGS)) {
     if (mdata->flags != 0) {
       std::string flags;
-      if (librmb::RadosUtils::flags_to_string(mdata->flags, &flags)) {
+      if (rados_utils->flags_to_string(mdata->flags, &flags)) {
         RadosMetadata *xattr=
           StorageBackendFactory::create_metadata_string(
             StorageBackendFactory::CEPH, rbox_metadata_key::RBOX_METADATA_OLDV1_FLAGS, flags);
@@ -427,7 +436,7 @@ static int rbox_save_mail_set_metadata(struct rbox_save_context *r_ctx, storage_
   if (r_storage->config->is_mail_attribute(rbox_metadata_key::RBOX_METADATA_PVT_FLAGS)) {
     if (mdata->pvt_flags != 0) {
       std::string pvt_flags;
-      if (librmb::RadosUtils::flags_to_string(mdata->pvt_flags, &pvt_flags)) {
+      if (rados_utils->flags_to_string(mdata->pvt_flags, &pvt_flags)) {
         RadosMetadata *xattr=
           StorageBackendFactory::create_metadata_string(
             StorageBackendFactory::CEPH, rbox_metadata_key::RBOX_METADATA_PVT_FLAGS, pvt_flags);
@@ -471,7 +480,8 @@ static int rbox_save_mail_set_metadata(struct rbox_save_context *r_ctx, storage_
   }
 
   mail_object->set_rados_save_date(mdata->save_date);
-
+  delete rados_utils;
+  rados_utils=nullptr;
   FUNC_END();
   return 0;
 }
@@ -604,9 +614,15 @@ int rbox_save_finish(struct mail_save_context *_ctx) {
         }
       }
       if (r_storage->save_log->is_open()) {
+        storage_interface::RadosSaveLogEntry *save_log_entry=
+          storage_engine::StorageBackendFactory::create_save_log_entry_default(storage_engine::StorageBackendFactory::CEPH);
         r_storage->save_log->append(
-            librmb::RadosSaveLogEntry(*r_ctx->rados_mail->get_oid(), r_storage->s->get_namespace(),
-                                      r_storage->s->get_pool_name(), librmb::RadosSaveLogEntry::op_save()));                        
+            storage_engine::StorageBackendFactory::create_save_log_entry(
+              storage_engine::StorageBackendFactory::CEPH,
+                *r_ctx->rados_mail->get_oid(), r_storage->s->get_namespace(),
+                    r_storage->s->get_pool_name(), save_log_entry->op_save()));  
+        delete save_log_entry;
+        save_log_entry=nullptr;                                  
       }
       
     }

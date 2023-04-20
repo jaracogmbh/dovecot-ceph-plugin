@@ -17,7 +17,7 @@
 #include <list>
 #include <set>
 #include "rados-mail.h"
-#include "../librmb/rbox-io-ctx.h"
+#include "rbox-io-ctx.h"
 #include "rados-metadata.h"
 
 namespace storage_interface {
@@ -25,7 +25,7 @@ class RadosStorageMetadataModule {
  public:
   virtual ~RadosStorageMetadataModule(){};
   /* update io_ctx */
-  virtual void set_io_ctx(librmb::RboxIoCtx &io_ctx_wrapper){};
+  virtual void set_io_ctx(storage_interface::RboxIoCtx *io_ctx_wrapper){};
   /* load the metadta into RadosMail */
   virtual int load_metadata(storage_interface::RadosMail *mail) = 0;
   /* set a new metadata attribute to a mail object */

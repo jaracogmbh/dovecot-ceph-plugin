@@ -13,7 +13,7 @@
 #include "dovecot-ceph-plugin-config.h"
 #endif
 
-#include "rados-util.h"
+#include "rados-util-impl.h"
 #include <limits.h>
 #include <string>
 #include <list>
@@ -26,11 +26,11 @@
 
 namespace librmb {
 
-  RadosUtils::RadosUtils() {}
+  RadosUtilsImpl::RadosUtilsImpl() {}
 
-  RadosUtils::~RadosUtils() {}
+  RadosUtilsImpl::~RadosUtilsImpl() {}
 
-  bool RadosUtils::convert_str_to_time_t(const std::string &date, time_t *val) {
+  bool RadosUtilsImpl::convert_str_to_time_t(const std::string &date, time_t *val) {
     struct tm tm = {0};
     if (strptime(date.c_str(), "%Y-%m-%d %H:%M:%S", &tm)) {
       tm.tm_isdst = -1;
@@ -42,7 +42,7 @@ namespace librmb {
     return false;
   }
 
-  bool RadosUtils::convert_string_to_date(const std::string &date_string, std::string *date) {
+  bool RadosUtilsImpl::convert_string_to_date(const std::string &date_string, std::string *date) {
     time_t t;
     if (convert_str_to_time_t(date_string, &t)) {
       *date = std::to_string(t);
@@ -51,7 +51,7 @@ namespace librmb {
     return false;
   }
 
-  bool RadosUtils::is_numeric(const char *s) {
+  bool RadosUtilsImpl::is_numeric(const char *s) {
     if (s == NULL) {
       return false;
     }
@@ -67,11 +67,11 @@ namespace librmb {
     return is_numeric;
   }
 
-  bool RadosUtils::is_date_attribute(const rbox_metadata_key &key) {
+  bool RadosUtilsImpl::is_date_attribute(const rbox_metadata_key &key) {
     return (key == RBOX_METADATA_OLDV1_SAVE_TIME || key == RBOX_METADATA_RECEIVED_TIME);
   }
 
-  int RadosUtils::convert_time_t_to_str(const time_t &t, std::string *ret_val) {
+  int RadosUtilsImpl::convert_time_t_to_str(const time_t &t, std::string *ret_val) {
     char buffer[256];
     if (t == -1) {
       *ret_val = "invalid date";
@@ -83,14 +83,14 @@ namespace librmb {
     *ret_val = std::string(buffer);
     return 0;
   }
-  bool RadosUtils::flags_to_string(const uint8_t &flags_, std::string *flags_str) {
+  bool RadosUtilsImpl::flags_to_string(const uint8_t &flags_, std::string *flags_str) {
     std::stringstream sstream;
     sstream << std::hex << flags_;
     sstream >> *flags_str;
     return true;
   }
 
-  bool RadosUtils::string_to_flags(const std::string &flags_, uint8_t *flags) {
+  bool RadosUtilsImpl::string_to_flags(const std::string &flags_, uint8_t *flags) {
     std::istringstream in(flags_);
 
     if (in >> std::hex >> *flags) {
@@ -99,14 +99,14 @@ namespace librmb {
     return false;
   }
 
-  void RadosUtils::find_and_replace(std::string *source, std::string const &find, std::string const &replace) {
+  void RadosUtilsImpl::find_and_replace(std::string *source, std::string const &find, std::string const &replace) {
     for (std::string::size_type i = 0; source != nullptr && (i = source->find(find, i)) != std::string::npos;) {
       source->replace(i, find.length(), replace);
       i += replace.length();
     }
   }
 
-  int RadosUtils::get_all_keys_and_values(librados::IoCtx *io_ctx, const std::string &oid,
+  int RadosUtilsImpl::get_all_keys_and_values(librados::IoCtx *io_ctx, const std::string &oid,
                                           std::map<std::string, librados::bufferlist> *kv_map) {
     int err = 0;
     librados::ObjectReadOperation first_read;
@@ -123,7 +123,7 @@ namespace librmb {
     return io_ctx->omap_get_vals_by_keys(oid, extended_keys, kv_map);
   }
 
-  void RadosUtils::resolve_flags(const uint8_t &flags, std::string *flat) {
+  void RadosUtilsImpl::resolve_flags(const uint8_t &flags, std::string *flat) {
     std::stringbuf buf;
     std::ostream os(&buf);
 
@@ -148,7 +148,7 @@ namespace librmb {
     *flat = buf.str();
   }
 
-  int RadosUtils::osd_add(librados::IoCtx *ioctx, const std::string &oid, const std::string &key,
+  int RadosUtilsImpl::osd_add(librados::IoCtx *ioctx, const std::string &oid, const std::string &key,
                           long long value_to_add) {
     librados::bufferlist in, out;
     encode(key, in);
@@ -161,7 +161,7 @@ namespace librmb {
     return ioctx->exec(oid, "numops", "add", in, out);
   }
 
-  int RadosUtils::osd_sub(librados::IoCtx *ioctx, const std::string &oid, const std::string &key,
+  int RadosUtilsImpl::osd_sub(librados::IoCtx *ioctx, const std::string &oid, const std::string &key,
                           long long value_to_subtract) {
     return osd_add(ioctx, oid, key, -value_to_subtract);
   }
@@ -170,25 +170,25 @@ namespace librmb {
     * @return reference to all write operations related with this object
     */
 
-  void RadosUtils::get_metadata(const std::string &key, std::map<std::string, ceph::bufferlist> *metadata, char **value) {
+  void RadosUtilsImpl::get_metadata(const std::string &key, std::map<std::string, ceph::bufferlist> *metadata, char **value) {
     if (metadata->find(key) != metadata->end()) {
       *value = (*metadata)[key].c_str();
       return;
     }
     *value = NULL;
   }
-  void RadosUtils::get_metadata(rbox_metadata_key key, std::map<std::string, ceph::bufferlist> *metadata, char **value) {
+  void RadosUtilsImpl::get_metadata(rbox_metadata_key key, std::map<std::string, ceph::bufferlist> *metadata, char **value) {
     std::string str_key(librmb::rbox_metadata_key_to_char(key));
     get_metadata(str_key, metadata, value);
   }
-  bool RadosUtils::is_numeric_optional(const char *text) {
+  bool RadosUtilsImpl::is_numeric_optional(const char *text) {
     if (text == NULL) {
       return true;  // optional
     }
     return is_numeric(text);
   }
 
-  bool RadosUtils::validate_metadata(std::map<std::string, ceph::bufferlist> *metadata) {
+  bool RadosUtilsImpl::validate_metadata(std::map<std::string, ceph::bufferlist> *metadata) {
     char *uid = NULL;
     get_metadata(RBOX_METADATA_MAIL_UID, metadata, &uid);
     char *recv_time_str = NULL;
@@ -228,20 +228,20 @@ namespace librmb {
     return test == 0;
   }
   // assumes that destination is open and initialized with uses namespace
-  int RadosUtils::move_to_alt(std::string &oid, storage_interface::RadosStorage *primary, storage_interface::RadosStorage *alt_storage,
+  int RadosUtilsImpl::move_to_alt(std::string &oid, storage_interface::RadosStorage *primary, storage_interface::RadosStorage *alt_storage,
                               storage_interface::RadosMetadataStorage *metadata, bool inverse) {
     int ret = -1;
     ret = copy_to_alt(oid, oid, primary, alt_storage, metadata, inverse);
     if (ret > 0) {
       if (inverse) {
-        ret = alt_storage->get_io_ctx_wrapper().remove(oid);
+        ret = alt_storage->get_io_ctx_wrapper()->remove(oid);
       } else {
-        ret = primary->get_io_ctx_wrapper().remove(oid);
+        ret = primary->get_io_ctx_wrapper()->remove(oid);
       }
     }
     return ret;
   }
-  int RadosUtils::copy_to_alt(std::string &src_oid, std::string &dest_oid, storage_interface::RadosStorage *primary,
+  int RadosUtilsImpl::copy_to_alt(std::string &src_oid, std::string &dest_oid, storage_interface::RadosStorage *primary,
                               storage_interface::RadosStorage *alt_storage,
                               storage_interface::RadosMetadataStorage *metadata, bool inverse) {
     int ret = 0;
@@ -291,8 +291,7 @@ namespace librmb {
     return success ? 0 : 1;
   }
 
-  static std::vector<std::string> RadosUtils::extractPgs(const std::string& str)
-  {
+  std::vector<std::string> RadosUtilsImpl::extractPgs(const std::string& str){
       std::vector<std::string> tokens;
 
       std::stringstream ss(str);
@@ -311,8 +310,7 @@ namespace librmb {
       return tokens;
   }
 
-  static std::map<std::string, std::vector<std::string>> RadosUtils::extractPgAndPrimaryOsd(const std::string& str)
-  {
+  std::map<std::string, std::vector<std::string>> RadosUtilsImpl::extractPgAndPrimaryOsd(const std::string& str){
       std::map<std::string,std::vector<std::string>> tokens;
 
       std::stringstream ss(str);
@@ -345,7 +343,7 @@ namespace librmb {
       return tokens;
   }
 
-  static std::vector<std::string> RadosUtils::split(std::string str_to_split, char delimiter) {
+  std::vector<std::string> RadosUtilsImpl::split(std::string str_to_split, char delimiter) {
     std::vector<std::string> tokens;
     std::stringstream stream(str_to_split);
     std::string token;
@@ -361,17 +359,17 @@ namespace librmb {
     return tokens;
   }
 
-  static std::string RadosUtils::convert_to_ceph_index(const std::set<std::string> &list){
+  std::string RadosUtilsImpl::convert_to_ceph_index(const std::set<std::string> &list){
     std::ostringstream str;
     std::copy(list.begin(), list.end(), std::ostream_iterator<std::string>(str, ","));
     return str.str();
   }
 
-  static std::string RadosUtils::convert_to_ceph_index(const std::string &str) {
+  std::string RadosUtilsImpl::convert_to_ceph_index(const std::string &str) {
     return str + ",";
   }
 
-  static std::set<std::string>  RadosUtils::ceph_index_to_set(const std::string &str) {
+  std::set<std::string>  RadosUtilsImpl::ceph_index_to_set(const std::string &str) {
     std::set<std::string> index;
     std::stringstream ss(str);
 

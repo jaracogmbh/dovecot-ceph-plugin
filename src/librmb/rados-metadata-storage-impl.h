@@ -33,16 +33,16 @@ class RadosMetadataStorageImpl : public storage_interface::RadosMetadataStorage 
     }
   }
 
-  storage_interface::RadosStorageMetadataModule *create_metadata_storage(librmb::RboxIoCtx &io_ctx_wrapper_, storage_interface::RadosDovecotCephCfg *cfg_) override {
-    this->io_ctx_wrapper = &io_ctx_wrapper_;
+  storage_interface::RadosStorageMetadataModule *create_metadata_storage(storage_interface::RboxIoCtx *io_ctx_wrapper_, storage_interface::RadosDovecotCephCfg *cfg_) override {
+    this->io_ctx_wrapper = io_ctx_wrapper_;
     this->cfg = cfg_;
     if (storage == nullptr) {
       // decide metadata storage!
       std::string storage_module_name = cfg_->get_metadata_storage_module();
       if (storage_module_name.compare(librmb::RadosMetadataStorageIma::module_name) == 0) {
-        storage = new librmb::RadosMetadataStorageIma(*io_ctx_wrapper, cfg_);
+        storage = new librmb::RadosMetadataStorageIma(io_ctx_wrapper, cfg_);
       } else {
-        storage = new librmb::RadosMetadataStorageDefault(*io_ctx_wrapper);
+        storage = new librmb::RadosMetadataStorageDefault(io_ctx_wrapper);
       }
     }
     return storage;
@@ -54,7 +54,7 @@ class RadosMetadataStorageImpl : public storage_interface::RadosMetadataStorage 
   }
 
  private:
-  librmb::RboxIoCtx *io_ctx_wrapper;
+  storage_interface::RboxIoCtx *io_ctx_wrapper;
   storage_interface::RadosDovecotCephCfg *cfg;
   storage_interface::RadosStorageMetadataModule *storage;
 };

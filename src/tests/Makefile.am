@@ -55,7 +55,7 @@ gtest_shlibs = libgmockgtest.la
 
 TESTS = test_rmb
 test_rmb_SOURCES = rmb/test_rmb.cpp mocks/mock_test.h
-test_rmb_LDADD = $(rmb_shlibs) $(top_builddir)/src/librmb/tools/rmb/ls_cmd_parser.o $(top_builddir)/src/librmb/tools/rmb/rmb-commands.o   $(top_builddir)/src/librmb/tools/rmb/mailbox_tools.o $(gtest_shlibs)
+test_rmb_LDADD = $(rmb_shlibs) $(top_builddir)/src/librmb/tools/rmb/ls_cmd_parser_impl.o $(top_builddir)/src/librmb/tools/rmb/rmb-commands-impl.o   $(top_builddir)/src/librmb/tools/rmb/mailbox_tools_impl.o $(gtest_shlibs)
 
     
 TESTS += test_storage_mock_rbox
@@ -77,14 +77,14 @@ test_repair_rbox_LDADD = $(storage_shlibs) $(gtest_shlibs)
 
 TESTS += test_librmb_utils
 test_librmb_utils_SOURCES = librmb/test_librmb_utils.cpp
-test_librmb_utils_LDADD = $(rmb_shlibs) $(top_builddir)/src/librmb/tools/rmb/ls_cmd_parser.o  $(top_builddir)/src/librmb/tools/rmb/mailbox_tools.o $(gtest_shlibs)
+test_librmb_utils_LDADD = $(rmb_shlibs) $(top_builddir)/src/librmb/tools/rmb/ls_cmd_parser_impl.o  $(top_builddir)/src/librmb/tools/rmb/mailbox_tools_impl.o $(gtest_shlibs)
     
 if BUILD_INTEGRATION_TESTS
 
 
 TESTS += it_test_librmb
 it_test_librmb_SOURCES = librmb/it_test_librmb.cpp 
-it_test_librmb_LDADD = $(rmb_shlibs) $(top_builddir)/src/librmb/tools/rmb/ls_cmd_parser.o  $(top_builddir)/src/librmb/tools/rmb/rmb-commands.o $(top_builddir)/src/librmb/tools/rmb/mailbox_tools.o $(gtest_shlibs)
+it_test_librmb_LDADD = $(rmb_shlibs) $(top_builddir)/src/librmb/tools/rmb/ls_cmd_parser_impl.o  $(top_builddir)/src/librmb/tools/rmb/rmb-commands-impl.o $(top_builddir)/src/librmb/tools/rmb/mailbox_tools_impl.o $(gtest_shlibs)
 
  
 

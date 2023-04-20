@@ -12,18 +12,22 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include <rados/librados.hpp>
-#include "../../librmb/rados-util.h"
+#include "../../storage-interface/rados-util.h"
 #include"../../librmb/rbox-io-ctx-impl.h"
 #include "../../librmb/rados-cluster-impl.h"
 #include "../../librmb/rados-mail-impl.h"
 #include "../../librmb/rados-storage-impl.h"
-#include "../../librmb/tools/rmb/ls_cmd_parser.h"
-#include "../../librmb/tools/rmb/mailbox_tools.h"
-#include "../../librmb/tools/rmb/rmb-commands.h"
+#include "../../storage-interface/tools/rmb/rmb-commands.h"
+#include "../../storage-interface/tools/rmb/ls_cmd_parser.h"
+#include "../../librmb/tools/rmb/rmb-commands-impl.h"
+#include "../../librmb/tools/rmb/ls_cmd_parser_impl.h"
+#include "../../librmb/tools/rmb/mailbox_tools_impl.h"
+#include "../../librmb/tools/rmb/rados-mail-box-impl.h"
 #include "mock_test.h"
 #include "../../librmb/rados-types.h"
 #include "../../storage-interface/rados-mail.h"
 #include "../../librmb/rados-metadata-impl.h"
+
 using ::testing::Return;
 using ::testing::_;
 using ::testing::ReturnRef;
@@ -37,7 +41,7 @@ TEST(rmb, test_cmd_parser) {
   std::string key3 = "R";
   //                             917378644
   std::string ls = "M=abc;U=1;R<2013-12-04 15:03";
-  librmb::CmdLineParser parser(ls);
+  librmb::CmdLineParserImpl parser(ls);
   EXPECT_TRUE(parser.parse_ls_string());
 
   EXPECT_EQ(3, (int)parser.get_predicates().size());
@@ -48,15 +52,15 @@ TEST(rmb, test_cmd_parser) {
 
   librmb::rbox_metadata_key k = static_cast<librmb::rbox_metadata_key>('M');
   EXPECT_EQ(k, librmb::RBOX_METADATA_MAILBOX_GUID);
-  librmb::Predicate *p = parser.get_predicate(key);
+  storage_interface::Predicate *p = parser.get_predicate(key);
   std::string value = "abc";
   EXPECT_TRUE(p->eval(value));
 
-  librmb::Predicate *p2 = parser.get_predicate(key2);
+  storage_interface::Predicate *p2 = parser.get_predicate(key2);
   value = "1";
   EXPECT_TRUE(p2->eval(value));
 
-  librmb::Predicate *p3 = parser.get_predicate(key3);
+  storage_interface::Predicate *p3 = parser.get_predicate(key3);
 
   value = "1503393219";
   EXPECT_FALSE(p3->eval(value));
@@ -66,7 +70,7 @@ TEST(rmb, test_cmd_parser) {
  * Test date predicate
  */
 TEST(rmb1, date_arg) {
-  librmb::Predicate *p = new librmb::Predicate();
+  storage_interface::Predicate *p = new librmb::PredicateImpl();
 
   std::string date = "2013-12-04 15:03:00";
   time_t t = -1;
@@ -83,7 +87,6 @@ TEST(rmb1, date_arg) {
   time_t t3 = 1086165760;
   p->convert_time_t_to_str(t3, &val);
   std::cout << val << std::endl;
-
   delete p;
 }
 
@@ -92,10 +95,10 @@ TEST(rmb1, date_arg) {
  */
 TEST(rmb1, save_mail) {
   std::string mbox_guid = "abc";
-  librmb::RadosMailBox mbox(mbox_guid, 1, mbox_guid);
+  librmb::RadosMailBoxImpl mbox(mbox_guid, 1, mbox_guid);
 
   std::string base_path = "test";
-  librmb::MailboxTools tools(&mbox, base_path);
+  librmb::MailboxToolsImpl tools(&mbox, base_path);
 
   int init = tools.init_mailbox_dir();
   EXPECT_EQ(0, init);
@@ -125,17 +128,17 @@ TEST(rmb1, save_mail) {
  */
 TEST(rmb1, path_tests) {
   std::string mbox_guid = "abc";
-  librmb::RadosMailBox mbox(mbox_guid, 1, mbox_guid);
+  librmb::RadosMailBoxImpl mbox(mbox_guid, 1, mbox_guid);
 
   std::string base_path = "test";
-  librmb::MailboxTools tools(&mbox, base_path);
+  librmb::MailboxToolsImpl tools(&mbox, base_path);
   EXPECT_EQ("test/abc", tools.get_mailbox_path());
   std::string test_path = "test/";
-  librmb::MailboxTools tools2(&mbox, test_path);
+  librmb::MailboxToolsImpl tools2(&mbox, test_path);
   EXPECT_EQ("test/abc", tools2.get_mailbox_path());
 
   std::string test_path2 = "";
-  librmb::MailboxTools tools3(&mbox, test_path2);
+  librmb::MailboxToolsImpl tools3(&mbox, test_path2);
   EXPECT_EQ("abc", tools3.get_mailbox_path());
 }
 /**
@@ -148,14 +151,14 @@ TEST(rmb1, rmb_commands_no_objects_found) {
   librmbtest::RadosStorageMetadataMock ms_module_mock;
 
   std::map<std::string, std::string> opts;
-  librmb::RmbCommands rmb_cmd(&storage_mock, &cluster_mock, &opts);
+  librmb::RmbCommandsImpl rmb_cmd(&storage_mock, &cluster_mock, &opts);
   std::list<storage_interface::RadosMail *> mails;
   std::string search_string = "uid";
   std::set<std::string> mail_list;
   librmb::RboxIoCtxImpl test_ioctx;
 
   EXPECT_CALL(storage_mock, find_mails(nullptr)).WillRepeatedly(Return(mail_list));
-  EXPECT_CALL(storage_mock,get_io_ctx_wrapper()).WillRepeatedly(ReturnRef(test_ioctx));
+  EXPECT_CALL(storage_mock,get_io_ctx_wrapper()).WillRepeatedly(Return(&test_ioctx));
   EXPECT_CALL(storage_mock, stat_mail(_, _, _)).WillRepeatedly(Return(0));
   int ret = rmb_cmd.load_objects(&ms_module_mock, mails, search_string);
   EXPECT_EQ(ret, 0);
@@ -169,8 +172,8 @@ TEST(rmb1, rmb_command_filter_result) {
   librmbtest::RadosClusterMock cluster_mock;
   std::map<std::string, std::string> opts;
   opts["ls"] = "-";
-  librmb::CmdLineParser parser(opts["ls"]);
-  librmb::RmbCommands rmb_cmd(&storage_mock, &cluster_mock, &opts);
+  librmb::CmdLineParserImpl parser(opts["ls"]);
+  librmb::RmbCommandsImpl rmb_cmd(&storage_mock, &cluster_mock, &opts);
   std::list<storage_interface::RadosMail *> mails;
   librmb::RadosMailImpl obj1;
   obj1.set_oid("oid_1");
@@ -267,8 +270,8 @@ TEST(rmb1, rmb_command_filter_result2) {
   librmbtest::RadosClusterMock cluster_mock;
   std::map<std::string, std::string> opts;
   opts["ls"] = "-";
-  librmb::CmdLineParser parser(opts["ls"]);
-  librmb::RmbCommands rmb_cmd(&storage_mock, &cluster_mock, &opts);
+  librmb::CmdLineParserImpl parser(opts["ls"]);
+  librmb::RmbCommandsImpl rmb_cmd(&storage_mock, &cluster_mock, &opts);
   std::list<storage_interface::RadosMail*> mails;
   librmb::RadosMailImpl obj1;
   obj1.set_oid("oid_1");

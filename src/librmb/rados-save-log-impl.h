@@ -9,37 +9,30 @@
  * Foundation.  See file COPYING.
  */
 
-#ifndef SRC_LIBRMB_RADOS_SAVE_LOG_H_
-#define SRC_LIBRMB_RADOS_SAVE_LOG_H_
+#ifndef SRC_LIBRMB_RADOS_SAVE_LOG_IMPL_H_
+#define SRC_LIBRMB_RADOS_SAVE_LOG_IMPL_H_
 
-#include <fstream>  // std::ofstream
-//#include <regex>
-#include <cstdio>
-#include <vector>
-#include <sstream>
-#include <list>
-#include <iostream>
 
-#include "../storage-interface/rados-metadata.h"
-#include "../storage-engine/storage-backend-factory.h"
+#include "../storage-interface/rados-save-log.h"
+#include "../librmb/rados-metadata-impl.h"
 
 namespace librmb {
 /**
- * RadosSaveLogEntry
+ * RadosSaveLogEntryImpl
  *
  * Class provides access to the savelog.format.
  *
  */
-class RadosSaveLogEntry {
+class RadosSaveLogEntryImpl : public  storage_interface::RadosSaveLogEntry{
  public:
-  RadosSaveLogEntry() {}
-  RadosSaveLogEntry(const std::string &oid_, const std::string &ns_, const std::string &pool_, const std::string &op_)
+  RadosSaveLogEntryImpl() {}
+  RadosSaveLogEntryImpl(const std::string &oid_, const std::string &ns_, const std::string &pool_, const std::string &op_)
       : oid(oid_), ns(ns_), pool(pool_), op(op_), metadata(0) {}
-  ~RadosSaveLogEntry(){};
+  ~RadosSaveLogEntryImpl(){};
 
   // format: mv|cp|save:src_ns,src_oid;metadata_key=metadata_value:metadata_key=metadata_value:....
   //        e.g.: // mv:ns_src:src_oid;M=ABCDEFG:B=INBOX:U=1
-  bool parse_mv_op() {
+  bool parse_mv_op() override{
     int pos = op.find(";");
     if (pos <= 0) {
       return false;
@@ -66,8 +59,7 @@ class RadosSaveLogEntry {
     std::stringstream right(op.substr(pos + 1, op.size()));
     std::vector<std::string> right_tokens;
     while (std::getline(right, item, ':')) {
-      storage_interface::RadosMetadata *m= storage_engine::StorageBackendFactory::create_metadata_default(
-        storage_engine::StorageBackendFactory::CEPH);
+      storage_interface::RadosMetadata *m= new librmb::RadosMetadataImpl();
       if (!m->from_string(item)) {
         return false;
       }
@@ -77,21 +69,21 @@ class RadosSaveLogEntry {
     }
     return true;
   }
-  static std::string op_save() { return "save"; }
-  static std::string op_cpy() { return "cpy"; }
-  static std::string op_mv(const std::string &src_ns, const std::string &src_oid, const std::string &src_user,
-                           std::list<storage_interface::RadosMetadata *> &metadata) {
+  std::string op_save() override{ return "save"; }
+  std::string op_cpy() override{ return "cpy"; }
+  std::string op_mv(const std::string &src_ns, const std::string &src_oid, const std::string &src_user,
+                           std::list<storage_interface::RadosMetadata *> &metadata) override{
     std::stringstream mv;
     mv << "mv:" << src_ns << ":" << src_oid << ":" << src_user << ";" << convert_metadata(metadata, ":");
     return mv.str();
   }
 
-  friend std::ostream &operator<<(std::ostream &os, const RadosSaveLogEntry &obj) {
-    os << obj.op << "," << obj.pool << "," << obj.ns << "," << obj.oid << std::endl;
+  friend std::ostream &operator<<(std::ostream &os, const librmb::RadosSaveLogEntryImpl &obj) {
+    os << obj.get_op() << "," << obj.get_pool() << "," << obj.get_ns() << "," << obj.get_oid()<< std::endl;
     return os;
   }
 
-  friend std::istream &operator>>(std::istream &is, RadosSaveLogEntry &obj) {
+  friend std::istream &operator>>(std::istream &is, librmb::RadosSaveLogEntryImpl &obj) {
     std::string line;
     std::string item;
     std::vector<std::string> csv_items;
@@ -104,11 +96,10 @@ class RadosSaveLogEntry {
 
     // read obj from stream
     if (csv_items.size() == 4) {
-      obj.op = csv_items[0];
-      obj.pool = csv_items[1];
-      obj.ns = csv_items[2];
-      obj.oid = csv_items[3];
-
+      obj.get_op() = csv_items[0];
+      obj.get_pool() = csv_items[1];
+      obj.get_ns() = csv_items[2];
+      obj.get_oid() = csv_items[3];
       obj.parse_mv_op();
 
     } else {
@@ -132,8 +123,39 @@ class RadosSaveLogEntry {
     }
     return metadata_str.str();
   }
+  
+  std::string& get_oid() override{
+    return oid;
+  }
 
- public:
+  std::string& get_ns() override{
+    return ns;
+  }
+
+  std::string& get_pool() override{
+    return pool;
+  }
+
+  std::string& get_op() override{
+    return op;
+  }
+  
+  std::string& get_src_oid() override{
+    return src_oid;
+  }
+  std::string& get_src_ns() override{
+    return src_ns;
+  }
+
+  std::string& get_src_user() override{
+     return src_user;
+  }
+
+  std::list<storage_interface::RadosMetadata*>& get_metadata() override{
+    return metadata;
+  }
+
+ private:
   std::string oid;   // oid
   std::string ns;    // namespace
   std::string pool;  // storage pool
@@ -144,19 +166,19 @@ class RadosSaveLogEntry {
   std::list<storage_interface::RadosMetadata*> metadata;
 };
 
-class RadosSaveLog {
+class RadosSaveLogImpl : public storage_interface::RadosSaveLog{
  public:
-  explicit RadosSaveLog(const std::string &logfile_) : logfile(logfile_) { log_active = !logfile.empty(); }
-  RadosSaveLog() { log_active = false; }
-  void set_save_log_file(const std::string &logfile_) {
+  explicit RadosSaveLogImpl(const std::string &logfile_) : logfile(logfile_) { log_active = !logfile.empty(); }
+  RadosSaveLogImpl() { log_active = false; }
+  virtual ~RadosSaveLogImpl(){};
+  void set_save_log_file (const std::string &logfile_) override{
     this->logfile = logfile_;
     this->log_active = !logfile.empty();
   }
-  virtual ~RadosSaveLog(){};
-  bool open();
-  void append(const RadosSaveLogEntry &entry);
-  bool close();
-  bool is_open() { return ofs.is_open(); }
+  bool open() override;
+  void append(const storage_interface::RadosSaveLogEntry *entry) override;
+  bool close() override;
+  bool is_open() override{ return ofs.is_open(); }
 
  private:
   std::string logfile;
@@ -166,4 +188,4 @@ class RadosSaveLog {
 
 } /* namespace librmb */
 
-#endif /* SRC_LIBRMB_RADOS_SAVE_LOG_H_ */
+#endif /* SRC_LIBRMB_RADOS_SAVE_LOG_IMPL_H_ */

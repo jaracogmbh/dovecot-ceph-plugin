@@ -22,7 +22,7 @@
 #include <string>
 #include <utility>
 #include <cstdint>
-#include "rbox-io-ctx.h"
+#include "../storage-interface/rbox-io-ctx.h"
 #include "rbox-io-ctx-impl.h"
 #include "rados-namespace-manager-impl.h"
 #include <rados/librados.hpp>
@@ -104,9 +104,9 @@ const string RadosDictionaryImpl::get_full_oid(const std::string &key) {
   return "";
 }
 
-librmb::RboxIoCtx &RadosDictionaryImpl::get_shared_io_ctx_wrapper() {
+storage_interface::RboxIoCtx *RadosDictionaryImpl::get_shared_io_ctx_wrapper() {
   if (!shared_io_ctx_created) {
-    shared_io_ctx_created = cluster->io_ctx_create(poolname, *shared_io_ctx_wrapper) == 0;
+    shared_io_ctx_created = cluster->io_ctx_create(poolname, shared_io_ctx_wrapper) == 0;
     shared_io_ctx=shared_io_ctx_wrapper->get_io_ctx();
     std::string ns;
     if (load_configuration(&shared_io_ctx)) {
@@ -115,7 +115,7 @@ librmb::RboxIoCtx &RadosDictionaryImpl::get_shared_io_ctx_wrapper() {
       shared_io_ctx.set_namespace(ns);
     }
   }
-  return *shared_io_ctx_wrapper;
+  return shared_io_ctx_wrapper;
 }
 
 bool RadosDictionaryImpl::load_configuration(librados::IoCtx *io_ctx) {
@@ -151,9 +151,9 @@ bool RadosDictionaryImpl::lookup_namespace(std::string &username_, storage_inter
   return 0;
 }
 
-librmb::RboxIoCtx &RadosDictionaryImpl::get_private_io_ctx_wrapper() {
+storage_interface::RboxIoCtx *RadosDictionaryImpl::get_private_io_ctx_wrapper() {
   if (!private_io_ctx_created) {
-    if (cluster->io_ctx_create(poolname, *private_io_ctx_wrapper) == 0) {
+    if (cluster->io_ctx_create(poolname, private_io_ctx_wrapper) == 0) {
       private_io_ctx=private_io_ctx_wrapper->get_io_ctx();
       if (load_configuration(&private_io_ctx)) {
         std::string ns;
@@ -164,10 +164,10 @@ librmb::RboxIoCtx &RadosDictionaryImpl::get_private_io_ctx_wrapper() {
       }
     }
   }
-  return *private_io_ctx_wrapper;
+  return private_io_ctx_wrapper;
 }
 
-librmb::RboxIoCtx &RadosDictionaryImpl::get_io_ctx_wrapper(const std::string &key) {
+storage_interface::RboxIoCtx *RadosDictionaryImpl::get_io_ctx_wrapper(const std::string &key) {
   if (!key.compare(0, strlen(DICT_PATH_PRIVATE), DICT_PATH_PRIVATE)) {
     return get_private_io_ctx_wrapper();
   } else if (!key.compare(0, strlen(DICT_PATH_SHARED), DICT_PATH_SHARED)) {
@@ -189,7 +189,7 @@ int RadosDictionaryImpl::get(const string &key, string *value_r) {
   oro.omap_get_vals_by_keys(keys, &map, &r_val);
 
   librados::bufferlist bl;
-  int err = get_io_ctx_wrapper(key).operate(get_full_oid(key), &oro, &bl);
+  int err = get_io_ctx_wrapper(key)->operate(get_full_oid(key), &oro, &bl);
 
   if (err == 0) {
     if (r_val == 0) {
@@ -207,14 +207,14 @@ int RadosDictionaryImpl::get(const string &key, string *value_r) {
   return err;
 }
 
-void RadosDictionaryImpl::remove_completion(librmb::RboxIoCtx &remove_completion_wrapper) {
-  librados::AioCompletion *c=&remove_completion_wrapper.get_remove_completion();
+void RadosDictionaryImpl::remove_completion(storage_interface::RboxIoCtx *remove_completion_wrapper) {
+  librados::AioCompletion *c=&remove_completion_wrapper->get_remove_completion();
   completions_mutex.lock();
   completions.remove(c);
   completions_mutex.unlock();
 }
-void RadosDictionaryImpl::push_back_completion(librmb::RboxIoCtx &push_back_completion_wrapper) {
-  librados::AioCompletion *c=&push_back_completion_wrapper.get_push_back_completion();
+void RadosDictionaryImpl::push_back_completion(storage_interface::RboxIoCtx *push_back_completion_wrapper) {
+  librados::AioCompletion *c=&push_back_completion_wrapper->get_push_back_completion();
   completions_mutex.lock();
   completions.push_back(c);
   completions_mutex.unlock();
@@ -225,7 +225,7 @@ void RadosDictionaryImpl::wait_for_completions() {
     auto c = completions.front();
     c->wait_for_complete_and_cb();
     remove_completion_wrapper->set_remove_completion(*c);
-    remove_completion(*remove_completion_wrapper);
+    remove_completion(remove_completion_wrapper);
     c->release();
   }
 }

@@ -12,7 +12,7 @@
 #define SRC_STORAGE_INTERFACES_RADOS_METADATA_STORAGE_PRODUCER_H_
 #include "rados-dovecot-ceph-cfg.h"
 #include "rados-metadata-storage-module.h"
-#include "../librmb/rbox-io-ctx.h"
+#include "rbox-io-ctx.h"
 
 namespace storage_interface {
 /**
@@ -25,7 +25,7 @@ class RadosMetadataStorage {
  public:
   virtual ~RadosMetadataStorage() {}
   /* create the medata data class based on configuration */
-  virtual RadosStorageMetadataModule *create_metadata_storage(librmb::RboxIoCtx &io_ctx_wrapper, RadosDovecotCephCfg *cfg_) = 0;
+  virtual RadosStorageMetadataModule *create_metadata_storage(storage_interface::RboxIoCtx *io_ctx_wrapper, RadosDovecotCephCfg *cfg_) = 0;
   virtual RadosStorageMetadataModule *get_storage() = 0;
 };
 

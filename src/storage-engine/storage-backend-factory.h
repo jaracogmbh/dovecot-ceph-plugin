@@ -1,5 +1,8 @@
 #ifndef SRC_STORAGE_ENGINE_STORAGE_BACKEND_FACTORY_H_
 #define SRC_STORAGE_ENGINE_STORAGE_BACKEND_FACTORY_H_
+#include<string>
+#include<map>
+
 #include "../storage-interface/rados-cluster.h"
 #include "../librmb/rados-cluster-impl.h"
 #include "../storage-interface/rados-storage.h"
@@ -18,6 +21,15 @@
 #include "../librmb/rados-metadata-impl.h"
 #include "../librmb/rados-types.h"
 #include "../librmb/rados-dovecot-config.h"
+#include "../storage-interface/tools/rmb/rmb-commands.h"
+#include "../librmb/tools/rmb/rmb-commands-impl.h"
+#include "../storage-interface/rados-save-log.h"
+#include "../librmb/rados-save-log-impl.h"
+#include "../storage-interface/tools/rmb/ls_cmd_parser.h"
+#include "../librmb/tools/rmb/ls_cmd_parser_impl.h"
+#include "../storage-interface/rados-util.h"
+#include "../librmb/rados-util-impl.h"
+
 
 namespace storage_engine {
 class StorageBackendFactory {
@@ -174,6 +186,72 @@ class StorageBackendFactory {
       metadata=new librmb::RadosMetadataImpl(_key,val);
     }
     return metadata;
+  }
+  static storage_interface::RmbCommands *create_rmb_commands(
+    StorageType storage_type, storage_interface::RadosStorage *storage_, storage_interface::RadosCluster *cluster_,
+      std::map<std::string, std::string> *opts_){
+
+    storage_interface::RmbCommands *rmb_commands;
+    if(storage_type==CEPH){
+      rmb_commands=new librmb::RmbCommandsImpl(storage_, cluster_, opts_);
+    }
+    return rmb_commands;    
+  }
+  static storage_interface::RmbCommands *create_rmb_commands_default(StorageType storage_type){
+    storage_interface::RmbCommands *rmb_commands;
+    if(storage_type==CEPH){
+      rmb_commands=new librmb::RmbCommandsImpl();
+    }
+    return rmb_commands;
+  }
+
+  static storage_interface::RadosSaveLogEntry *create_save_log_entry(
+    StorageType storage_type,const std::string &oid_, const std::string &ns_, const std::string &pool_, const std::string &op_){
+
+    storage_interface::RadosSaveLogEntry *save_log_entry;
+    if(storage_type==CEPH){
+      save_log_entry=new librmb::RadosSaveLogEntryImpl(oid_, ns_, pool_, op_);
+    }
+    return save_log_entry;
+  }
+
+  static storage_interface::RadosSaveLogEntry *create_save_log_entry_default(StorageType storage_type){
+    storage_interface::RadosSaveLogEntry *save_log_entry;
+    if(storage_type==CEPH){
+      save_log_entry=new librmb::RadosSaveLogEntryImpl();
+    }
+    return save_log_entry;
+  }
+  
+  static storage_interface::RadosSaveLog *create_save_log(StorageType storage_type,const std::string& log_file){
+    storage_interface::RadosSaveLog *save_log;
+    if(storage_type==CEPH){
+      save_log=new librmb::RadosSaveLogImpl(log_file);
+    }
+    return save_log;
+  }
+  static storage_interface::RadosSaveLog *create_save_log_default(StorageType storage_type){
+    storage_interface::RadosSaveLog *save_log;
+    if(storage_type==CEPH){
+      save_log=new librmb::RadosSaveLogImpl();
+    }
+    return save_log;
+  }
+
+  static storage_interface::CmdLineParser *create_cmd_line_parser(StorageType storage_type,const std::string &_ls_value){
+    storage_interface::CmdLineParser *cmd_line_parser;
+    if(storage_type==CEPH){
+      cmd_line_parser=new librmb::CmdLineParserImpl(_ls_value);
+    }
+    return cmd_line_parser;
+  }
+
+  static storage_interface::RadosUtils *create_rados_utils(StorageType storage_type){
+    storage_interface::RadosUtils *rados_utils;
+    if(storage_type==CEPH){
+      rados_utils=new librmb::RadosUtilsImpl();
+    }
+    return rados_utils;
   }
 };
 }  // namespace interface_engine

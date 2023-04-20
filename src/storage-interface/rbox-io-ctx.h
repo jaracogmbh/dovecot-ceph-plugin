@@ -1,13 +1,13 @@
   
   
-#ifndef SRC_LIBRMB_INTERFACE_RBOX_IO_CTX_H_
-#define SRC_LIBRMB_INTERFACE_RBOX_IO_CTX_H_  
+#ifndef SRC_STORAGE_INTERFACES_RBOX_IO_CTX_H_
+#define SRC_STORAGE_INTERFACES_RBOX_IO_CTX_H_  
 
 #include <string>
 #include <rados/librados.hpp>
 using librados::AioCompletion;
 
-namespace librmb{
+namespace storage_interface{
 class RboxIoCtx{
     public:
       virtual ~RboxIoCtx() {}
@@ -44,5 +44,5 @@ class RboxIoCtx{
       virtual void set_push_back_completion(librados::AioCompletion &aio_commepletion)=0;
       virtual librados::AioCompletion& get_push_back_completion()=0;
   };
-}  
-#endif  // SRC_LIBRMB_INTERFACE_RBOX_IO_CTX_H_ 
+}  //namespace storage_interface
+#endif  // SRC_STORAGE_INTERFACES_RBOX_IO_CTX_H_

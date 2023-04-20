@@ -29,7 +29,7 @@ extern "C" {
 #include "rbox-save.h"
 #include "rbox-sync.h"
 #include "rbox-copy.h"
-#include "rados-util.h"
+#include "../storage-interface/rados-util.h"
 #include "../storage-engine/storage-backend-factory.h"
 #include "../storage-interface/rados-metadata.h"
 
@@ -225,8 +225,15 @@ static int copy_mail(struct mail_save_context *ctx, storage_interface::RadosStor
 
   rbox_add_to_index(ctx);
   if (r_storage->save_log->is_open()) {
-    r_storage->save_log->append(librmb::RadosSaveLogEntry(dest_oid, *ns_dest, rados_storage->get_pool_name(),
-                                                          librmb::RadosSaveLogEntry::op_cpy()));
+    storage_interface::RadosSaveLogEntry *save_log_entry=
+      storage_engine::StorageBackendFactory::create_save_log_entry_default(storage_engine::StorageBackendFactory::CEPH);
+
+    r_storage->save_log->append(storage_engine::StorageBackendFactory::create_save_log_entry(
+      storage_engine::StorageBackendFactory::CEPH,
+        dest_oid, *ns_dest, rados_storage->get_pool_name(),
+          save_log_entry->op_cpy()));
+    delete save_log_entry;
+    save_log_entry=nullptr;      
   }
 #ifdef DEBUG
   i_debug("copy successfully finished: from src %s to oid = %s", src_oid.c_str(), dest_oid.c_str());

@@ -14,10 +14,8 @@
 
 #include <string>
 #include <list>
-
-#include "../librmb/rados-storage-impl.h"
 #include "mail-storage-private.h"
-
+#include "../storage-interface/rados-storage.h"
 #include "../storage-interface/rados-mail.h"
 /**
  * @brief: rbox_save_context

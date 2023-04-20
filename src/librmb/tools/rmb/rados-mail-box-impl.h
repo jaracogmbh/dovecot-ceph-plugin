@@ -9,31 +9,29 @@
  * Foundation.  See file COPYING.
  */
 
-#ifndef SRC_LIBRMB_TOOLS_RMB_RMB_H_
-#define SRC_LIBRMB_TOOLS_RMB_RMB_H_
-
+#ifndef SRC_LIBRMB_TOOLS_RMB_RADOS_MAIL_BOX_IMPL_H_
+#define SRC_LIBRMB_TOOLS_RMB_RADOS_MAIL_BOX_IMPL_H_
 #include <string>
 #include <sstream>
 #include <list>
 #include <map>
 
-#include "../storage-interface/rados-mail.h"
-#include "ls_cmd_parser.h"
-#include "rados-util.h"
+#include "../../../storage-interface/tools/rmb/ls_cmd_parser.h"
+#include "../../rados-util-impl.h"
 #include "../../../storage-interface/rados-mail.h"
 namespace librmb {
 
-class RadosMailBox {
+class RadosMailBoxImpl : public storage_interface::RadosMailBox {
  public:
-  RadosMailBox(const std::string &_mailbox_guid, int _mail_count, const std::string &_mbox_orig_name)
+  RadosMailBoxImpl(const std::string &_mailbox_guid, int _mail_count, const std::string &_mbox_orig_name)
       : mailbox_guid(_mailbox_guid), mail_count(_mail_count), mbox_orig_name(_mbox_orig_name) {
     this->mailbox_size = 0;
     this->total_mails = 0;
     this->parser = nullptr;
   }
-  virtual ~RadosMailBox() {}
+  virtual ~RadosMailBoxImpl() {}
 
-  void add_mail(storage_interface::RadosMail *mail) {
+  void add_mail(storage_interface::RadosMail *mail) override{
     total_mails++;
     if (!mail->is_valid()) {
       mails.push_back(mail);
@@ -47,12 +45,13 @@ class RadosMailBox {
       mails.push_back(mail);
       return;
     }
-    for (std::map<std::string, Predicate *>::iterator it = parser->get_predicates().begin();
+    for (std::map<std::string, storage_interface::Predicate *>::iterator it = parser->get_predicates().begin();
          it != parser->get_predicates().end(); ++it) {
       if (mail->get_metadata()->find(it->first) != mail->get_metadata()->end()) {
         std::string key = it->first;
         char *value;
-        RadosUtils::get_metadata(key, mail->get_metadata(), &value);
+        librmb::RadosUtilsImpl rados_utils;
+        rados_utils.get_metadata(key, mail->get_metadata(), &value);
         if (it->second->eval(value)) {
           mails.push_back(mail);
         }
@@ -80,20 +79,20 @@ class RadosMailBox {
     }
     return ss.str();
   }
-  inline void add_to_mailbox_size(const uint64_t &_mailbox_size) { this->mailbox_size += _mailbox_size; }
-  void set_mails(const std::list<storage_interface::RadosMail *> &_mails) { this->mails = _mails; }
+  void add_to_mailbox_size(const uint64_t &_mailbox_size) override{ this->mailbox_size += _mailbox_size; }
+  void set_mails(const std::list<storage_interface::RadosMail *> &_mails) override{ this->mails = _mails; }
 
-  CmdLineParser *get_xattr_filter() { return this->parser; }
-  void set_xattr_filter(CmdLineParser *_parser) { this->parser = _parser; }
-  std::list<storage_interface::RadosMail *> &get_mails() { return this->mails; }
+  storage_interface::CmdLineParser *get_xattr_filter() override{ return this->parser; }
+  void set_xattr_filter(storage_interface::CmdLineParser *_parser) override{ this->parser = _parser; }
+  std::list<storage_interface::RadosMail *> &get_mails() override{ return this->mails; }
 
-  std::string &get_mailbox_guid() { return this->mailbox_guid; }
-  void set_mailbox_guid(const std::string &_mailbox_guid) { this->mailbox_guid = _mailbox_guid; }
-  void set_mailbox_orig_name(const std::string &_mbox_orig_name) { this->mbox_orig_name = _mbox_orig_name; }
-  int &get_mail_count() { return this->mail_count; }
+  std::string &get_mailbox_guid() override{ return this->mailbox_guid; }
+  void set_mailbox_guid(const std::string &_mailbox_guid) override{ this->mailbox_guid = _mailbox_guid; }
+  void set_mailbox_orig_name(const std::string &_mbox_orig_name) override{ this->mbox_orig_name = _mbox_orig_name; }
+  int &get_mail_count() override{ return this->mail_count; }
 
  private:
-  CmdLineParser *parser;
+  storage_interface::CmdLineParser *parser;
 
   std::string mailbox_guid;
   int mail_count;
@@ -104,4 +103,4 @@ class RadosMailBox {
 };
 }  // namespace librmb
 
-#endif  // SRC_LIBRMB_TOOLS_RMB_RMB_H_
+#endif  // SRC_LIBRMB_TOOLS_RMB_RADOS_MAIL_BOX_IMPL_H_

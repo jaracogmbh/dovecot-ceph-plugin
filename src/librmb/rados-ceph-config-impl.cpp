@@ -13,28 +13,34 @@
 #include <jansson.h>
 #include <climits>
 #include <unistd.h>
+#include "rados-ceph-json-config-impl.h"
 
 namespace librmb {
 
-RadosCephConfigImpl::RadosCephConfigImpl(librados::IoCtx *io_ctx_) { io_ctx = io_ctx_; }
+RadosCephConfigImpl::RadosCephConfigImpl(librados::IoCtx *io_ctx_) {
+  io_ctx = io_ctx_;
+  if(config==nullptr){
+    config=new librmb::RadosCephJsonConfigImpl();
+  }
+}
 
 int RadosCephConfigImpl::save_cfg() {
   ceph::bufferlist buffer;
-  bool success = config.to_json(&buffer) ? save_object(config.get_cfg_object_name(), buffer) >= 0 : false;
+  bool success = config->to_json(&buffer) ? save_object(config->get_cfg_object_name(), buffer) >= 0 : false;
   return success ? 0 : -1;
 }
 
 int RadosCephConfigImpl::load_cfg() {
-  if (config.is_valid()) {
+  if (config->is_valid()) {
     return 0;
   }
   ceph::bufferlist buffer;
-  int ret = read_object(config.get_cfg_object_name(), &buffer);
+  int ret = read_object(config->get_cfg_object_name(), &buffer);
   if (ret < 0) {
     return ret;
   }
-  config.set_valid(true);
-  return config.from_json(&buffer) ? 0 : -1;
+  config->set_valid(true);
+  return config->from_json(&buffer) ? 0 : -1;
 }
 
 bool RadosCephConfigImpl::is_valid_key_value(const std::string &key, const std::string &value) {
