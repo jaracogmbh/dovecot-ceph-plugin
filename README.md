@@ -98,4 +98,8 @@ If you are using CentOS make sure you also have the following package installed:
     <td><img src="https://avatars1.githubusercontent.com/u/20288092?v=4&s=100"</td>
     <td>Wido den Hollander from <a href="http://www.42on.com">42on.com</a> for all the help and ideas.</td>
   </tr>
+   <tr>
+<td><img src="https://user-images.githubusercontent.com/43539960/234269838-cbf61947-72f6-4386-b9d4-9858d4d77eff.jpg"</td>
+    <td>Jan Radon from <a href="http://www.jaraco.de">jaraco.de</a>.</td>
+  </tr>
 </table>
