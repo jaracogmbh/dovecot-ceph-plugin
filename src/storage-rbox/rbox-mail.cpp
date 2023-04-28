@@ -37,15 +37,17 @@ extern "C" {
 #endif
 }
 
-#include "../librmb/rados-mail.h"
+#include "../storage-interface/rados-mail.h"
 #include "rbox-storage.hpp"
-#include "../librmb/rados-storage-impl.h"
 #include "istream-bufferlist.h"
 #include "rbox-mail.h"
-#include "rados-util.h"
+#include "../storage-interface/rados-util.h"
+#include "../storage-engine/storage-backend-factory.h"
+#include "../storage-interface/rados-metadata.h"
+#include "../storage-interface/rados-storage.h"
 
-using librmb::RadosMail;
-using librmb::rbox_metadata_key;
+using storage_interface::RadosMail;
+using storage_interface::rbox_metadata_key;
 
 void rbox_mail_set_expunged(struct rbox_mail *mail) {
   FUNC_START();
@@ -153,7 +155,7 @@ static int rbox_mail_metadata_get(struct rbox_mail *rmail, enum rbox_metadata_ke
   }
   int ret_load_metadata = r_storage->ms->get_storage()->load_metadata(rmail->rados_mail);
   if (ret_load_metadata < 0) {
-    std::string metadata_key = librmb::rbox_metadata_key_to_char(key);
+    std::string metadata_key = storage_interface::rbox_metadata_key_to_char(key);
     if (ret_load_metadata == -ENOENT) {
       //i_debug("Errorcode: process %d returned with %d cannot get x_attr(%s,%c) from rados_object: %s",getpid(), ret_load_metadata,
       //          metadata_key.c_str(), key, rmail->rados_mail != NULL ? rmail->rados_mail->to_string(" ").c_str() : " no rados_mail");
@@ -169,12 +171,16 @@ static int rbox_mail_metadata_get(struct rbox_mail *rmail, enum rbox_metadata_ke
 
   // we need to copy the pointer. Because dovecots memory mgmnt will free it!
   char *val = NULL;
-  librmb::RadosUtils::get_metadata(key, rmail->rados_mail->get_metadata(), &val);
+  storage_interface::RadosUtils *rados_utils=
+    storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
+  rados_utils->get_metadata(key, rmail->rados_mail->get_metadata(), &val);
   if (val != NULL) {
     *value_r = i_strdup(val);
   } else {
     return -1;
   }
+  delete rados_utils;
+  rados_utils = nullptr;
   FUNC_END();
   return 0;
 }
@@ -206,7 +212,9 @@ int rbox_mail_get_received_date(struct mail *_mail, time_t *date_r) {
       return -1;
     }
   }
-  librmb::RadosUtils::get_metadata(rbox_metadata_key::RBOX_METADATA_RECEIVED_TIME, rmail->rados_mail->get_metadata(),
+  storage_interface::RadosUtils *rados_utils=
+    storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
+  rados_utils->get_metadata(rbox_metadata_key::RBOX_METADATA_RECEIVED_TIME, rmail->rados_mail->get_metadata(),
                                    &value);
 
   if (value == NULL) {
@@ -247,6 +255,9 @@ int rbox_mail_get_received_date(struct mail *_mail, time_t *date_r) {
   if (value != NULL && free_value) {
     i_free(value);
   }
+
+  delete rados_utils;
+  rados_utils = nullptr;
   FUNC_END();
   return ret;
 }
@@ -289,7 +300,7 @@ static int rbox_mail_get_save_date(struct mail *_mail, time_t *date_r) {
     return -1;
   }
 
-  librmb::RadosStorage *rados_storage = alt_storage ? r_storage->alt : r_storage->s;
+  storage_interface::RadosStorage *rados_storage = alt_storage ? r_storage->alt : r_storage->s;
   int ret_val = rados_storage->stat_mail(*rmail->rados_mail->get_oid(), &object_size, &save_date_rados);
   if (ret_val < 0) {
     if (ret_val != -ENOENT) {
@@ -324,7 +335,9 @@ int rbox_mail_get_virtual_size(struct mail *_mail, uoff_t *size_r) {
     FUNC_END_RET("ret == -1; mail_object == nullptr ");
     return -1;
   }
-  librmb::RadosUtils::get_metadata(rbox_metadata_key::RBOX_METADATA_VIRTUAL_SIZE, rmail->rados_mail->get_metadata(),
+  storage_interface::RadosUtils *rados_utils=
+    storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
+  rados_utils->get_metadata(rbox_metadata_key::RBOX_METADATA_VIRTUAL_SIZE, rmail->rados_mail->get_metadata(),
                                    &value);
 
   if (value == NULL) {
@@ -356,12 +369,18 @@ int rbox_mail_get_virtual_size(struct mail *_mail, uoff_t *size_r) {
             oid.c_str());
     ret = -1;
   }
-  librmb::RadosMetadata metadata_phy(rbox_metadata_key::RBOX_METADATA_VIRTUAL_SIZE, data->virtual_size);
+  storage_interface::RadosMetadata *metadata_phy=
+    storage_engine::StorageBackendFactory::create_metadata_uint(
+      storage_engine::StorageBackendFactory::CEPH, rbox_metadata_key::RBOX_METADATA_VIRTUAL_SIZE, data->virtual_size);
   rmail->rados_mail->add_metadata(metadata_phy);
 
   if (value != NULL && free_value) {
     i_free(value);
   }
+  delete metadata_phy;
+  metadata_phy=nullptr;
+  delete rados_utils;
+  rados_utils=nullptr;
   return ret;
 }
 
@@ -383,8 +402,9 @@ static int rbox_mail_get_physical_size(struct mail *_mail, uoff_t *size_r) {
     FUNC_END_RET("ret == -1; mail_object == nullptr ");
     return -1;
   }
-
-  librmb::RadosUtils::get_metadata(rbox_metadata_key::RBOX_METADATA_PHYSICAL_SIZE, rmail->rados_mail->get_metadata(),
+  storage_interface::RadosUtils *rados_utils=
+    storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
+  rados_utils->get_metadata(rbox_metadata_key::RBOX_METADATA_PHYSICAL_SIZE, rmail->rados_mail->get_metadata(),
                                    &value);
 
   if (value == NULL) {
@@ -414,7 +434,8 @@ static int rbox_mail_get_physical_size(struct mail *_mail, uoff_t *size_r) {
   if (value != NULL && free_value) {
     i_free(value);
   }
-
+  delete rados_utils;
+  rados_utils = nullptr;
   FUNC_END();
   return ret;
 }
@@ -454,7 +475,7 @@ static int rbox_mail_get_stream(struct mail *_mail, bool get_body ATTR_UNUSED, s
       return -1;
     }
     
-    librmb::RadosStorage *rados_storage = alt_storage ? ((struct rbox_storage *)_mail->box->storage)->alt
+    storage_interface::RadosStorage *rados_storage = alt_storage ? ((struct rbox_storage *)_mail->box->storage)->alt
                                                       : ((struct rbox_storage *)_mail->box->storage)->s;
     if (alt_storage) {
       rados_storage->set_namespace(rados_storage->get_namespace());

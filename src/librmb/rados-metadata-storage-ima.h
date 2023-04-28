@@ -18,10 +18,11 @@
 #include <string>
 #include <map>
 
-#include "rados-ceph-config.h"
-#include "rados-dovecot-ceph-cfg.h"
-#include "rados-metadata-storage-module.h"
-#include"rbox-io-ctx.h"
+#include "../storage-interface/rados-ceph-config.h"
+#include "../storage-interface/rados-dovecot-ceph-cfg.h"
+#include "../storage-interface/rados-metadata-storage-module.h"
+#include "../storage-interface/rados-mail.h"
+#include "../storage-interface/rbox-io-ctx.h"
 namespace librmb {
 /**
  *  All immutable mail attributes are saved in one rados
@@ -32,20 +33,20 @@ namespace librmb {
  * immutable value.
  *
  */
-class RadosMetadataStorageIma : public RadosStorageMetadataModule {
+class RadosMetadataStorageIma : public storage_interface::RadosStorageMetadataModule {
  private:
-  int parse_attribute(RadosMail *mail, json_t *root);
+  int parse_attribute(storage_interface::RadosMail *mail, json_t *root);
 
  public:
-  RadosMetadataStorageIma(librmb::RboxIoCtx &io_ctx_wrapper, RadosDovecotCephCfg *cfg_);
+  RadosMetadataStorageIma(storage_interface::RboxIoCtx *io_ctx_wrapper, storage_interface::RadosDovecotCephCfg *cfg_);
   virtual ~RadosMetadataStorageIma();
-  void set_io_ctx(librmb::RboxIoCtx &io_ctx_wrapper) override { this->io_ctx_wrapper = &io_ctx_wrapper; }
-  int load_metadata(RadosMail *mail) override;
-  int set_metadata(RadosMail *mail, RadosMetadata &xattr) override;
-  bool update_metadata(const std::string &oid, std::list<RadosMetadata> &to_update) override;
-  void save_metadata(librados::ObjectWriteOperation *write_op, RadosMail *mail);
+  void set_io_ctx(storage_interface::RboxIoCtx *io_ctx_wrapper) override { this->io_ctx_wrapper = io_ctx_wrapper; }
+  int load_metadata(storage_interface::RadosMail *mail) override;
+  int set_metadata(storage_interface::RadosMail *mail, storage_interface::RadosMetadata *xattr) override;
+  bool update_metadata(const std::string &oid, std::list<storage_interface::RadosMetadata*> &to_update) override;
+  void save_metadata(librados::ObjectWriteOperation *write_op, storage_interface::RadosMail *mail);
 
-  int update_keyword_metadata(const std::string &oid, RadosMetadata *metadata) override;
+  int update_keyword_metadata(const std::string &oid, storage_interface::RadosMetadata *metadata) override;
   int remove_keyword_metadata(const std::string &oid, std::string &key) override;
   int load_keyword_metadata(const std::string &oid, std::set<std::string> &keys,
                             std::map<std::string, ceph::bufferlist> *metadata) override;
@@ -55,8 +56,8 @@ class RadosMetadataStorageIma : public RadosStorageMetadataModule {
   static std::string keyword_key;
 
  private:
-  librmb::RboxIoCtx *io_ctx_wrapper;
-  RadosDovecotCephCfg *cfg;
+  storage_interface::RboxIoCtx *io_ctx_wrapper;
+  storage_interface::RadosDovecotCephCfg *cfg;
 };
 
 } /* namespace librmb */

@@ -21,21 +21,27 @@
 
 #include <limits>
 
-#include "../../rados-cluster.h"
+#include "../../../storage-interface/rados-cluster.h"
 #include "../../rados-cluster-impl.h"
-#include "../../rados-mail.h"
-#include "../../rados-storage.h"
+#include "../../../storage-interface/rados-mail.h"
+#include "../../../storage-interface/rados-storage.h"
 #include "../../rados-storage-impl.h"
 #include "../../rados-metadata-storage-ima.h"
-#include "../../rados-metadata-storage-module.h"
-#include "ls_cmd_parser.h"
-#include "mailbox_tools.h"
-#include "rados-util.h"
-#include "rados-namespace-manager.h"
-#include "rados-dovecot-ceph-cfg.h"
-#include "rados-dovecot-ceph-cfg-impl.h"
-#include "rados-metadata-storage-default.h"
-#include "rmb-commands.h"
+#include "../../../storage-interface/rados-metadata-storage-module.h"
+#include "../../../storage-interface/tools/rmb/ls_cmd_parser.h"
+#include "../../tools/rmb/ls_cmd_parser_impl.h"
+#include "../../../storage-interface/tools/rmb/mailbox_tools.h"
+#include "../../../storage-interface/rados-util.h"
+#include "../../rados-namespace-manager-impl.h"
+#include "../../../storage-interface/rados-dovecot-ceph-cfg.h"
+#include "../../rados-dovecot-ceph-cfg-impl.h"
+#include "../../rados-metadata-storage-default.h"
+#include "../../../storage-interface/tools/rmb/rmb-commands.h"
+#include "../../tools/rmb/rmb-commands-impl.h"
+#include "../../../storage-interface/rados-save-log.h"
+#include "../../../storage-interface/rados-ceph-config.h"
+#include "../../rados-ceph-config-impl.h"
+
 #undef PACKAGE_BUGREPORT
 #undef PACKAGE_NAME
 #undef PACKAGE_STRING
@@ -201,7 +207,7 @@ __attribute__((noreturn)) static void usage_exit() {
   exit(1);
 }
 
-static void release_exit(std::list<librmb::RadosMail *> *mail_objects, librmb::RadosCluster *cluster, bool show_usage) {
+static void release_exit(std::list<storage_interface::RadosMail *> *mail_objects, storage_interface::RadosCluster *cluster, bool show_usage) {
   if (mail_objects != nullptr) {
     for (auto mo : *mail_objects) {
       delete mo;
@@ -282,13 +288,14 @@ static void parse_cmd_line_args(std::map<std::string, std::string> *opts, bool &
 }
 
 int main(int argc, const char **argv) {
-  std::list<librmb::RadosMail *> mail_objects;
+  std::list<storage_interface::RadosMail *> mail_objects;
   std::vector<const char *> args;
 
   std::map<std::string, std::string> opts;
   std::map<std::string, std::string> metadata;
   std::string sort_type;
-  librmb::RmbCommands *rmb_commands = nullptr;
+  storage_interface::RmbCommands *rmb_commands = nullptr;
+  storage_interface::RmbCommands *temp_rmb_commands= new librmb::RmbCommandsImpl();
 
   bool is_config_option = false;
   bool create_config = false;
@@ -323,8 +330,14 @@ int main(int argc, const char **argv) {
 
   if (!remove_save_log.empty()) {
     if (confirmed) {
-      std::map<std::string, std::list<librmb::RadosSaveLogEntry>> moved_items;
-      return librmb::RmbCommands::delete_with_save_log(remove_save_log, rados_cluster, rados_user, &moved_items);
+      std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>> moved_items;
+      int ret= temp_rmb_commands->delete_with_save_log(remove_save_log, rados_cluster, rados_user, &moved_items);
+      std::map<std::string, std::list<storage_interface::RadosSaveLogEntry*>>::iterator it=moved_items.begin();
+      for(std::list<storage_interface::RadosSaveLogEntry*>::iterator iter = it->second.begin();iter != it->second.end(); ++iter){
+        delete *iter;
+        *iter=nullptr;
+      }
+      return ret;
     } else {
       std::cout << "WARNING:" << std::endl;
       std::cout << "Performing this command, will delete all mail objects from ceph object store which are "
@@ -338,9 +351,10 @@ int main(int argc, const char **argv) {
   std::string pool_name(opts.find("pool") == opts.end() ? "mail_storage" : opts["pool"]);
 
   if (is_lspools_cmd) {
-    return librmb::RmbCommands::lspools();
+    return temp_rmb_commands->lspools();
   }
-
+  delete temp_rmb_commands;
+  temp_rmb_commands=nullptr;
   librmb::RadosClusterImpl cluster;
   librmb::RadosStorageImpl storage(&cluster);
   int open_connection = storage.open_connection(pool_name, rados_cluster, rados_user);
@@ -351,15 +365,15 @@ int main(int argc, const char **argv) {
   }
 
   // initialize configuration
-  librmb::RadosCephConfig ceph_cfg(&storage.get_io_ctx());
+  storage_interface::RadosCephConfig *ceph_cfg=new librmb::RadosCephConfigImpl(&storage.get_io_ctx());
   // set config object
-  config_obj = opts.find("cfg_obj") != opts.end() ? opts["cfg_obj"] : ceph_cfg.get_cfg_object_name();
-  ceph_cfg.set_cfg_object_name(config_obj);
+  config_obj = opts.find("cfg_obj") != opts.end() ? opts["cfg_obj"] : ceph_cfg->get_cfg_object_name();
+  ceph_cfg->set_cfg_object_name(config_obj);
 
-  int ret_load_cfg = ceph_cfg.load_cfg();
+  int ret_load_cfg = ceph_cfg->load_cfg();
   if (ret_load_cfg < 0) {
     if (create_config) {
-      if (ceph_cfg.save_cfg() < 0) {
+      if (ceph_cfg->save_cfg() < 0) {
         std::cerr << "loading config object failed " << std::endl;
       } else {
         std::cout << "config created" << std::endl;
@@ -375,12 +389,13 @@ int main(int argc, const char **argv) {
   }
 
   // connection to rados is established!
-  rmb_commands = new librmb::RmbCommands(&storage, &cluster, &opts);
+  rmb_commands =new librmb::RmbCommandsImpl(&storage, &cluster, &opts);
   if (is_config_option) {
     if (rmb_commands->configuration(confirmed, ceph_cfg) < 0) {
       std::cerr << "error processing config option" << std::endl;
     }
     delete rmb_commands;
+    delete ceph_cfg;
     // tear down.
     release_exit(nullptr, &cluster, false);
     exit(0);
@@ -393,18 +408,19 @@ int main(int argc, const char **argv) {
 
   std::string uid;
   // load metadata configuration
-  librmb::RadosStorageMetadataModule *ms = rmb_commands->init_metadata_storage_module(ceph_cfg, &uid);
+  storage_interface::RadosStorageMetadataModule *ms = rmb_commands->init_metadata_storage_module(ceph_cfg, &uid);
   if (ms == nullptr) {
     /// error exit!
     std::cerr << " Error initializing metadata module " << std::endl;
     delete rmb_commands;
+    delete ceph_cfg;
     release_exit(&mail_objects, &cluster, false);
     exit(0);
   }
 
   if (delete_mail_option) {
     if (opts["to_delete"].size() == 1 && opts["to_delete"].compare("-") == 0) {
-      if (rmb_commands->delete_namespace(ms, mail_objects, &ceph_cfg, confirmed) < 0) {
+      if (rmb_commands->delete_namespace(ms, mail_objects, ceph_cfg, confirmed) < 0) {
         std::cerr << "error deleting namespace " << std::endl;
         release_exit(&mail_objects, &cluster, false);
       }
@@ -416,14 +432,15 @@ int main(int argc, const char **argv) {
     release_exit(&mail_objects, &cluster, false);
     delete rmb_commands;
     delete ms;
+    delete ceph_cfg;
     exit(0);
 
   } else if (rename_user_option) {
-    if (rmb_commands->rename_user(&ceph_cfg, confirmed, uid) < 0) {
+    if (rmb_commands->rename_user(ceph_cfg, confirmed, uid) < 0) {
       std::cerr << "error renaming user" << std::endl;
     }
   } else if (opts.find("ls") != opts.end()) {
-    librmb::CmdLineParser parser(opts["ls"]);
+    librmb::CmdLineParserImpl parser(opts["ls"]);
     if (opts["ls"].compare("all") == 0 || opts["ls"].compare("-") == 0 || parser.parse_ls_string()) {
       rmb_commands->load_objects(ms, mail_objects, sort_type);
       rmb_commands->query_mail_storage(&mail_objects, &parser, false, false);
@@ -432,7 +449,7 @@ int main(int argc, const char **argv) {
                 << std::endl;
     }
   } else if (opts.find("get") != opts.end()) {
-    librmb::CmdLineParser parser(opts["get"]);
+    librmb::CmdLineParserImpl parser(opts["get"]);
 
     rmb_commands->set_output_path(&parser);
 
@@ -447,6 +464,7 @@ int main(int argc, const char **argv) {
 
   delete rmb_commands;
   delete ms;
+  delete ceph_cfg;
 
   // tear down.
   release_exit(&mail_objects, &cluster, false);

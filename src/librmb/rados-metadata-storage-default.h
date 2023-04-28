@@ -15,8 +15,10 @@
 #include <map>
 #include <string>
 #include <set>
-#include "rados-metadata-storage-module.h"
-#include "rbox-io-ctx.h"
+#include "../storage-interface/rados-metadata-storage-module.h"
+#include "../storage-interface/rados-mail.h"
+#include "../storage-interface/rados-metadata.h"
+#include "../storage-interface/rbox-io-ctx.h"
 
 namespace librmb {
 /**
@@ -25,17 +27,17 @@ namespace librmb {
  * Each metadata attribute is saved as single xattribute.io_ctx_wrapper_wrapper
  *
  */
-class RadosMetadataStorageDefault : public RadosStorageMetadataModule {
+class RadosMetadataStorageDefault : public storage_interface::RadosStorageMetadataModule {
  public:
-  explicit RadosMetadataStorageDefault(librmb::RboxIoCtx &io_ctx_wrapper);
+  explicit RadosMetadataStorageDefault(storage_interface::RboxIoCtx *io_ctx_wrapper);
   virtual ~RadosMetadataStorageDefault();
-  void set_io_ctx(librmb::RboxIoCtx &io_ctx_wrapper) override { this->io_ctx_wrapper =&io_ctx_wrapper; }
+  void set_io_ctx(storage_interface::RboxIoCtx *io_ctx_wrapper) override { this->io_ctx_wrapper =io_ctx_wrapper; }
 
-  int load_metadata(RadosMail *mail) override;
-  int set_metadata(RadosMail *mail, RadosMetadata &xattr) override;
-  bool update_metadata(const std::string &oid, std::list<RadosMetadata> &to_update) override;
-  void save_metadata(librados::ObjectWriteOperation *write_op, RadosMail *mail);
-  int update_keyword_metadata(const std::string &oid, RadosMetadata *metadata) override;
+  int load_metadata(storage_interface::RadosMail *mail) override;
+  int set_metadata(storage_interface::RadosMail *mail, storage_interface::RadosMetadata *xattr) override;
+  bool update_metadata(const std::string &oid, std::list<storage_interface::RadosMetadata*> &to_update) override;
+  void save_metadata(librados::ObjectWriteOperation *write_op, storage_interface::RadosMail *mail);
+  int update_keyword_metadata(const std::string &oid, storage_interface::RadosMetadata *metadata) override;
   int remove_keyword_metadata(const std::string &oid, std::string &key) override;
   int load_keyword_metadata(const std::string &oid, std::set<std::string> &keys,
                             std::map<std::string, ceph::bufferlist> *metadata) override;
@@ -44,7 +46,7 @@ class RadosMetadataStorageDefault : public RadosStorageMetadataModule {
   static std::string module_name;
 
  private:
-  librmb::RboxIoCtx *io_ctx_wrapper;
+  storage_interface::RboxIoCtx *io_ctx_wrapper;
 };
 
 } /* namespace librmb */

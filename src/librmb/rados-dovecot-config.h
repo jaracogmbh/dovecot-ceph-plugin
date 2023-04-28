@@ -15,7 +15,7 @@
 #include <map>
 #include <string>
 
-#include "rados-types.h"
+#include "../storage-interface/rados-types.h"
 
 namespace librmb {
 /**
@@ -76,7 +76,7 @@ class RadosConfig {
   std::string to_string();
 
  private:
-  bool string_contains_key(const std::string &str, enum rbox_metadata_key key);
+  bool string_contains_key(const std::string &str, storage_interface::rbox_metadata_key key);
 
  private:
   std::map<std::string, std::string> config;

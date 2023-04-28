@@ -10,17 +10,18 @@
  */
 
 #include "rados-metadata-storage-default.h"
-#include "rados-util.h"
+#include "rados-util-impl.h"
 #include <utility>
+#include "../storage-interface/rados-mail.h"
 namespace librmb {
 
 std::string RadosMetadataStorageDefault::module_name = "default";
 
-RadosMetadataStorageDefault::RadosMetadataStorageDefault(librmb::RboxIoCtx &io_ctx_wrapper) { this->io_ctx_wrapper = &io_ctx_wrapper; }
+RadosMetadataStorageDefault::RadosMetadataStorageDefault(storage_interface::RboxIoCtx *io_ctx_wrapper) { this->io_ctx_wrapper = io_ctx_wrapper; }
 
 RadosMetadataStorageDefault::~RadosMetadataStorageDefault() {}
 
-int RadosMetadataStorageDefault::load_metadata(RadosMail *mail) {
+int RadosMetadataStorageDefault::load_metadata(storage_interface::RadosMail *mail) {
   int ret = -1;
   if (mail == nullptr) {
     return ret;
@@ -31,23 +32,24 @@ int RadosMetadataStorageDefault::load_metadata(RadosMail *mail) {
   ret = io_ctx_wrapper->getxattrs(*mail->get_oid(), *mail->get_metadata());
 
   if (ret >= 0) {
-    ret = RadosUtils::get_all_keys_and_values(&io_ctx_wrapper->get_io_ctx(), *mail->get_oid(), mail->get_extended_metadata());
+    librmb::RadosUtilsImpl rados_utils;
+    ret = rados_utils.get_all_keys_and_values(&io_ctx_wrapper->get_io_ctx(), *mail->get_oid(), mail->get_extended_metadata());
   }
   return ret;
 }
-int RadosMetadataStorageDefault::set_metadata(RadosMail *mail, RadosMetadata &xattr) {
+int RadosMetadataStorageDefault::set_metadata(storage_interface::RadosMail *mail, storage_interface::RadosMetadata *xattr) {
   if(mail->get_metadata()->size()==0){
     mail->add_metadata(xattr);
-    return io_ctx_wrapper->setxattr(*mail->get_oid(), xattr.key.c_str(), xattr.bl);
+    return io_ctx_wrapper->setxattr(*mail->get_oid(), xattr->get_key().c_str(), xattr->get_buffer());
   }else{
     librados::ObjectWriteOperation write_op_xattr;
     save_metadata(&write_op_xattr,mail);
     return io_ctx_wrapper->operate(*mail->get_oid(), &write_op_xattr);
   }
 }
-void RadosMetadataStorageDefault::save_metadata(librados::ObjectWriteOperation *write_op, RadosMail *mail) {
+void RadosMetadataStorageDefault::save_metadata(librados::ObjectWriteOperation *write_op, storage_interface::RadosMail *mail) {
   // update metadata
-  for (std::map<string, ceph::bufferlist>::iterator it = mail->get_metadata()->begin();
+  for (std::map<std::string, ceph::bufferlist>::iterator it = mail->get_metadata()->begin();
        it != mail->get_metadata()->end(); ++it) {
     write_op->setxattr((*it).first.c_str(), (*it).second);
   }
@@ -55,13 +57,13 @@ void RadosMetadataStorageDefault::save_metadata(librados::ObjectWriteOperation *
     write_op->omap_set(*mail->get_extended_metadata());
   }
 }
-bool RadosMetadataStorageDefault::update_metadata(const std::string &oid, std::list<RadosMetadata> &to_update) {
+bool RadosMetadataStorageDefault::update_metadata(const std::string &oid, std::list<storage_interface::RadosMetadata*> &to_update) {
   librados::ObjectWriteOperation write_op;
   librados::AioCompletion *completion = librados::Rados::aio_create_completion();
 
   // update metadata
-  for (std::list<RadosMetadata>::iterator it = to_update.begin(); it != to_update.end(); ++it) {
-    write_op.setxattr((*it).key.c_str(), (*it).bl);
+  for (std::list<storage_interface::RadosMetadata*>::iterator it = to_update.begin(); it != to_update.end(); ++it) {
+    write_op.setxattr((*it)->get_key().c_str(), (*it)->get_buffer());
   }
 
   int ret = io_ctx_wrapper->aio_operate(oid, completion, &write_op);
@@ -69,11 +71,11 @@ bool RadosMetadataStorageDefault::update_metadata(const std::string &oid, std::l
   completion->release();
   return ret == 0;
 }
-int RadosMetadataStorageDefault::update_keyword_metadata(const std::string &oid, RadosMetadata *metadata) {
+int RadosMetadataStorageDefault::update_keyword_metadata(const std::string &oid, storage_interface::RadosMetadata *metadata) {
   int ret = -1;
   if (metadata != nullptr) {
     std::map<std::string, librados::bufferlist> map;
-    map.insert(std::pair<string, librados::bufferlist>(metadata->key, metadata->bl));
+    map.insert(std::pair<std::string, librados::bufferlist>(metadata->get_key(), metadata->get_buffer()));
     ret = io_ctx_wrapper->omap_set(map,oid);
   }
   return ret;

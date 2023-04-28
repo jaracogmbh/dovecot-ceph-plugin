@@ -23,18 +23,21 @@ extern "C" {
 #include "ostream-private.h"
 #include "debug-helper.h"
 }
-#include "../librmb/rados-mail.h"
+#include "../storage-interface/rados-mail.h"
 #include "rbox-storage.hpp"
 #include "rbox-mail.h"
 #include "rbox-save.h"
 #include "rbox-sync.h"
 #include "rbox-copy.h"
-#include "rados-util.h"
+#include "../storage-interface/rados-util.h"
+#include "../storage-engine/storage-backend-factory.h"
+#include "../storage-interface/rados-metadata.h"
 
 const char *SETTINGS_RBOX_UPDATE_IMMUTABLE = "rbox_update_immutable";
 const char *SETTINGS_DEF_UPDATE_IMMUTABLE = "false";
 
-using librmb::rbox_metadata_key;
+using storage_interface::rbox_metadata_key;
+using storage_engine::StorageBackendFactory;
 
 int rbox_mail_storage_copy(struct mail_save_context *ctx, struct mail *mail);
 
@@ -105,7 +108,7 @@ static int rbox_mail_save_copy_default_metadata(struct mail_save_context *ctx, s
   return 0;
 }
 
-static void set_mailbox_metadata(struct mail_save_context *ctx, std::list<librmb::RadosMetadata> *metadata_update) {
+static void set_mailbox_metadata(struct mail_save_context *ctx, std::list<storage_interface::RadosMetadata*> *metadata_update) {
   {
     FUNC_START();
     struct mailbox *dest_mbox = ctx->transaction->box;
@@ -115,17 +118,22 @@ static void set_mailbox_metadata(struct mail_save_context *ctx, std::list<librmb
     struct rbox_mailbox *dest_rbox = (struct rbox_mailbox *)(dest_mbox);
 
     // #130 always update Mailbox guid, in case we need to resync the mailbox!
-    librmb::RadosMetadata metadata_mailbox_guid(rbox_metadata_key::RBOX_METADATA_MAILBOX_GUID,
-                                                guid_128_to_string(dest_rbox->mailbox_guid));
+    storage_interface::RadosMetadata *metadata_mailbox_guid=
+      StorageBackendFactory::create_metadata_string(
+        StorageBackendFactory::CEPH, rbox_metadata_key::RBOX_METADATA_MAILBOX_GUID, guid_128_to_string(dest_rbox->mailbox_guid));
     metadata_update->push_back(metadata_mailbox_guid);
 
-    librmb::RadosMetadata metadata_mbn(rbox_metadata_key::RBOX_METADATA_RECEIVED_TIME, ctx->data.received_date);
+    storage_interface::RadosMetadata *metadata_mbn=
+      StorageBackendFactory::create_metadata_time(
+        StorageBackendFactory::CEPH, rbox_metadata_key::RBOX_METADATA_RECEIVED_TIME, ctx->data.received_date);
     metadata_update->push_back(metadata_mbn);        
     
     if (r_storage->config->is_update_attributes()) {
       if (r_storage->config->is_updateable_attribute(rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX)) {
         // updates the plain text mailbox name
-        librmb::RadosMetadata metadata_mbn(rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, dest_rbox->box.name);
+        storage_interface::RadosMetadata *metadata_mbn=
+          StorageBackendFactory::create_metadata_char(
+            StorageBackendFactory::CEPH, rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, dest_rbox->box.name);
         metadata_update->push_back(metadata_mbn);
       }
     }
@@ -177,12 +185,12 @@ static void mail_copy_set_failed(struct mail_save_context *ctx, struct mail *mai
   errstr = mail_storage_get_last_error(mail->box->storage, &error);
   mail_storage_set_error(ctx->transaction->box->storage, error, t_strdup_printf("%s (%s)", errstr, func));
 }
-static int copy_mail(struct mail_save_context *ctx, librmb::RadosStorage *rados_storage, struct rbox_mail *rmail,
+static int copy_mail(struct mail_save_context *ctx, storage_interface::RadosStorage *rados_storage, struct rbox_mail *rmail,
                      const std::string *ns_src, const std::string *ns_dest) {
   struct rbox_save_context *r_ctx = (struct rbox_save_context *)ctx;
   struct rbox_storage *r_storage = (struct rbox_storage *)&r_ctx->mbox->storage->storage;
 
-  std::list<librmb::RadosMetadata> metadata_update;
+  std::list<storage_interface::RadosMetadata*> metadata_update;
   std::string src_oid = *rmail->rados_mail->get_oid();
 
   setup_mail_object(ctx);
@@ -217,8 +225,15 @@ static int copy_mail(struct mail_save_context *ctx, librmb::RadosStorage *rados_
 
   rbox_add_to_index(ctx);
   if (r_storage->save_log->is_open()) {
-    r_storage->save_log->append(librmb::RadosSaveLogEntry(dest_oid, *ns_dest, rados_storage->get_pool_name(),
-                                                          librmb::RadosSaveLogEntry::op_cpy()));
+    storage_interface::RadosSaveLogEntry *save_log_entry=
+      storage_engine::StorageBackendFactory::create_save_log_entry_default(storage_engine::StorageBackendFactory::CEPH);
+
+    r_storage->save_log->append(storage_engine::StorageBackendFactory::create_save_log_entry(
+      storage_engine::StorageBackendFactory::CEPH,
+        dest_oid, *ns_dest, rados_storage->get_pool_name(),
+          save_log_entry->op_cpy()));
+    delete save_log_entry;
+    save_log_entry=nullptr;      
   }
 #ifdef DEBUG
   i_debug("copy successfully finished: from src %s to oid = %s", src_oid.c_str(), dest_oid.c_str());
@@ -261,7 +276,7 @@ static int rbox_mail_storage_try_copy(struct mail_save_context **_ctx, struct ma
       return -1;
     }
 
-    librmb::RadosStorage *rados_storage = !from_alt_storage ? r_storage->s : r_storage->alt;
+    storage_interface::RadosStorage *rados_storage = !from_alt_storage ? r_storage->s : r_storage->alt;
   
     if (copy_mail(ctx, rados_storage, rmail, &ns_src, &ns_dest) < 0) {
       FUNC_END_RET("ret == -1, copy mail failed");

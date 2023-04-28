@@ -43,7 +43,7 @@ extern "C" {
 #include "rbox-save.h"
 
 #include "../mocks/mock_test.h"
-#include "rados-util.h"
+#include "../../librmb/rados-util-impl.h"
 
 using ::testing::_;
 using ::testing::AtLeast;
@@ -103,8 +103,8 @@ TEST_F(StorageTest, ParseLsByPoolOutput) {
   10.1e      593         0          0        0     848897            0           0  1413  active+clean    20h   3641'19318   3656:51479  [1,3,4]p1  [1,3,4]p1  2022-09-12T22:13:27.455449+0000  2022-09-12T22:13:27.455449+0000\n\
   10.1f      589         0          0        0     827645            0           0  1288  active+clean    13h   3641'20726   3656:53355  [2,4,1]p2  [2,4,1]p2  2022-09-13T05:09:00.823199+0000  2022-09-07T23:42:54.081441+0000\n\
   last row.....";
-
-  std::vector<std::string> list = librmb::RadosUtils::extractPgs(lsByPoolOutPut);
+  librmb::RadosUtilsImpl rados_utils;
+  std::vector<std::string> list = rados_utils.extractPgs(lsByPoolOutPut);
     
   /*for (auto const &token: list) {
         std::cout << token << std::endl;        
@@ -150,11 +150,11 @@ TEST_F(StorageTest, scanForPg) {
       "mon command outbl: PG     OBJECTS  DEGRADED  MISPLACED  UNFOUND  BYTES      OMAP_BYTES*  OMAP_KEYS*  LOG   STATE         SINCE  VERSION      REPORTED     UP         ACTING     SCRUB_STAMP                      DEEP_SCRUB_STAMP\n";
 
   const std::string row ="10.0       568         0          0        0     841115            0           0  1165  active+clean    26h   3641'18906   3656:51938  [3,1,4]p3  [3,1,4]p3  2022-09-12T15:41:31.269234+0000  2022-09-12T15:41:31.269234+0000\n";
-
-  std::vector<std::string> list = librmb::RadosUtils::split(row,' ');
+  librmb::RadosUtilsImpl rados_utils;
+  std::vector<std::string> list = rados_utils.split(row,' ');
   EXPECT_EQ(17,list.size());
 
-  std::vector<std::string> list2= librmb::RadosUtils::split(header,' ');
+  std::vector<std::string> list2= rados_utils.split(header,' ');
   EXPECT_EQ(20,list2.size());
 
 }
@@ -194,8 +194,8 @@ TEST_F(StorageTest, extractPrimaryOsd) {
     10.1d      607         0          0        0  191148409            0           0  1271  active+clean    26h   3641'19526   3656:51525  [2,1,3]p2  [2,1,3]p2  2022-09-12T16:25:02.581960+0000  2022-09-12T16:25:02.581960+0000\n\
     10.1e      593         0          0        0     848897            0           0  1413  active+clean    20h   3641'19318   3656:51479  [1,3,4]p1  [1,3,4]p1  2022-09-12T22:13:27.455449+0000  2022-09-12T22:13:27.455449+0000\n\
     10.1f      589         0          0        0     827645            0           0  1288  active+clean    13h   3641'20726   3656:53355  [2,4,1]p2  [2,4,1]p2  2022-09-13T05:09:00.823199+0000  2022-09-07T23:42:54.081441+0000\n";
-
-    std::map<std::string,std::vector<std::string>> list = librmb::RadosUtils::extractPgAndPrimaryOsd(lsByPoolOutPut);
+    librmb::RadosUtilsImpl rados_utils;
+    std::map<std::string,std::vector<std::string>> list = rados_utils.extractPgAndPrimaryOsd(lsByPoolOutPut);
       
     for (const auto& x : list)
     {
@@ -210,17 +210,17 @@ TEST_F(StorageTest, extractPrimaryOsd) {
 }
 
 TEST_F(StorageTest,create_read_index) {
-
+  librmb::RadosUtilsImpl rados_utils;
   std::set<std::string> test_mails;
   test_mails.insert("1");
   test_mails.insert("2");
   test_mails.insert("3");
   test_mails.insert("4");
   test_mails.insert("5");
-  std::string test_string = librmb::RadosUtils::convert_to_ceph_index(test_mails);
+  std::string test_string = rados_utils.convert_to_ceph_index(test_mails);
   EXPECT_EQ("1,2,3,4,5,",test_string);
 
-  std::set<std::string> test_mails_read = librmb::RadosUtils::ceph_index_to_set(test_string);
+  std::set<std::string> test_mails_read = rados_utils.ceph_index_to_set(test_string);
   EXPECT_EQ(5,test_mails_read.size());
   auto my_vect = std::vector<std::string>(test_mails_read.begin(), test_mails_read.end()); // O[n]
 
@@ -231,7 +231,7 @@ TEST_F(StorageTest,create_read_index) {
   EXPECT_EQ("5",my_vect[4]);
 
 
-  std::string test_string1 = librmb::RadosUtils::convert_to_ceph_index("abd");
+  std::string test_string1 = rados_utils.convert_to_ceph_index("abd");
   EXPECT_EQ("abd,",test_string1);
 }
 

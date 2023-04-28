@@ -42,7 +42,7 @@ extern "C" {
 #include "../test-utils/it_utils.h"
 #include "rbox-mail.h"
 #include "rbox-storage.h"
-#include "rados-util.h"
+#include "../../librmb/rados-util-impl.h"
 
 using ::testing::AtLeast;
 using ::testing::Return;
@@ -129,7 +129,8 @@ TEST_F(StorageTest, read_mail_from_alt_storage) {
       struct rbox_mailbox *mbox = (struct rbox_mailbox *)box;
       // MOVE TO ALT
       std::string oid = *r_mail->rados_mail->get_oid();
-      librmb::RadosUtils::move_to_alt(oid, mbox->storage->s, mbox->storage->alt, mbox->storage->ms, false);
+      librmb::RadosUtilsImpl rados_utils;
+      rados_utils.move_to_alt(oid, mbox->storage->s, mbox->storage->alt, mbox->storage->ms, false);
     }
 
     int ret2 = mail_get_stream(mail, &hdr_size, &body_size, &input);

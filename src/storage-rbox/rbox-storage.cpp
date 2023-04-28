@@ -34,21 +34,15 @@ extern "C" {
 }
 
 #include "rbox-mailbox-list-fs.h"
-
-#include "../librmb/rados-cluster-impl.h"
-#include "../librmb/rados-storage-impl.h"
-#include "../librmb/rados-namespace-manager.h"
-#include "../librmb/rados-dovecot-ceph-cfg-impl.h"
-#include "../librmb/rados-guid-generator.h"
-#include "../librmb/rados-metadata-storage-impl.h"
+#include "../storage-interface/rados-namespace-manager.h"
+#include "../storage-interface/rados-guid-generator.h"
+#include "../storage-engine/storage-backend-factory.h"
 
 #include "rbox-copy.h"
 #include "rbox-mail.h"
-#include "rados-types.h"
-#include "storage-backend-factory.h"
+#include "../storage-interface/rados-types.h"
 using std::string;
-using rbox::StorageBackendFactory;
-class RboxGuidGenerator : public librmb::RadosGuidGenerator {
+class RboxGuidGenerator : public storage_interface::RadosGuidGenerator {
  public:
   void generate_guid(std::string *guid_) override {
     guid_128_t namespace_guid;
@@ -70,20 +64,22 @@ struct mail_storage *rbox_storage_alloc(void) {
   r_storage->storage = rbox_storage;
   r_storage->storage.pool = pool;
   r_storage->cluster =
-    rbox::StorageBackendFactory::get_instance().create_cluster(rbox::StorageBackendFactory::CEPH);
+    storage_engine::StorageBackendFactory::create_cluster(storage_engine::StorageBackendFactory::CEPH);
   r_storage->s =
-    rbox::StorageBackendFactory::get_instance().create_storage(rbox::StorageBackendFactory::CEPH,r_storage->cluster);
+    storage_engine::StorageBackendFactory::create_storage(storage_engine::StorageBackendFactory::CEPH,r_storage->cluster); 
   r_storage->config =
-    rbox::StorageBackendFactory::get_instance().create_dovecot_ceph_cfg(rbox::StorageBackendFactory::CEPH,r_storage->s);
+    storage_engine::StorageBackendFactory::create_dovecot_ceph_cfg_io(
+      storage_engine::StorageBackendFactory::CEPH,&(r_storage->s->get_io_ctx_wrapper()->get_io_ctx()));
   r_storage->ns_mgr =
-    rbox::StorageBackendFactory::get_instance().create_namespace_manager(rbox::StorageBackendFactory::CEPH,r_storage->config);
+    storage_engine::StorageBackendFactory::create_namespace_manager(storage_engine::StorageBackendFactory::CEPH,r_storage->config);
   r_storage->ms =
-    rbox::StorageBackendFactory::get_instance().create_metadata_storage(rbox::StorageBackendFactory::CEPH);
+    storage_engine::StorageBackendFactory::create_metadata_storage(storage_engine::StorageBackendFactory::CEPH);
   r_storage->alt =
-    rbox::StorageBackendFactory::get_instance().create_storage(rbox::StorageBackendFactory::CEPH,r_storage->cluster);
+    storage_engine::StorageBackendFactory::create_storage(storage_engine::StorageBackendFactory::CEPH,r_storage->cluster); 
 
   // logfile is set when 90-plugin.conf param rados_save_cfg is evaluated.
-  r_storage->save_log = new librmb::RadosSaveLog();
+  r_storage->save_log = 
+    storage_engine::StorageBackendFactory::create_save_log_default(storage_engine::StorageBackendFactory::CEPH);
 
   FUNC_END();
   return &r_storage->storage;
@@ -439,7 +435,7 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
   struct rbox_mailbox *rbox = (struct rbox_mailbox *)box;
   struct rbox_storage *r_storage = (struct rbox_storage *)box->storage;
 
-  librmb::RadosStorage *rados_storage = rbox->storage->s;
+  storage_interface::RadosStorage *rados_storage = rbox->storage->s;
   if (!r_storage->config->is_config_valid()) {
     // initialize storage with plugin configuration
     read_plugin_configuration(box);
@@ -449,8 +445,8 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
   int ret = 0;
   try {
     rados_storage->set_ceph_wait_method(rbox->storage->config->is_ceph_aio_wait_for_safe_and_cb()
-                                            ? librmb::WAIT_FOR_SAFE_AND_CB
-                                            : librmb::WAIT_FOR_COMPLETE_AND_CB);
+                                            ? storage_interface::WAIT_FOR_SAFE_AND_CB
+                                            : storage_interface::WAIT_FOR_COMPLETE_AND_CB);
     /* open connection to primary and alternative storage */
     ret = rados_storage->open_connection(rbox->storage->config->get_pool_name(),
                                          rbox->storage->config->get_index_pool_name(), 
@@ -464,8 +460,8 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
                                                 rbox->storage->config->get_rados_username());
 
       rbox->storage->alt->set_ceph_wait_method(rbox->storage->config->is_ceph_aio_wait_for_safe_and_cb()
-                                                   ? librmb::WAIT_FOR_SAFE_AND_CB
-                                                   : librmb::WAIT_FOR_COMPLETE_AND_CB);
+                                                   ? storage_interface::WAIT_FOR_SAFE_AND_CB
+                                                   : storage_interface::WAIT_FOR_COMPLETE_AND_CB);
     }
   } catch (std::exception &e) {    
     i_error("Exception: setting up ceph connection: %s",e.what());
@@ -880,8 +876,8 @@ void rbox_notify_changes(struct mailbox *box) {
   FUNC_END();
 }
 
-int check_users_mailbox_delete_ns_object(struct mail_user *user, librmb::RadosDovecotCephCfg *config,
-                                         librmb::RadosNamespaceManager *ns_mgr, librmb::RadosStorage *storage) {
+int check_users_mailbox_delete_ns_object(struct mail_user *user, storage_interface::RadosDovecotCephCfg *config,
+                                         storage_interface::RadosNamespaceManager *ns_mgr, storage_interface::RadosStorage *storage) {
   FUNC_START();
   int ret = 0;
   struct mail_namespace *ns = mail_namespace_find_inbox(user->namespaces);

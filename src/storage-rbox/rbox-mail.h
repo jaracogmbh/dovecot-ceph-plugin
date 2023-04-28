@@ -14,7 +14,7 @@
 
 #include "index-mail.h"
 #include <rados/librados.hpp>
-#include "../librmb/rados-mail.h"
+#include "../storage-interface/rados-mail.h"
 
 /**
  * @brief: holds the rados mail object.
@@ -25,7 +25,7 @@ struct rbox_mail {
   guid_128_t index_guid;
   guid_128_t index_oid;
   /** refrence to rados mail object **/
-  librmb::RadosMail *rados_mail;
+  storage_interface::RadosMail *rados_mail;
   uint32_t last_seq;  // TODO(jrse): init with -1
 };
 extern void rbox_mail_set_expunged(struct rbox_mail *mail);

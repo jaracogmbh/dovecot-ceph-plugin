@@ -1,0 +1,104 @@
+// -*- mode:C++; tab-width:8; c-basic-offset:2; indent-tabs-mode:t -*-
+// vim: ts=8 sw=2 smarttab
+/*
+ * Copyright (c) 2017-2018 Tallence AG and the authors
+ *
+ * This is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License version 2.1, as published by the Free Software
+ * Foundation.  See file COPYING.
+ */
+
+#ifndef SRC_LIBRMB_RADOS_MAIL_IMPL_H_
+#define SRC_LIBRMB_RADOS_MAIL_IMPL_H_
+
+#include <string>
+#include <iostream>
+#include <sstream>
+#include <map>
+#include "../storage-interface/rados-metadata.h"
+#include "../storage-interface/rados-types.h"
+#include <rados/librados.hpp>
+#include "../storage-interface/rados-mail.h"
+
+namespace librmb {
+
+using std::map;
+using std::string;
+
+/**
+ * Rados mail object
+ *
+ * ceph mail representation.
+ *
+ */
+class RadosMailImpl : public storage_interface::RadosMail {
+ public:
+  RadosMailImpl();
+  virtual ~RadosMailImpl();
+  void set_oid(const char* _oid) override { this->oid = _oid; }
+  void set_oid(const string& _oid) override { this->oid = _oid; }
+  void set_mail_size(const int _size) override { object_size = _size; }
+  void set_rados_save_date(const time_t& _save_date) override { this->save_date_rados = _save_date; }
+  string* get_oid() override { return &this->oid; }
+  int get_mail_size() override { return this->object_size; }
+  time_t get_rados_save_date() override { return this->save_date_rados; }
+  uint8_t get_guid_ref() override { return *this->guid; }
+  
+  /*!
+   * @return ptr to internal buffer .
+   */
+  void set_mail_buffer(void* buffer) override { this->mail_buffer = buffer;}
+  void* get_mail_buffer() override { return this->mail_buffer;}
+  map<string, ceph::bufferlist>* get_metadata() override { return &this->attrset; }
+  bool is_index_ref() override { return index_ref; }
+  void set_index_ref(bool ref) override { this->index_ref = ref; }
+  bool is_valid() override { return valid; }
+  void set_valid(bool valid_) override { valid = valid_; }
+  
+  bool is_restored() override { return restored; }
+  void set_restored(bool restored_) override { restored = restored_; }
+  
+  bool is_lost_object() override { return lost_object; }
+  void set_lost_object(bool is_lost_object) override { lost_object = is_lost_object; }
+  string to_string(const string& padding) override;
+  void add_metadata(const storage_interface::RadosMetadata* metadata) override { attrset[metadata->get_key()] = metadata->get_buffer(); }
+  bool is_deprecated_uid() override {return deprecated_uid;}
+  void set_deprecated_uid(bool deprecated_uid_) override {deprecated_uid = deprecated_uid_;}
+  /*!
+   * Some metadata isn't saved as xattribute (default). To access those, get_extended_metadata can
+   * be used.
+   */
+  map<string, ceph::bufferlist>* get_extended_metadata() override { return &this->extended_attrset; }
+  /*!
+   * Save metadata to extended metadata store currently omap
+   * @param[in] metadata valid radosMetadata.
+   */
+  void add_extended_metadata(const storage_interface::RadosMetadata *metadata) override { extended_attrset[metadata->get_key()] = metadata->get_buffer(); }
+
+  const string get_extended_metadata(const string& key) override {
+    if (extended_attrset.find(key) != extended_attrset.end()) {
+      return extended_attrset[key].to_str();
+    }
+    return nullptr;
+  }
+
+ private:
+  string oid;
+  uint8_t guid[GUID_128_SIZE] = {};
+  int object_size;  // byte
+  void* mail_buffer;
+  time_t save_date_rados;
+
+  map<string, ceph::bufferlist> attrset;
+  map<string, ceph::bufferlist> extended_attrset;
+  bool valid;
+  bool index_ref;
+  bool deprecated_uid;
+  bool restored;
+  bool lost_object; // is this a lost object for re-sync.
+};
+
+}  // namespace librmb
+
+#endif  // SRC_LIBRMB_RADOS_MAIL_IMPL_H_

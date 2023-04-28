@@ -47,6 +47,8 @@ extern "C" {
 #include "rados-dovecot-ceph-cfg-impl.h"
 #include "../../storage-rbox/istream-bufferlist.h"
 #include "../../storage-rbox/ostream-bufferlist.h"
+#include "../../storage-engine/storage-backend-factory.h"
+#include "../../storage-interface/rados-mail.h"
 using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::Matcher;
@@ -103,7 +105,7 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
 
 
   librmb::RboxIoCtxImpl test_ioctx;
-  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(ReturnRef(test_ioctx));
+  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(Return(&test_ioctx));
 
   EXPECT_CALL(*storage_mock, set_ceph_wait_method(_)).Times(1);
 
@@ -124,9 +126,11 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
       .WillRepeatedly(Return(false));
 
 
-  librmb::RadosMail *test_obj = new librmb::RadosMail();
+  storage_interface::RadosMail *test_obj =
+   storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
   test_obj->set_mail_buffer(nullptr);
-  librmb::RadosMail *test_obj2 = new librmb::RadosMail();
+  storage_interface::RadosMail *test_obj2 =
+   storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
   test_obj2->set_mail_buffer(nullptr);
   EXPECT_CALL(*storage_mock, alloc_rados_mail()).Times(2).WillOnce(Return(test_obj)).WillOnce(Return(test_obj2));
   EXPECT_CALL(*storage_mock, free_rados_mail(_)).Times(2);
@@ -249,7 +253,7 @@ TEST_F(StorageTest, save_mail_success) {
 
   librmb::RboxIoCtxImpl io_ctx;
 
-  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(ReturnRef(io_ctx));
+  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(Return(&io_ctx));
 
   EXPECT_CALL(*storage_mock, set_ceph_wait_method(_)).Times(1);
 
@@ -269,9 +273,11 @@ TEST_F(StorageTest, save_mail_success) {
       .WillRepeatedly(Return(true));
 
   
-  librmb::RadosMail *test_obj = new librmb::RadosMail();
+  storage_interface::RadosMail *test_obj =
+    storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
   test_obj->set_mail_buffer(nullptr);
-  librmb::RadosMail *test_obj2 = new librmb::RadosMail();
+  storage_interface::RadosMail *test_obj2 =
+    storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
   test_obj2->set_mail_buffer(nullptr);
   EXPECT_CALL(*storage_mock, alloc_rados_mail()).Times(2).WillOnce(Return(test_obj)).WillOnce(Return(test_obj2));
   EXPECT_CALL(*storage_mock, free_rados_mail(_)).Times(2);

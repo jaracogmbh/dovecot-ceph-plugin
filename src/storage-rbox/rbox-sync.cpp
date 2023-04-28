@@ -21,10 +21,11 @@ extern "C" {
 #include "rbox-sync.h"
 #include "debug-helper.h"
 }
-#include "rados-util.h"
+#include "../storage-interface/rados-util.h"
 #include "rbox-storage.hpp"
 #include "rbox-mail.h"
 #include "rbox-sync-rebuild.h"
+#include "../storage-engine/storage-backend-factory.h"
 
 #define RBOX_REBUILD_COUNT 3
 
@@ -124,8 +125,12 @@ static int update_extended_metadata(struct rbox_sync_context *ctx, uint32_t seq1
           continue;
         }
         std::string key_value = keywords[keyword_idx];
-        librmb::RadosMetadata ext_metata(ext_key, key_value);
-        ret = r_storage->ms->get_storage()->update_keyword_metadata(key_oid, &ext_metata);
+        storage_interface::RadosMetadata *ext_metata=
+          storage_engine::StorageBackendFactory::create_metadata_str_key_val(
+            storage_engine::StorageBackendFactory::CEPH, ext_key, key_value);
+        ret = r_storage->ms->get_storage()->update_keyword_metadata(key_oid, ext_metata);
+        delete ext_metata;
+        ext_metata=nullptr;
       }
       if (ret < 0) {
         break;
@@ -151,7 +156,9 @@ static int move_to_alt(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t se
     guid_128_t index_oid;
     if (rbox_get_oid_from_index(ctx->sync_view, seq1, ((struct rbox_mailbox *)&ctx->rbox->box)->ext_id, &index_oid) >= 0) {
       std::string oid = guid_128_to_string(index_oid);
-      ret = librmb::RadosUtils::move_to_alt(oid, r_storage->s, r_storage->alt, r_storage->ms, inverse);
+      storage_interface::RadosUtils *rados_utils=
+        storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
+      ret = rados_utils->move_to_alt(oid, r_storage->s, r_storage->alt, r_storage->ms, inverse);
       if (ret >= 0) {
         if (inverse) {
           mail_index_update_flags(ctx->trans, seq1, MODIFY_REMOVE, (enum mail_flags)RBOX_INDEX_FLAG_ALT);
@@ -159,6 +166,8 @@ static int move_to_alt(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t se
           mail_index_update_flags(ctx->trans, seq1, MODIFY_ADD, (enum mail_flags)RBOX_INDEX_FLAG_ALT);
         }
       }
+      delete rados_utils;
+      rados_utils = nullptr;
     }
   }
   return ret;
@@ -196,16 +205,19 @@ static int update_flags(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t s
     if (rbox_get_oid_from_index(ctx->sync_view, seq1, ((struct rbox_mailbox *)box)->ext_id, &index_oid) >= 0) {
       const char *oid = guid_128_to_string(index_oid);
 
-      librmb::RadosMail mail_object;
-      mail_object.set_oid(oid);
-      if (r_storage->ms->get_storage()->load_metadata(&mail_object) < 0) {
+      storage_interface::RadosMail *mail_object=
+        storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+      mail_object->set_oid(oid);
+      if (r_storage->ms->get_storage()->load_metadata(mail_object) < 0) {
         i_error("update_flags: load_metadata failed! for %d, oid(%s)", seq1, oid);
         continue;
       }
       char *flags_metadata = NULL;
-      librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_OLDV1_FLAGS, mail_object.get_metadata(), &flags_metadata);
+      storage_interface::RadosUtils *rados_utils=
+        storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
+      rados_utils->get_metadata(storage_interface::RBOX_METADATA_OLDV1_FLAGS, mail_object->get_metadata(), &flags_metadata);
       uint8_t flags = 0x0;
-      if (librmb::RadosUtils::string_to_flags(flags_metadata, &flags)) {
+      if (rados_utils->string_to_flags(flags_metadata, &flags)) {
         if (add_flags != 0) {
           flags |= add_flags;
         }
@@ -213,15 +225,23 @@ static int update_flags(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t s
           flags &= ~remove_flags;
         }
         std::string str_flags_metadata;
-        if (librmb::RadosUtils::flags_to_string(flags, &str_flags_metadata)) {
-          librmb::RadosMetadata update(librmb::RBOX_METADATA_OLDV1_FLAGS, str_flags_metadata);
-          ret = r_storage->ms->get_storage()->set_metadata(&mail_object, update);
+        if (rados_utils->flags_to_string(flags, &str_flags_metadata)) {
+          storage_interface::RadosMetadata *update=
+            storage_engine::StorageBackendFactory::create_metadata_string(
+              storage_engine::StorageBackendFactory::CEPH, storage_interface::RBOX_METADATA_OLDV1_FLAGS, str_flags_metadata);
+          ret = r_storage->ms->get_storage()->set_metadata(mail_object, update);
           if (ret < 0) {
             i_warning("updating metadata for object : oid(%s), seq (%d) failed with ceph errorcode: %d",
-                      mail_object.get_oid()->c_str(), seq1, ret);
+                      mail_object->get_oid()->c_str(), seq1, ret);
           }
+          delete update;
+          update =nullptr;
         }
       }
+      delete mail_object;
+      mail_object=nullptr;
+      delete rados_utils;
+      rados_utils=nullptr;
     }
   }
   // reset metadata storage
@@ -284,9 +304,9 @@ static int rbox_sync_index(struct rbox_sync_context *ctx) {
           if (ret < 0) {
             i_error("Error moving seq (%d) to alt storage", seq1);
           }
-        } else if (r_storage->config->is_mail_attribute(librmb::RBOX_METADATA_OLDV1_FLAGS) &&
+        } else if (r_storage->config->is_mail_attribute(storage_interface::RBOX_METADATA_OLDV1_FLAGS) &&
                    r_storage->config->is_update_attributes() &&
-                   r_storage->config->is_updateable_attribute(librmb::RBOX_METADATA_OLDV1_FLAGS)) {
+                   r_storage->config->is_updateable_attribute(storage_interface::RBOX_METADATA_OLDV1_FLAGS)) {
           if (update_flags(ctx, seq1, seq2, sync_rec.add_flags, sync_rec.remove_flags) < 0) {
             i_error("Error updating flags seq (%d)", seq1);
           }
@@ -294,9 +314,9 @@ static int rbox_sync_index(struct rbox_sync_context *ctx) {
      
         break;
       case MAIL_INDEX_SYNC_TYPE_KEYWORD_ADD:
-        if (r_storage->config->is_mail_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS) &&
+        if (r_storage->config->is_mail_attribute(storage_interface::RBOX_METADATA_OLDV1_KEYWORDS) &&
             r_storage->config->is_update_attributes() &&
-            r_storage->config->is_updateable_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS)) {
+            r_storage->config->is_updateable_attribute(storage_interface::RBOX_METADATA_OLDV1_KEYWORDS)) {
           // sync_rec.keyword_idx;
           if (update_extended_metadata(ctx, seq1, seq2, sync_rec.keyword_idx, false) < 0) {
             return -1;
@@ -304,9 +324,9 @@ static int rbox_sync_index(struct rbox_sync_context *ctx) {
         }
         break;
       case MAIL_INDEX_SYNC_TYPE_KEYWORD_REMOVE:
-        if (r_storage->config->is_mail_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS) &&
+        if (r_storage->config->is_mail_attribute(storage_interface::RBOX_METADATA_OLDV1_KEYWORDS) &&
             r_storage->config->is_update_attributes() &&
-            r_storage->config->is_updateable_attribute(librmb::RBOX_METADATA_OLDV1_KEYWORDS)) {
+            r_storage->config->is_updateable_attribute(storage_interface::RBOX_METADATA_OLDV1_KEYWORDS)) {
           /* FIXME: should be bother calling sync_notify()? */
           // sync_rec.keyword_idx
           if (update_extended_metadata(ctx, seq1, seq2, sync_rec.keyword_idx, true) < 0) {
@@ -451,13 +471,13 @@ static int rbox_sync_object_expunge(struct rbox_sync_context *ctx, struct expung
     FUNC_END();
     return ret_remove;
   }
-  librmb::RadosStorage *rados_storage = item->alt_storage ? r_storage->alt : r_storage->s;
-  ret_remove = rados_storage->get_io_ctx_wrapper().get_io_ctx().remove(oid);
+  storage_interface::RadosStorage *rados_storage = item->alt_storage ? r_storage->alt : r_storage->s;
+  ret_remove = rados_storage->get_io_ctx_wrapper()->get_io_ctx().remove(oid);
   if (ret_remove < 0) {
     if(ret_remove == -ETIMEDOUT) {
       int max_retry = 10;
       for(int i = 0;i<max_retry;i++){
-          ret_remove = rados_storage->get_io_ctx_wrapper().get_io_ctx().remove(oid);
+          ret_remove = rados_storage->get_io_ctx_wrapper()->get_io_ctx().remove(oid);
           if(ret_remove >=0){
             i_error("rbox_sync connection timeout during oid (%s) deletion, mail stays in object store.",oid);
             break;

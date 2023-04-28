@@ -37,7 +37,7 @@ extern "C" {
 #include "rbox-storage.hpp"
 #include "../mocks/mock_test.h"
 #include "../test-utils/it_utils.h"
-#include "rados-util.h"
+#include "../../librmb/rados-util-impl.h"
 #include "rbox-storage.h"
 
 using ::testing::AtLeast;
@@ -48,7 +48,7 @@ TEST_F(SyncTest, init) {}
 static void copy_object(struct mail_namespace *_ns, struct mailbox *box) {
   struct rbox_storage *r_storage = (struct rbox_storage *)box->storage;
 
-  librmb::RadosMetadata xattr(librmb::rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, box->name);
+  librmb::RadosMetadataImpl xattr(librmb::rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, box->name);
   std::set<std::string> mail_list = r_storage->s->find_mails(&xattr);
   std::set<std::string>::iterator mail_iter;
   std::string oid;
@@ -93,8 +93,8 @@ static void copy_object(struct mail_namespace *_ns, struct mailbox *box) {
   if (rbox_open_rados_connection(box, true) < 0) {
     FAIL() << "error opening connection";
   }
-
-  if (librmb::RadosUtils::move_to_alt(test_oid, r_storage->s, r_storage->alt, r_storage->ms, false) < 0) {
+  librmb::RadosUtilsImpl rados_utils;
+  if (rados_utils.move_to_alt(test_oid, r_storage->s, r_storage->alt, r_storage->ms, false) < 0) {
     FAIL() << "error moving object to alt storage";
   }
   i_debug("ok, mail moved to alt");

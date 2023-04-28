@@ -43,7 +43,7 @@ extern "C" {
 #include "dovecot-ceph-plugin-config.h"
 #include "../test-utils/it_utils.h"
 #include "rbox-mail.h"
-#include "rados-util.h"
+#include "../../librmb/rados-util-impl.h"
 
 using ::testing::AtLeast;
 using ::testing::Return;
@@ -182,7 +182,8 @@ TEST_F(StorageTest, check_metadata) {
     i_debug("recv date value %ld = %s", date_recv, buff2);
 
     char *val3 = NULL;
-    librmb::RadosUtils::get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, rmail->rados_mail->get_metadata(), &val3);
+    librmb::RadosUtilsImpl rados_utils;
+    rados_utils.get_metadata(librmb::RBOX_METADATA_RECEIVED_TIME, rmail->rados_mail->get_metadata(), &val3);
     ASSERT_TRUE(val3 != NULL);
 
     ASSERT_EQ(rmail->rados_mail->get_metadata()->size(), 8);

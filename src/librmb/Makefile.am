@@ -12,31 +12,22 @@ lib_LTLIBRARIES = \
 	librmb.la 
 
 headers = \
-	rados-cluster.h \
-	rados-dictionary.h \
-	rados-storage.h \
 	encoding.h \
 	rados-cluster-impl.h \
 	rados-storage-impl.h \
 	rados-dictionary-impl.h \
-	rados-mail.h \
-	rados-util.h \
-	rados-metadata.h \
-	rados-types.h \
+	rados-mail-impl.h \
+	rados-util-impl.h \
+	rados-metadata-impl.h \
 	rados-dovecot-config.h \
-	rados-namespace-manager.h \
-	rados-dovecot-ceph-cfg.h \
+	rados-namespace-manager-impl.h\
 	rados-dovecot-ceph-cfg-impl.h \
-	rados-ceph-config.h \
-	rados-ceph-json-config.h \
-	rados-guid-generator.h \
-	rados-metadata-storage.h \
+	rados-ceph-config-impl.h \
+	rados-ceph-json-config-impl.h \
 	rados-metadata-storage-impl.h \
-	rados-metadata-storage-module.h \
 	rados-metadata-storage-default.h \
 	rados-metadata-storage-ima.h \
-	rados-save-log.h \
-	rbox-io-ctx.h \
+	rados-save-log-impl.h \
 	rbox-io-ctx-impl.h
 		
 	
@@ -46,16 +37,16 @@ librmb_la_SOURCES = \
 	rados-cluster-impl.cpp \
 	rados-storage-impl.cpp \
 	rados-dictionary-impl.cpp \
-	rados-mail.cpp \
-	rados-util.cpp \
+	rados-mail-impl.cpp \
+	rados-util-impl.cpp \
 	rados-dovecot-config.cpp \
-	rados-namespace-manager.cpp\
-	rados-ceph-config.cpp \
+	rados-namespace-manager-impl.cpp\
+	rados-ceph-config-impl.cpp \
 	rados-dovecot-ceph-cfg-impl.cpp \
-	rados-ceph-json-config.cpp \
+	rados-ceph-json-config-impl.cpp \
 	rados-metadata-storage-default.cpp \
 	rados-metadata-storage-ima.cpp \
-	rados-save-log.cpp
+	rados-save-log-impl.cpp
 	
 AM_LDFLAGS = $(JANSSON_LIBS)
 AM_CFLAGS = $(JANSSON_CFLAGS)

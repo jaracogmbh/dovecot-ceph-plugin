@@ -40,7 +40,7 @@ ItUtils::ItUtils() {}
 
 ItUtils::~ItUtils() {}
 void ItUtils::add_mail(const char *message, const char *mailbox, struct mail_namespace *_ns,
-                       librmb::RadosStorage *storage_impl) {
+                       storage_interface::RadosStorage *storage_impl) {
   struct mail_namespace *ns = mail_namespace_find_inbox(_ns);
   ASSERT_NE(ns, nullptr);
   struct mailbox *box = mailbox_alloc(ns->list, mailbox, (mailbox_flags)0);

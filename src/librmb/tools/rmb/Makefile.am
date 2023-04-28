@@ -15,14 +15,14 @@ shlibs = \
 bin_PROGRAMS = rmb
 
 rmb_SOURCES = \
-	mailbox_tools.cpp \
-	mailbox_tools.h \
-	ls_cmd_parser.cpp \
-	ls_cmd_parser.h \
-	rmb-commands.cpp \
-	rmb-commands.h \
+	mailbox_tools_impl.cpp \
+	mailbox_tools_impl.h \
+	ls_cmd_parser_impl.cpp \
+	ls_cmd_parser_impl.h \
+	rmb-commands-impl.cpp \
+	rmb-commands-impl.h \
 	rmb.cpp \
-	rados-mail-box.h
+	rados-mail-box-impl.h
 
 rmb_LDADD = $(shlibs)
 

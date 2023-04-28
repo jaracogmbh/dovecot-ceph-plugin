@@ -13,13 +13,13 @@
 
 #include <assert.h> /* assert */
 #include <string>
-#include "rados-metadata-storage-module.h"
+#include "../storage-interface/rados-metadata-storage-module.h"
 #include "rados-metadata-storage-default.h"
 #include "rados-metadata-storage-ima.h"
-#include "rados-metadata-storage.h"
+#include "../storage-interface/rados-metadata-storage.h"
 
 namespace librmb {
-class RadosMetadataStorageImpl : public RadosMetadataStorage {
+class RadosMetadataStorageImpl : public storage_interface::RadosMetadataStorage {
  public:
   RadosMetadataStorageImpl() {
     storage = nullptr;
@@ -33,30 +33,30 @@ class RadosMetadataStorageImpl : public RadosMetadataStorage {
     }
   }
 
-  RadosStorageMetadataModule *create_metadata_storage(librmb::RboxIoCtx &io_ctx_wrapper_, RadosDovecotCephCfg *cfg_) override {
-    this->io_ctx_wrapper = &io_ctx_wrapper_;
+  storage_interface::RadosStorageMetadataModule *create_metadata_storage(storage_interface::RboxIoCtx *io_ctx_wrapper_, storage_interface::RadosDovecotCephCfg *cfg_) override {
+    this->io_ctx_wrapper = io_ctx_wrapper_;
     this->cfg = cfg_;
     if (storage == nullptr) {
       // decide metadata storage!
       std::string storage_module_name = cfg_->get_metadata_storage_module();
       if (storage_module_name.compare(librmb::RadosMetadataStorageIma::module_name) == 0) {
-        storage = new librmb::RadosMetadataStorageIma(*io_ctx_wrapper, cfg_);
+        storage = new librmb::RadosMetadataStorageIma(io_ctx_wrapper, cfg_);
       } else {
-        storage = new librmb::RadosMetadataStorageDefault(*io_ctx_wrapper);
+        storage = new librmb::RadosMetadataStorageDefault(io_ctx_wrapper);
       }
     }
     return storage;
   }
 
-  RadosStorageMetadataModule *get_storage() override {
+  storage_interface::RadosStorageMetadataModule *get_storage() override {
     assert(storage != nullptr);
     return storage;
   }
 
  private:
-  librmb::RboxIoCtx *io_ctx_wrapper;
-  RadosDovecotCephCfg *cfg;
-  RadosStorageMetadataModule *storage;
+  storage_interface::RboxIoCtx *io_ctx_wrapper;
+  storage_interface::RadosDovecotCephCfg *cfg;
+  storage_interface::RadosStorageMetadataModule *storage;
 };
 }  // namespace librmb
 

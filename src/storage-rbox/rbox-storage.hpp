@@ -24,25 +24,22 @@
 #define RBOX_MAILDIR_NAME "rbox-Mails"
 
 #ifdef __cplusplus
-#include "../librmb/rados-cluster-impl.h"
-#include "../librmb/rados-storage-impl.h"
-#include "../librmb/rados-namespace-manager.h"
-#include "../librmb/rados-dovecot-ceph-cfg.h"
-#include "../librmb/rados-metadata-storage-impl.h"
-#include "../librmb/rados-save-log.h"
-
+#include "../storage-interface/rados-namespace-manager.h"
+#include "../storage-interface/rados-dovecot-ceph-cfg.h"
+#include "../storage-interface/rados-metadata-storage.h"
+#include "../storage-interface/rados-save-log.h"
 #include "rbox-storage-struct.h"
 
 struct rbox_storage {
   struct mail_storage storage;
 
-  librmb::RadosCluster *cluster;
-  librmb::RadosStorage *s;
-  librmb::RadosDovecotCephCfg *config;
-  librmb::RadosNamespaceManager *ns_mgr;
-  librmb::RadosMetadataStorage *ms;
-  librmb::RadosStorage *alt;
-  librmb::RadosSaveLog *save_log;
+  storage_interface::RadosCluster *cluster;
+  storage_interface::RadosStorage *s;
+  storage_interface::RadosDovecotCephCfg *config;
+  storage_interface::RadosNamespaceManager *ns_mgr;
+  storage_interface::RadosMetadataStorage *ms;
+  storage_interface::RadosStorage *alt;
+  storage_interface::RadosSaveLog *save_log;
 
   uint32_t corrupted_rebuild_count;
   bool corrupted;
@@ -75,7 +72,7 @@ extern int rbox_read_header(struct rbox_mailbox *mbox, struct rbox_index_header 
 
 extern int rbox_mailbox_create_indexes(struct mailbox *box, const struct mailbox_update *update,
                                        struct mail_index_transaction *trans);
-extern int check_users_mailbox_delete_ns_object(struct mail_user *user, librmb::RadosDovecotCephCfg *config,
-                                                librmb::RadosNamespaceManager *ns_mgr, librmb::RadosStorage *storage);
+extern int check_users_mailbox_delete_ns_object(struct mail_user *user, storage_interface::RadosDovecotCephCfg *config,
+                                                storage_interface::RadosNamespaceManager *ns_mgr, storage_interface::RadosStorage *storage);
 
 #endif  // SRC_STORAGE_RBOX_RBOX_STORAGE_HPP_
