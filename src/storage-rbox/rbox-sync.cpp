@@ -127,7 +127,7 @@ static int update_extended_metadata(struct rbox_sync_context *ctx, uint32_t seq1
         std::string key_value = keywords[keyword_idx];
         storage_interface::RadosMetadata *ext_metata=
           storage_engine::StorageBackendFactory::create_metadata_str_key_val(
-            storage_engine::StorageBackendFactory::CEPH, ext_key, key_value);
+            storage_engine::CEPH, ext_key, key_value);
         ret = r_storage->ms->get_storage()->update_keyword_metadata(key_oid, ext_metata);
         delete ext_metata;
         ext_metata=nullptr;
@@ -157,7 +157,7 @@ static int move_to_alt(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t se
     if (rbox_get_oid_from_index(ctx->sync_view, seq1, ((struct rbox_mailbox *)&ctx->rbox->box)->ext_id, &index_oid) >= 0) {
       std::string oid = guid_128_to_string(index_oid);
       storage_interface::RadosUtils *rados_utils=
-        storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
+        storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::CEPH);
       ret = rados_utils->move_to_alt(oid, r_storage->s, r_storage->alt, r_storage->ms, inverse);
       if (ret >= 0) {
         if (inverse) {
@@ -166,8 +166,8 @@ static int move_to_alt(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t se
           mail_index_update_flags(ctx->trans, seq1, MODIFY_ADD, (enum mail_flags)RBOX_INDEX_FLAG_ALT);
         }
       }
-      delete rados_utils;
-      rados_utils = nullptr;
+  delete rados_utils;
+  rados_utils = nullptr;
     }
   }
   return ret;
@@ -206,7 +206,7 @@ static int update_flags(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t s
       const char *oid = guid_128_to_string(index_oid);
 
       storage_interface::RadosMail *mail_object=
-        storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+        storage_engine::StorageBackendFactory::create_mail(storage_engine::CEPH);
       mail_object->set_oid(oid);
       if (r_storage->ms->get_storage()->load_metadata(mail_object) < 0) {
         i_error("update_flags: load_metadata failed! for %d, oid(%s)", seq1, oid);
@@ -214,7 +214,7 @@ static int update_flags(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t s
       }
       char *flags_metadata = NULL;
       storage_interface::RadosUtils *rados_utils=
-        storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
+        storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::CEPH);
       rados_utils->get_metadata(storage_interface::RBOX_METADATA_OLDV1_FLAGS, mail_object->get_metadata(), &flags_metadata);
       uint8_t flags = 0x0;
       if (rados_utils->string_to_flags(flags_metadata, &flags)) {
@@ -224,18 +224,19 @@ static int update_flags(struct rbox_sync_context *ctx, uint32_t seq1, uint32_t s
         if (remove_flags != 0) {
           flags &= ~remove_flags;
         }
+        std::list<storage_interface::RadosMetadata*> to_update;
         std::string str_flags_metadata;
         if (rados_utils->flags_to_string(flags, &str_flags_metadata)) {
           storage_interface::RadosMetadata *update=
             storage_engine::StorageBackendFactory::create_metadata_string(
-              storage_engine::StorageBackendFactory::CEPH, storage_interface::RBOX_METADATA_OLDV1_FLAGS, str_flags_metadata);
-          ret = r_storage->ms->get_storage()->set_metadata(mail_object, update);
+              storage_engine::CEPH, storage_interface::RBOX_METADATA_OLDV1_FLAGS, str_flags_metadata);
+          mail_object->add_metadata(update);
+          to_update.push_back(update);
+          ret = r_storage->ms->get_storage()->update_metadata(*mail_object->get_oid(), to_update);
           if (ret < 0) {
             i_warning("updating metadata for object : oid(%s), seq (%d) failed with ceph errorcode: %d",
                       mail_object->get_oid()->c_str(), seq1, ret);
           }
-          delete update;
-          update =nullptr;
         }
       }
       delete mail_object;

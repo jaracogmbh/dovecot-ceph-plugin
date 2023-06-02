@@ -22,7 +22,6 @@
 #include <regex>
 
 #include <string>
-#include <rados/librados.hpp>
 #include "../storage-interface/rados-storage.h"
 #include "../storage-interface/rados-metadata-storage.h"
 #include "../storage-interface/rados-types.h"
@@ -107,8 +106,8 @@ class RadosUtilsImpl : public storage_interface::RadosUtils {
    * @param[in] oid: unique identifier
    * @param[out] kv_map valid ptr to key value map.
    */
-  int get_all_keys_and_values(librados::IoCtx *io_ctx, const std::string &oid,
-                                     std::map<std::string, librados::bufferlist> *kv_map) override;
+  int get_all_keys_and_values(storage_interface::RboxIoCtx *io_ctx, const std::string &oid,
+                                     storage_interface::RadosMail* mail) override;
   /*!
    * get the text representation of uint flags.
    * @param[in] flags
@@ -148,7 +147,7 @@ class RadosUtilsImpl : public storage_interface::RadosUtils {
    *
    * @return linux error code or 0 if sucessful
    */
-  int osd_add(librados::IoCtx *ioctx, const std::string &oid, const std::string &key, long long value_to_add) override;
+  int osd_add(storage_interface::RboxIoCtx *ioctx, const std::string &oid, const std::string &key, long long value_to_add) override;
   /*!
    * decrement (sub) value directly on osd
    * @param[in] ioctx
@@ -158,7 +157,7 @@ class RadosUtilsImpl : public storage_interface::RadosUtils {
    *
    * @return linux error code or 0 if sucessful
    */
-  int osd_sub(librados::IoCtx *ioctx, const std::string &oid, const std::string &key,
+  int osd_sub(storage_interface::RboxIoCtx *ioctx, const std::string &oid, const std::string &key,
                      long long value_to_subtract) override;
 
   /*!
@@ -167,7 +166,7 @@ class RadosUtilsImpl : public storage_interface::RadosUtils {
    * @param[in] metadata
    * @return true if all keys and value are correct. (type, name, value)
    */
-  bool validate_metadata(std::map<std::string, ceph::bufferlist> *metadata) override;
+  bool validate_metadata(std::map<std::string, void*> *metadata) override;
   /*!
    * get metadata
    *
@@ -175,7 +174,7 @@ class RadosUtilsImpl : public storage_interface::RadosUtils {
    * @param[int] valid pointer to metadata map
    * @return the metadata value
    */
-  void get_metadata(const std::string &key, std::map<std::string, ceph::bufferlist> *metadata, char **value) override;
+  void get_metadata(const std::string &key, std::map<std::string, void*> *metadata, char **value) override;
 
   /*!
    * get metadata
@@ -184,7 +183,7 @@ class RadosUtilsImpl : public storage_interface::RadosUtils {
    * @param[int] valid pointer to metadata map
    * @return the metadata value
    */
-  void get_metadata(storage_interface::rbox_metadata_key key, std::map<std::string, ceph::bufferlist> *metadata, char **value) override;
+  void get_metadata(storage_interface::rbox_metadata_key key, std::map<std::string, void*> *metadata, char **value) override;
 
 
   /**

@@ -21,31 +21,24 @@
 namespace librmb {
 class RadosMetadataStorageImpl : public storage_interface::RadosMetadataStorage {
  public:
-  RadosMetadataStorageImpl() {
-    storage = nullptr;
-    io_ctx_wrapper = nullptr;
-    cfg = nullptr;
+    
+   RadosMetadataStorageImpl(storage_interface::RboxIoCtx *io_ctx_, storage_interface::RadosDovecotCephCfg *cfg_) {
+    io_ctx_wrapper = io_ctx_;
+    cfg = cfg_;
+
+    std::string storage_module_name = cfg->get_metadata_storage_module();
+    if (storage_module_name.compare(librmb::RadosMetadataStorageIma::module_name) == 0) {
+      storage = new librmb::RadosMetadataStorageIma(io_ctx_wrapper, cfg);
+    } else {
+      storage = new librmb::RadosMetadataStorageDefault(io_ctx_wrapper);
+    }
   }
+
   virtual ~RadosMetadataStorageImpl() {
     if (storage != nullptr) {
       delete storage;
       storage = nullptr;
     }
-  }
-
-  storage_interface::RadosStorageMetadataModule *create_metadata_storage(storage_interface::RboxIoCtx *io_ctx_wrapper_, storage_interface::RadosDovecotCephCfg *cfg_) override {
-    this->io_ctx_wrapper = io_ctx_wrapper_;
-    this->cfg = cfg_;
-    if (storage == nullptr) {
-      // decide metadata storage!
-      std::string storage_module_name = cfg_->get_metadata_storage_module();
-      if (storage_module_name.compare(librmb::RadosMetadataStorageIma::module_name) == 0) {
-        storage = new librmb::RadosMetadataStorageIma(io_ctx_wrapper, cfg_);
-      } else {
-        storage = new librmb::RadosMetadataStorageDefault(io_ctx_wrapper);
-      }
-    }
-    return storage;
   }
 
   storage_interface::RadosStorageMetadataModule *get_storage() override {
@@ -54,9 +47,9 @@ class RadosMetadataStorageImpl : public storage_interface::RadosMetadataStorage 
   }
 
  private:
-  storage_interface::RboxIoCtx *io_ctx_wrapper;
-  storage_interface::RadosDovecotCephCfg *cfg;
-  storage_interface::RadosStorageMetadataModule *storage;
+  storage_interface::RboxIoCtx *io_ctx_wrapper = nullptr;
+  storage_interface::RadosDovecotCephCfg *cfg  = nullptr;
+  storage_interface::RadosStorageMetadataModule *storage = nullptr;
 };
 }  // namespace librmb
 

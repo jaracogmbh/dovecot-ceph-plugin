@@ -477,8 +477,8 @@ class rados_dict_transaction_context {
         // it->second is a signed long int
         storage_interface::RadosUtils *rados_util=
           storage_engine::StorageBackendFactory::create_rados_utils(
-            storage_engine::StorageBackendFactory::CEPH);
-        rados_util->osd_add(&(is_private(key) ? d->get_private_io_ctx_wrapper()->get_io_ctx() : d->get_shared_io_ctx_wrapper()->get_io_ctx()), oid, key,
+            storage_engine::CEPH);
+        rados_util->osd_add(is_private(key) ? d->get_private_io_ctx_wrapper() : d->get_shared_io_ctx_wrapper(), oid, key,
                                     it->second);
         delete rados_util;
         rados_util=nullptr;                            

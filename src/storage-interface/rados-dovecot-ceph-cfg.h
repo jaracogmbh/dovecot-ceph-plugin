@@ -18,6 +18,7 @@
 #include "rados-storage.h"
 #include "rados-ceph-config.h"
 #include "rbox-io-ctx.h"
+#include "rados-types.h"
 namespace storage_interface {
 
 /**

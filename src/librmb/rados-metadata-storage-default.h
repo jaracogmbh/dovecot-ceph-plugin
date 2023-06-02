@@ -34,13 +34,11 @@ class RadosMetadataStorageDefault : public storage_interface::RadosStorageMetada
   void set_io_ctx(storage_interface::RboxIoCtx *io_ctx_wrapper) override { this->io_ctx_wrapper =io_ctx_wrapper; }
 
   int load_metadata(storage_interface::RadosMail *mail) override;
-  int set_metadata(storage_interface::RadosMail *mail, storage_interface::RadosMetadata *xattr) override;
+  int set_metadata(storage_interface::RadosMail *mail) override;
   bool update_metadata(const std::string &oid, std::list<storage_interface::RadosMetadata*> &to_update) override;
   void save_metadata(librados::ObjectWriteOperation *write_op, storage_interface::RadosMail *mail);
   int update_keyword_metadata(const std::string &oid, storage_interface::RadosMetadata *metadata) override;
   int remove_keyword_metadata(const std::string &oid, std::string &key) override;
-  int load_keyword_metadata(const std::string &oid, std::set<std::string> &keys,
-                            std::map<std::string, ceph::bufferlist> *metadata) override;
 
  public:
   static std::string module_name;

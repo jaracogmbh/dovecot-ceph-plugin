@@ -107,18 +107,17 @@ const string RadosDictionaryImpl::get_full_oid(const std::string &key) {
 storage_interface::RboxIoCtx *RadosDictionaryImpl::get_shared_io_ctx_wrapper() {
   if (!shared_io_ctx_created) {
     shared_io_ctx_created = cluster->io_ctx_create(poolname, shared_io_ctx_wrapper) == 0;
-    shared_io_ctx=shared_io_ctx_wrapper->get_io_ctx();
     std::string ns;
-    if (load_configuration(&shared_io_ctx)) {
+    if (load_configuration(shared_io_ctx_wrapper)) {
       std::string user = cfg->get_public_namespace();
       lookup_namespace(user, cfg, &ns);
-      shared_io_ctx.set_namespace(ns);
+      shared_io_ctx_wrapper->set_namespace(ns);
     }
   }
   return shared_io_ctx_wrapper;
 }
 
-bool RadosDictionaryImpl::load_configuration(librados::IoCtx *io_ctx) {
+bool RadosDictionaryImpl::load_configuration(storage_interface::RboxIoCtx *io_ctx) {
   bool loaded = true;
   if (cfg != nullptr) {
     return loaded;
@@ -154,13 +153,12 @@ bool RadosDictionaryImpl::lookup_namespace(std::string &username_, storage_inter
 storage_interface::RboxIoCtx *RadosDictionaryImpl::get_private_io_ctx_wrapper() {
   if (!private_io_ctx_created) {
     if (cluster->io_ctx_create(poolname, private_io_ctx_wrapper) == 0) {
-      private_io_ctx=private_io_ctx_wrapper->get_io_ctx();
-      if (load_configuration(&private_io_ctx)) {
+      if (load_configuration(private_io_ctx_wrapper)) {
         std::string ns;
         std::string user = username + cfg->get_user_suffix();
         lookup_namespace(user, cfg, &ns);
         private_io_ctx_created = true;
-        private_io_ctx.set_namespace(ns);
+        private_io_ctx_wrapper->set_namespace(ns);
       }
     }
   }

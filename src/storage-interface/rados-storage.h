@@ -16,7 +16,6 @@
 #include <map>
 #include <list>
 #include <set>
-#include <rados/librados.hpp>
 #include "rados-cluster.h"
 #include "rados-mail.h"
 #include "rados-types.h"

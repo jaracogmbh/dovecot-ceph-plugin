@@ -32,8 +32,6 @@ extern void rbox_sync_update_header(struct index_rebuild_context *ctx);
 extern int rbox_sync_add_object(struct index_rebuild_context *ctx, const std::string &oi, storage_interface::RadosMail *mail_obj,
                                 bool alt_storage, uint32_t next_uid);
 
-extern int rbox_sync_index_rebuild(struct index_rebuild_context *ctx, std::map<std::string, std::list<storage_interface::RadosMail*>> &rados_mails,
-                                   struct rbox_sync_rebuild_ctx *rebuild_ctx);
 extern void rbox_sync_set_uidvalidity(struct index_rebuild_context *ctx);
 
 extern int rbox_sync_index_rebuild_objects(struct index_rebuild_context *ctx, std::map<std::string, std::list<storage_interface::RadosMail*>> &rados_mails);

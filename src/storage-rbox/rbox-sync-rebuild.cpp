@@ -37,7 +37,7 @@ int rbox_sync_add_object(struct index_rebuild_context *ctx, const std::string &o
                          bool alt_storage, uint32_t next_uid) {
   FUNC_START();
   storage_interface::RadosUtils *rados_utils=
-    storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
+    storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::CEPH);
   struct rbox_mailbox *rbox = (struct rbox_mailbox *)ctx->box;
   char *xattr_mail_uid = NULL;
   rados_utils->get_metadata(rbox_metadata_key::RBOX_METADATA_MAIL_UID, mail_obj->get_metadata(),
@@ -88,15 +88,14 @@ int rbox_sync_add_object(struct index_rebuild_context *ctx, const std::string &o
   // update uid.
   storage_interface::RadosMetadata *mail_uid=
     storage_engine::StorageBackendFactory::create_metadata_uint(
-      storage_engine::StorageBackendFactory::CEPH, storage_interface::RBOX_METADATA_MAIL_UID, next_uid);
+      storage_engine::CEPH, storage_interface::RBOX_METADATA_MAIL_UID, next_uid);
+  mail_obj->add_metadata(mail_uid);    
   std::string s_oid = *mail_obj->get_oid();
   std::list<storage_interface::RadosMetadata*> to_update;
   to_update.push_back(mail_uid);
   if (!r_storage->ms->get_storage()->update_metadata(s_oid, to_update)) {
     i_warning("update of MAIL_UID failed: for object: %s , uid: %d", mail_obj->get_oid()->c_str(), next_uid);
   }
-  delete mail_uid;
-  mail_uid=nullptr;
   delete rados_utils;
   rados_utils=nullptr;
   FUNC_END();
@@ -112,15 +111,15 @@ std::map<std::string, std::list<storage_interface::RadosMail*>> load_rados_mail_
   std::set<std::string>::iterator it;
   for(it=mail_list.begin(); it!=mail_list.end(); ++it){          
     storage_interface::RadosUtils *rados_utils=
-      storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::StorageBackendFactory::CEPH);
+      storage_engine::StorageBackendFactory::create_rados_utils(storage_engine::CEPH);
     storage_interface::RadosMail *mail_object=
-      storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+      storage_engine::StorageBackendFactory::create_mail(storage_engine::CEPH);
     mail_object->set_oid((*it));
   
     if (alt_storage) {
       r_storage->ms->get_storage()->set_io_ctx(r_storage->alt->get_io_ctx_wrapper());
     }
-    int load_metadata_ret = r_storage->ms->get_storage()->load_metadata(mail_object); 
+    int load_metadata_ret = r_storage->ms->get_storage()->load_metadata(mail_object);
     if (load_metadata_ret < 0 || !rados_utils->validate_metadata(mail_object->get_metadata())) {    
       i_debug("metadata for object : %s is not valid, skipping object ", mail_object->get_oid()->c_str());
       continue;
@@ -294,7 +293,6 @@ int rbox_storage_rebuild_in_context(struct rbox_storage *r_storage, bool force, 
     for(list_it=it->second.begin(); list_it!=it->second.end(); ++list_it){
       count_not_assigned += (*list_it)->is_restored() ? 0 : 1;
       count_assigned += (*list_it)->is_restored() ? 1 : 0;
-
     }    
   }
   i_info("total unassigned mails %ld", count_not_assigned);
@@ -309,6 +307,13 @@ int rbox_storage_rebuild_in_context(struct rbox_storage *r_storage, bool force, 
     if(find_default_mailbox_guid(ns_second, &last_known_mailbox_guid) < 0){
       // bad no default mailbox found
       i_warning("unable to find inbox guid => unreferenced mails can not automatically be re-assigned ");
+      for(it=rados_mails.begin(); it!=rados_mails.end(); ++it){
+        std::list<storage_interface::RadosMail*>::iterator list_it;
+        for(list_it=it->second.begin(); list_it!=it->second.end(); ++list_it){
+          delete *list_it;
+          *list_it=nullptr;
+        }
+      }
       return 0;
     }
 
@@ -321,16 +326,22 @@ int rbox_storage_rebuild_in_context(struct rbox_storage *r_storage, bool force, 
           continue;
         }
         storage_interface::RadosMetadata *metadata=storage_engine::StorageBackendFactory::create_metadata_default(
-          storage_engine::StorageBackendFactory::CEPH);
+          storage_engine::CEPH);
         metadata->convert(rbox_metadata_key::RBOX_METADATA_MAILBOX_GUID, last_known_mailbox_guid);
     
         storage_interface::RadosMetadata *metadata_uid=storage_engine::StorageBackendFactory::create_metadata_default(
-          storage_engine::StorageBackendFactory::CEPH);
+          storage_engine::CEPH);
         metadata_uid->convert(rbox_metadata_key::RBOX_METADATA_MAIL_UID, INT32_MAX);
   
         librados::ObjectWriteOperation write_mail_uid;
-        write_mail_uid.setxattr(metadata_uid->get_key().c_str(), metadata_uid->get_buffer());
-        write_mail_uid.setxattr(metadata->get_key().c_str(), metadata->get_buffer());
+        (*list_it)->add_metadata(metadata_uid);
+        void* bl_ptr_uid=(void*)metadata_uid->get_buffer();
+        ceph::bufferlist bl_uid=*(ceph::bufferlist*)bl_ptr_uid;
+        write_mail_uid.setxattr(metadata_uid->get_key().c_str(), bl_uid);
+        (*list_it)->add_metadata(metadata);
+        void* bl_ptr=(void*)metadata->get_buffer();
+        ceph::bufferlist bl=*(ceph::bufferlist*)bl_ptr;    
+        write_mail_uid.setxattr(metadata->get_key().c_str(), bl);
 
         if (r_storage->s->get_io_ctx_wrapper()->operate(*(*list_it)->get_oid(), &write_mail_uid) < 0) {
             i_debug("Unable to reset metadata to guid : %s",last_known_mailbox_guid.c_str());
@@ -339,23 +350,42 @@ int rbox_storage_rebuild_in_context(struct rbox_storage *r_storage, bool force, 
         }
         unassigned_counter++;
         (*list_it)->set_lost_object(true);
-        delete metadata;
-        metadata=nullptr;
-        delete metadata_uid;
-        metadata_uid=nullptr;
       }
     }
     if(unassigned_counter > 0){
       if(firstTry){
         // try again.... but only once, as we do not want to end up in an endless loop.
-        return rbox_storage_rebuild_in_context(r_storage,force, false); 
+        int ret = 0;
+        ret= rbox_storage_rebuild_in_context(r_storage,force, false);
+        for(it=rados_mails.begin(); it!=rados_mails.end(); ++it){
+          std::list<storage_interface::RadosMail*>::iterator list_it;
+          for(list_it=it->second.begin(); list_it!=it->second.end(); ++list_it){
+            delete *list_it;
+            *list_it=nullptr;
+          }
+        }
+        return ret; 
       }else{
         i_error("still unassigned mail objects in ceph namespace, manual intervention required.");
+        for(it=rados_mails.begin(); it!=rados_mails.end(); ++it){
+          std::list<storage_interface::RadosMail*>::iterator list_it;
+          for(list_it=it->second.begin(); list_it!=it->second.end(); ++list_it){
+            delete *list_it;
+            *list_it=nullptr;
+          }
+        }        
         return -1; 
       }
     }
   }
-  
+
+  for(it=rados_mails.begin(); it!=rados_mails.end(); ++it){
+    std::list<storage_interface::RadosMail*>::iterator list_it;
+    for(list_it=it->second.begin(); list_it!=it->second.end(); ++list_it){
+      delete *list_it;
+      *list_it=nullptr;
+    }
+  }
   FUNC_END();
   return 0;
 }
@@ -462,7 +492,7 @@ int repair_namespace(struct mail_namespace *ns, bool force, struct rbox_storage 
             //all mail first end up in the inbox
             storage_interface::RadosMetadata *filter=
               storage_engine::StorageBackendFactory::create_metadata_string(
-                storage_engine::StorageBackendFactory::CEPH, rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, "INBOX");
+                storage_engine::CEPH, rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, "INBOX");
   
             long milli_time, seconds, useconds;
             struct timeval start_time, end_time;

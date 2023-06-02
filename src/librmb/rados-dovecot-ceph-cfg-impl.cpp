@@ -15,7 +15,7 @@
 
 namespace librmb {
 
-RadosDovecotCephCfgImpl::RadosDovecotCephCfgImpl(librados::IoCtx *io_ctx_) {
+RadosDovecotCephCfgImpl::RadosDovecotCephCfgImpl(storage_interface::RboxIoCtx *io_ctx_) {
   if(rados_cfg!=nullptr){
     rados_cfg->set_io_ctx(io_ctx_);
   }else{

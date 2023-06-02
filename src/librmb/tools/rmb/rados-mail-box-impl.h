@@ -47,7 +47,10 @@ class RadosMailBoxImpl : public storage_interface::RadosMailBox {
     }
     for (std::map<std::string, storage_interface::Predicate *>::iterator it = parser->get_predicates().begin();
          it != parser->get_predicates().end(); ++it) {
-      if (mail->get_metadata()->find(it->first) != mail->get_metadata()->end()) {
+      std::map<std::string, void*>::iterator found_metadata=mail->get_metadata()->find(it->first);
+      std::map<std::string, void*>::iterator end_metadata= mail->get_metadata()->end();   
+      if (found_metadata->first != end_metadata->first ||
+         ((ceph::bufferlist*)found_metadata->second)->to_str()!= ((ceph::bufferlist*)end_metadata->second)->to_str()) {
         std::string key = it->first;
         char *value;
         librmb::RadosUtilsImpl rados_utils;

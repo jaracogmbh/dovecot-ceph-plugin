@@ -12,7 +12,6 @@
 #ifndef SRC_STORAGE_INTERFACES_RADOS_METADATA_STORAGE_MODULE_H_
 #define SRC_STORAGE_INTERFACES_RADOS_METADATA_STORAGE_MODULE_H_
 
-#include <rados/librados.hpp>
 #include <string>
 #include <list>
 #include <set>
@@ -29,14 +28,12 @@ class RadosStorageMetadataModule {
   /* load the metadta into RadosMail */
   virtual int load_metadata(storage_interface::RadosMail *mail) = 0;
   /* set a new metadata attribute to a mail object */
-  virtual int set_metadata(storage_interface::RadosMail *mail, storage_interface::RadosMetadata *xattr) = 0;
+  virtual int set_metadata(storage_interface::RadosMail *mail) = 0;
   /* update the given metadata attributes */
   virtual bool update_metadata(const std::string &oid, std::list<storage_interface::RadosMetadata*> &to_update) = 0;
   /* manage keywords */
   virtual int update_keyword_metadata(const std::string &oid, storage_interface::RadosMetadata *metadata) = 0;
   virtual int remove_keyword_metadata(const std::string &oid, std::string &key) = 0;
-  virtual int load_keyword_metadata(const std::string &oid, std::set<std::string> &keys,
-                                    std::map<std::string, ceph::bufferlist> *metadata) = 0;
 };
 
 }  // namespace storage_interface

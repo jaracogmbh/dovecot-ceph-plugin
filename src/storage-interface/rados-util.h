@@ -22,10 +22,10 @@
 
 #include <string>
 #include <map>
-#include <rados/librados.hpp>
 #include "rados-storage.h"
 #include "rados-metadata-storage.h"
 #include "rados-types.h"
+#include "rbox-io-ctx.h"
 
 namespace storage_interface {
 
@@ -105,8 +105,8 @@ class RadosUtils {
    * @param[in] oid: unique identifier
    * @param[out] kv_map valid ptr to key value map.
    */
-  virtual int get_all_keys_and_values(librados::IoCtx *io_ctx, const std::string &oid,
-                                     std::map<std::string, librados::bufferlist> *kv_map) = 0;
+  virtual int get_all_keys_and_values(storage_interface::RboxIoCtx *io_ctx, const std::string &oid,
+                                     storage_interface::RadosMail* mail) = 0;
   /*!
    * get the text representation of uint flags.
    * @param[in] flags
@@ -146,7 +146,7 @@ class RadosUtils {
    *
    * @return linux error code or 0 if sucessful
    */
-  virtual int osd_add(librados::IoCtx *ioctx, const std::string &oid, const std::string &key, long long value_to_add) = 0;
+  virtual int osd_add(storage_interface::RboxIoCtx *ioctx, const std::string &oid, const std::string &key, long long value_to_add) = 0;
   /*!
    * decrement (sub) value directly on osd
    * @param[in] ioctx
@@ -156,7 +156,7 @@ class RadosUtils {
    *
    * @return linux error code or 0 if sucessful
    */
-  virtual int osd_sub(librados::IoCtx *ioctx, const std::string &oid, const std::string &key,
+  virtual int osd_sub(storage_interface::RboxIoCtx *ioctx, const std::string &oid, const std::string &key,
                      long long value_to_subtract) = 0;
 
   /*!
@@ -165,7 +165,7 @@ class RadosUtils {
    * @param[in] metadata
    * @return true if all keys and value are correct. (type, name, value)
    */
-  virtual bool validate_metadata(std::map<std::string, ceph::bufferlist> *metadata) = 0;
+  virtual bool validate_metadata(std::map<std::string, void*> *metadata) = 0;
   /*!
    * get metadata
    *
@@ -173,7 +173,7 @@ class RadosUtils {
    * @param[int] valid pointer to metadata map
    * @return the metadata value
    */
-  virtual void get_metadata(const std::string &key, std::map<std::string, ceph::bufferlist> *metadata, char **value) = 0;
+  virtual void get_metadata(const std::string &key, std::map<std::string, void*> *metadata, char **value) = 0;
 
   /*!
    * get metadata
@@ -182,7 +182,7 @@ class RadosUtils {
    * @param[int] valid pointer to metadata map
    * @return the metadata value
    */
-  virtual void get_metadata(storage_interface::rbox_metadata_key key, std::map<std::string, ceph::bufferlist> *metadata, char **value) = 0;
+  virtual void get_metadata(storage_interface::rbox_metadata_key key, std::map<std::string, void*> *metadata, char **value) = 0;
 
 
   /**

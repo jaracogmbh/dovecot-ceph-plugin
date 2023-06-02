@@ -120,12 +120,12 @@ static void set_mailbox_metadata(struct mail_save_context *ctx, std::list<storag
     // #130 always update Mailbox guid, in case we need to resync the mailbox!
     storage_interface::RadosMetadata *metadata_mailbox_guid=
       StorageBackendFactory::create_metadata_string(
-        StorageBackendFactory::CEPH, rbox_metadata_key::RBOX_METADATA_MAILBOX_GUID, guid_128_to_string(dest_rbox->mailbox_guid));
+        storage_engine::CEPH, rbox_metadata_key::RBOX_METADATA_MAILBOX_GUID, guid_128_to_string(dest_rbox->mailbox_guid));
     metadata_update->push_back(metadata_mailbox_guid);
 
     storage_interface::RadosMetadata *metadata_mbn=
       StorageBackendFactory::create_metadata_time(
-        StorageBackendFactory::CEPH, rbox_metadata_key::RBOX_METADATA_RECEIVED_TIME, ctx->data.received_date);
+        storage_engine::CEPH, rbox_metadata_key::RBOX_METADATA_RECEIVED_TIME, ctx->data.received_date);
     metadata_update->push_back(metadata_mbn);        
     
     if (r_storage->config->is_update_attributes()) {
@@ -133,7 +133,7 @@ static void set_mailbox_metadata(struct mail_save_context *ctx, std::list<storag
         // updates the plain text mailbox name
         storage_interface::RadosMetadata *metadata_mbn=
           StorageBackendFactory::create_metadata_char(
-            StorageBackendFactory::CEPH, rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, dest_rbox->box.name);
+            storage_engine::CEPH, rbox_metadata_key::RBOX_METADATA_ORIG_MAILBOX, dest_rbox->box.name);
         metadata_update->push_back(metadata_mbn);
       }
     }
@@ -226,10 +226,10 @@ static int copy_mail(struct mail_save_context *ctx, storage_interface::RadosStor
   rbox_add_to_index(ctx);
   if (r_storage->save_log->is_open()) {
     storage_interface::RadosSaveLogEntry *save_log_entry=
-      storage_engine::StorageBackendFactory::create_save_log_entry_default(storage_engine::StorageBackendFactory::CEPH);
+      storage_engine::StorageBackendFactory::create_save_log_entry_default(storage_engine::CEPH);
 
     r_storage->save_log->append(storage_engine::StorageBackendFactory::create_save_log_entry(
-      storage_engine::StorageBackendFactory::CEPH,
+      storage_engine::CEPH,
         dest_oid, *ns_dest, rados_storage->get_pool_name(),
           save_log_entry->op_cpy()));
     delete save_log_entry;

@@ -232,6 +232,9 @@ src/storage-rbox/Makefile
 src/librmb/tools/Makefile
 src/librmb/tools/rmb/Makefile
 src/tests/Makefile
+src/storage-interface/Makefile
+src/storage-interface/tools/Makefile
+src/storage-interface/tools/rmb/Makefile
 ])
 
 AC_OUTPUT

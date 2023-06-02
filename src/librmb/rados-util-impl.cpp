@@ -23,6 +23,8 @@
 #include <cctype>
 #include <algorithm>
 #include "encoding.h"
+#include "rados-mail-impl.h"
+#include "rados-metadata-impl.h"
 
 namespace librmb {
 
@@ -105,8 +107,8 @@ namespace librmb {
     }
   }
 
-  int RadosUtilsImpl::get_all_keys_and_values(librados::IoCtx *io_ctx, const std::string &oid,
-                                          std::map<std::string, librados::bufferlist> *kv_map) {
+  int RadosUtilsImpl::get_all_keys_and_values(storage_interface::RboxIoCtx *io_ctx, const std::string &oid,
+                                          storage_interface::RadosMail* mail) {
     int err = 0;
     librados::ObjectReadOperation first_read;
     std::set<std::string> extended_keys;
@@ -119,7 +121,15 @@ namespace librmb {
     if (ret < 0) {
       return ret;
     }
-    return io_ctx->omap_get_vals_by_keys(oid, extended_keys, kv_map);
+    std::map<std::string, ceph::bufferlist> ceph_metadata;    
+    ret= io_ctx->omap_get_vals_by_keys(oid, extended_keys, &ceph_metadata);
+    for(std::map<std::string,ceph::bufferlist>::iterator it=ceph_metadata.begin(); it!=ceph_metadata.end(); ++it){
+      std::string key = (*it).first;
+      std::string value = std::string((*it).second.c_str());
+      storage_interface::RadosMetadata *xattr= new librmb::RadosMetadataImpl(key,value);
+      mail->add_extended_metadata(xattr);
+    }
+    return ret;
   }
 
   void RadosUtilsImpl::resolve_flags(const uint8_t &flags, std::string *flat) {
@@ -147,7 +157,7 @@ namespace librmb {
     *flat = buf.str();
   }
 
-  int RadosUtilsImpl::osd_add(librados::IoCtx *ioctx, const std::string &oid, const std::string &key,
+  int RadosUtilsImpl::osd_add(storage_interface::RboxIoCtx *ioctx, const std::string &oid, const std::string &key,
                           long long value_to_add) {
     librados::bufferlist in, out;
     encode(key, in);
@@ -160,7 +170,7 @@ namespace librmb {
     return ioctx->exec(oid, "numops", "add", in, out);
   }
 
-  int RadosUtilsImpl::osd_sub(librados::IoCtx *ioctx, const std::string &oid, const std::string &key,
+  int RadosUtilsImpl::osd_sub(storage_interface::RboxIoCtx *ioctx, const std::string &oid, const std::string &key,
                           long long value_to_subtract) {
     return osd_add(ioctx, oid, key, -value_to_subtract);
   }
@@ -169,14 +179,14 @@ namespace librmb {
     * @return reference to all write operations related with this object
     */
 
-  void RadosUtilsImpl::get_metadata(const std::string &key, std::map<std::string, ceph::bufferlist> *metadata, char **value) {
+  void RadosUtilsImpl::get_metadata(const std::string &key, std::map<std::string, void*> *metadata, char **value) {
     if (metadata->find(key) != metadata->end()) {
-      *value = (*metadata)[key].c_str();
+      *value = ((ceph::bufferlist*)(*metadata)[key])->c_str();
       return;
     }
     *value = NULL;
   }
-  void RadosUtilsImpl::get_metadata(storage_interface::rbox_metadata_key key, std::map<std::string, ceph::bufferlist> *metadata, char **value) {
+  void RadosUtilsImpl::get_metadata(storage_interface::rbox_metadata_key key, std::map<std::string, void*> *metadata, char **value) {
     std::string str_key(storage_interface::rbox_metadata_key_to_char(key));
     get_metadata(str_key, metadata, value);
   }
@@ -187,7 +197,7 @@ namespace librmb {
     return is_numeric(text);
   }
 
-  bool RadosUtilsImpl::validate_metadata(std::map<std::string, ceph::bufferlist> *metadata) {
+  bool RadosUtilsImpl::validate_metadata(std::map<std::string, void*> *metadata) {
     char *uid = NULL;
     get_metadata(storage_interface::RBOX_METADATA_MAIL_UID, metadata, &uid);
     char *recv_time_str = NULL;
@@ -220,7 +230,7 @@ namespace librmb {
 
     test += is_numeric_optional(flags) ? 0 : 1;
     test += is_numeric_optional(pvt_flags) ? 0 : 1;
-
+    
     test += mailbox_guid == NULL ? 1 : 0;
     test += mail_guid == NULL ? 1 : 0;
     return test == 0;
@@ -271,9 +281,7 @@ namespace librmb {
     }
 
     mail->set_oid(dest_oid);
-
-    // librados::ObjectWriteOperation write_op;  // = new librados::ObjectWriteOperation();
-    // metadata->get_storage()->save_metadata(&write_op, &mail);
+    metadata->get_storage()->set_metadata(mail);
 
     bool success;
     if (inverse) {

@@ -17,7 +17,6 @@
 #include <sstream>
 #include <map>
 #include "rados-metadata.h"
-#include <rados/librados.hpp>
 
 namespace storage_interface {
 
@@ -41,7 +40,7 @@ class RadosMail{
    */
   virtual void set_mail_buffer(void* buffer) = 0; 
   virtual void* get_mail_buffer() = 0; 
-  virtual map<string, ceph::bufferlist>* get_metadata() = 0; 
+  virtual map<string, void*>* get_metadata() = 0; 
   virtual bool is_index_ref() = 0;
   virtual void set_index_ref(bool ref) = 0; 
   virtual bool is_valid() = 0; 
@@ -60,7 +59,7 @@ class RadosMail{
    * Some metadata isn't saved as xattribute (default). To access those, get_extended_metadata can
    * be used.
    */
-  virtual map<string, ceph::bufferlist>* get_extended_metadata() = 0; 
+  virtual map<string, void*>* get_extended_metadata() = 0; 
   /*!
    * Save metadata to extended metadata store currently omap
    * @param[in] metadata valid radosMetadata.

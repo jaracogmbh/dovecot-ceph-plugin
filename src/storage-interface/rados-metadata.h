@@ -17,7 +17,6 @@
 #include <time.h>
 #include <stdlib.h>
 #include <sstream>
-#include <rados/librados.hpp>
 #include "rados-types.h"
 namespace storage_interface {
 
@@ -30,13 +29,12 @@ class RadosMetadata {
   virtual std::string to_string() = 0;
   virtual void convert(enum rbox_metadata_key _key, const std::string& val) = 0;
   virtual void convert(enum rbox_metadata_key _key, const time_t& time) = 0;
-  virtual void convert(enum rbox_metadata_key _key, char* value) = 0;
+  virtual void convert(enum rbox_metadata_key _key, const char* value) = 0;
   virtual void convert(enum rbox_metadata_key _key, const uint& value) = 0;
   virtual void convert(enum rbox_metadata_key _key, const size_t& value) = 0;
   virtual void convert(enum rbox_metadata_key _key, const int value) = 0;
-  virtual ceph::bufferlist& get_buffer() = 0;
+  virtual void* get_buffer() = 0;
   virtual std::string& get_key() = 0;
-  virtual void set_buffer(ceph::bufferlist& bl_) = 0;
   virtual void set_key(std::string& key_) = 0;
 };
 }  // end namespace

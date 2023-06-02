@@ -365,7 +365,7 @@ int main(int argc, const char **argv) {
   }
 
   // initialize configuration
-  storage_interface::RadosCephConfig *ceph_cfg=new librmb::RadosCephConfigImpl(&storage.get_io_ctx());
+  storage_interface::RadosCephConfig *ceph_cfg=new librmb::RadosCephConfigImpl(storage.get_io_ctx_wrapper());
   // set config object
   config_obj = opts.find("cfg_obj") != opts.end() ? opts["cfg_obj"] : ceph_cfg->get_cfg_object_name();
   ceph_cfg->set_cfg_object_name(config_obj);

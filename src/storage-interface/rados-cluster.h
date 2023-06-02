@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <rados/librados.hpp>
 #include"rbox-io-ctx.h"
 namespace storage_interface {
 /** class RadosDictionary

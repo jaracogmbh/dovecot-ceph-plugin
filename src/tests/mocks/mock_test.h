@@ -37,6 +37,7 @@ class RboxIoCtxMock : public RboxIoCtx{
     MOCK_METHOD1(set_io_ctx,void(librados::IoCtx& io_ctx_));
     MOCK_METHOD0(get_io_ctx,librados::IoCtx& ());
     MOCK_METHOD0(get_recovery_io_ctx,librados::IoCtx& ());
+    MOCK_METHOD5(exec,int(const std::string& oid, const char *cls, const char *method,ceph::bufferlist& inbl, ceph::bufferlist& outbl));
     MOCK_METHOD4(aio_stat,int(const std::string& oid,librados::AioCompletion *aio_complete,uint64_t *psize,time_t *pmtime));
     MOCK_METHOD3(omap_get_vals_by_keys,int(const std::string& oid,const std::set<std::string>& keys,std::map<std::string, librados::bufferlist> *vals));
     MOCK_METHOD2(omap_rm_keys,int(const std::string& oid,const std::set<std::string>& keys));
@@ -117,18 +118,14 @@ class RadosStorageMetadataMock : public RadosStorageMetadataModule {
  public:
   MOCK_METHOD1(set_io_ctx, void(storage_interface::RboxIoCtx *io_ctx_wrapper));
   MOCK_METHOD1(load_metadata, int(storage_interface::RadosMail *mail));
-  MOCK_METHOD2(set_metadata, int(storage_interface::RadosMail *mail, storage_interface::RadosMetadata *xattr));
+  MOCK_METHOD1(set_metadata, int(storage_interface::RadosMail *mail));
   MOCK_METHOD2(update_metadata, bool(const std::string &oid, std::list<storage_interface::RadosMetadata*> &to_update));
   MOCK_METHOD2(update_keyword_metadata, int(const std::string &oid, storage_interface::RadosMetadata *metadata));
   MOCK_METHOD2(remove_keyword_metadata, int(const std::string &oid, std::string &key));
-  MOCK_METHOD3(load_keyword_metadata, int(const std::string &oid, std::set<std::string> &keys,
-                                          std::map<std::string, ceph::bufferlist> *metadata));
 };
 
 class RadosMetadataStorageProducerMock : public RadosMetadataStorage {
  public:
-  MOCK_METHOD2(create_metadata_storage,
-               RadosStorageMetadataModule* (storage_interface::RboxIoCtx *io_ctx_wrapper, storage_interface::RadosDovecotCephCfg *cfg_));
   MOCK_METHOD0(get_storage, RadosStorageMetadataModule *());
 };
 

@@ -102,10 +102,9 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
   struct rbox_storage *storage = (struct rbox_storage *)box->storage;
   delete storage->s;
   librmbtest::RadosStorageMock *storage_mock = new librmbtest::RadosStorageMock();
-
-
-  librmb::RboxIoCtxImpl test_ioctx;
-  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(Return(&test_ioctx));
+  
+  librmb::RboxIoCtxImpl *test_ioctx = new librmb::RboxIoCtxImpl();
+  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(Return(test_ioctx));
 
   EXPECT_CALL(*storage_mock, set_ceph_wait_method(_)).Times(1);
 
@@ -125,25 +124,28 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
       .Times(AtLeast(1))
       .WillRepeatedly(Return(false));
 
-
   storage_interface::RadosMail *test_obj =
-   storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
-  test_obj->set_mail_buffer(nullptr);
+   storage_engine::StorageBackendFactory::create_mail(storage_engine::CEPH);
+  test_obj->set_mail_buffer((void*) new librados::bufferlist());
+  ceph::bufferlist *obj_buff=(ceph::bufferlist*)test_obj->get_mail_buffer(); 
+  obj_buff->append(message,strlen(message)-1);
+
   storage_interface::RadosMail *test_obj2 =
-   storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
-  test_obj2->set_mail_buffer(nullptr);
+   storage_engine::StorageBackendFactory::create_mail(storage_engine::CEPH);
+  test_obj2->set_mail_buffer((void*) new librados::bufferlist()); 
+  ceph::bufferlist *obj2_buff=(ceph::bufferlist*)test_obj2->get_mail_buffer(); 
+  obj2_buff->append(message,strlen(message)-1);
+
   EXPECT_CALL(*storage_mock, alloc_rados_mail()).Times(2).WillOnce(Return(test_obj)).WillOnce(Return(test_obj2));
   EXPECT_CALL(*storage_mock, free_rados_mail(_)).Times(2);
 
   delete storage->ms;
   librmbtest::RadosMetadataStorageProducerMock *ms_p_mock = new librmbtest::RadosMetadataStorageProducerMock();
   storage->ms = ms_p_mock;
-
-  librmbtest::RadosStorageMetadataMock ms_mock;
-  EXPECT_CALL(*ms_p_mock, get_storage()).WillRepeatedly(Return(&ms_mock));
-  EXPECT_CALL(ms_mock, set_metadata(_, _)).WillRepeatedly(Return(0));
-  EXPECT_CALL(*ms_p_mock, create_metadata_storage(_,_)).Times(1);
-
+  
+  librmbtest::RadosStorageMetadataMock *ms_mock= new librmbtest::RadosStorageMetadataMock();
+  EXPECT_CALL(*ms_p_mock, get_storage()).WillRepeatedly(Return(ms_mock));
+  EXPECT_CALL(*ms_mock, set_metadata(_)).WillRepeatedly(Return(0));
   delete storage->config;
   librmbtest::RadosDovecotCephCfgMock *cfg_mock = new librmbtest::RadosDovecotCephCfgMock();
   EXPECT_CALL(*cfg_mock, is_config_valid()).WillRepeatedly(Return(true));
@@ -166,11 +168,12 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
   EXPECT_CALL(*cfg_mock, is_mail_attribute(_)).WillRepeatedly(Return(true));
   EXPECT_CALL(*cfg_mock, is_user_mapping()).WillRepeatedly(Return(false));
   EXPECT_CALL(*cfg_mock, get_write_method()).WillRepeatedly(Return(1));
-  storage->ns_mgr->set_config(cfg_mock);
 
   storage->config = cfg_mock;
   storage->s = storage_mock;
-
+  storage->ns_mgr =
+    storage_engine::StorageBackendFactory::create_namespace_manager(storage_engine::CEPH,cfg_mock);
+  
   bool save_failed = FALSE;
   // ------ begin flow 
 
@@ -210,7 +213,23 @@ TEST_F(StorageTest, save_mail_rados_connection_failed) {
   i_stream_unref(&input);
   i_info("mailbox free!");
   mailbox_free(&box);
+  
+  delete test_ioctx;
+  test_ioctx=nullptr;
+  delete storage->ns_mgr;
+  storage->ns_mgr = nullptr;
+  
+  i_info("next delete test_obj");
+  if(test_obj->get_mail_buffer() != nullptr){
+    delete test_obj->get_mail_buffer();
+  }
+  delete test_obj;
 
+  i_info("next delete test_obj2");
+  if (test_obj2->get_mail_buffer() != nullptr) {
+    delete test_obj2->get_mail_buffer();
+  }
+  delete test_obj2;
 }
  
 /**
@@ -251,9 +270,9 @@ TEST_F(StorageTest, save_mail_success) {
 
   librmbtest::RadosStorageMock *storage_mock = new librmbtest::RadosStorageMock();
 
-  librmb::RboxIoCtxImpl io_ctx;
+  librmb::RboxIoCtxImpl *test_ioctx = new librmb::RboxIoCtxImpl();
 
-  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(Return(&io_ctx));
+  EXPECT_CALL(*storage_mock, get_io_ctx_wrapper()).WillRepeatedly(Return(test_ioctx));
 
   EXPECT_CALL(*storage_mock, set_ceph_wait_method(_)).Times(1);
 
@@ -274,11 +293,17 @@ TEST_F(StorageTest, save_mail_success) {
 
   
   storage_interface::RadosMail *test_obj =
-    storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
-  test_obj->set_mail_buffer(nullptr);
+   storage_engine::StorageBackendFactory::create_mail(storage_engine::CEPH);
+  test_obj->set_mail_buffer((void*) new librados::bufferlist());
+  ceph::bufferlist *obj_buff=(ceph::bufferlist*)test_obj->get_mail_buffer(); 
+  obj_buff->append(message,strlen(message)-1);
+
   storage_interface::RadosMail *test_obj2 =
-    storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
-  test_obj2->set_mail_buffer(nullptr);
+   storage_engine::StorageBackendFactory::create_mail(storage_engine::CEPH);
+  test_obj2->set_mail_buffer((void*) new librados::bufferlist()); 
+  ceph::bufferlist *obj2_buff=(ceph::bufferlist*)test_obj2->get_mail_buffer(); 
+  obj2_buff->append(message,strlen(message)-1);
+
   EXPECT_CALL(*storage_mock, alloc_rados_mail()).Times(2).WillOnce(Return(test_obj)).WillOnce(Return(test_obj2));
   EXPECT_CALL(*storage_mock, free_rados_mail(_)).Times(2);
 
@@ -286,10 +311,9 @@ TEST_F(StorageTest, save_mail_success) {
   librmbtest::RadosMetadataStorageProducerMock *ms_p_mock = new librmbtest::RadosMetadataStorageProducerMock();
   storage->ms = ms_p_mock;
 
-  librmbtest::RadosStorageMetadataMock ms_mock;
-  EXPECT_CALL(*ms_p_mock, get_storage()).WillRepeatedly(Return(&ms_mock));
-  EXPECT_CALL(ms_mock, set_metadata(_, _)).WillRepeatedly(Return(0));
-  EXPECT_CALL(*ms_p_mock, create_metadata_storage(_,_)).Times(1);
+  librmbtest::RadosStorageMetadataMock *ms_mock = new librmbtest::RadosStorageMetadataMock();
+  EXPECT_CALL(*ms_p_mock, get_storage()).WillRepeatedly(Return(ms_mock));
+  EXPECT_CALL(*ms_mock, set_metadata(_)).WillRepeatedly(Return(0));
 
   delete storage->config;
   librmbtest::RadosDovecotCephCfgMock *cfg_mock = new librmbtest::RadosDovecotCephCfgMock();
@@ -313,7 +337,8 @@ TEST_F(StorageTest, save_mail_success) {
   EXPECT_CALL(*cfg_mock, is_user_mapping()).WillRepeatedly(Return(false));
   
 
-  storage->ns_mgr->set_config(cfg_mock);
+  storage->ns_mgr =
+    storage_engine::StorageBackendFactory::create_namespace_manager(storage_engine::CEPH,cfg_mock);
 
   storage->config = cfg_mock;
   storage->s = storage_mock;
@@ -357,14 +382,22 @@ TEST_F(StorageTest, save_mail_success) {
   mailbox_free(&box);
   i_info("mailbox free done");
   
+  delete test_ioctx;
+  test_ioctx=nullptr;
+  delete storage->ns_mgr;
+  storage->ns_mgr = nullptr;
+
   i_info("next delete test_obj");
+  if(test_obj->get_mail_buffer() != nullptr){
+    delete test_obj->get_mail_buffer();
+  }
   delete test_obj;
+
+  i_info("next delete test_obj2");
   if (test_obj2->get_mail_buffer() != nullptr) {
     delete test_obj2->get_mail_buffer();
   }
-  i_info("next delete test_obj2");
   delete test_obj2;
-
 }
 
 int main(int argc, char **argv) {

@@ -28,7 +28,13 @@ class RadosSaveLogEntryImpl : public  storage_interface::RadosSaveLogEntry{
   RadosSaveLogEntryImpl() {}
   RadosSaveLogEntryImpl(const std::string &oid_, const std::string &ns_, const std::string &pool_, const std::string &op_)
       : oid(oid_), ns(ns_), pool(pool_), op(op_), metadata(0) {}
-  ~RadosSaveLogEntryImpl(){};
+  ~RadosSaveLogEntryImpl(){
+    std::list<storage_interface::RadosMetadata*>::iterator it;
+    for(it = metadata.begin(); it != metadata.end(); ++it){
+        delete (*it);
+        (*it)=nullptr;
+    }
+  };
 
   // format: mv|cp|save:src_ns,src_oid;metadata_key=metadata_value:metadata_key=metadata_value:....
   //        e.g.: // mv:ns_src:src_oid;M=ABCDEFG:B=INBOX:U=1
@@ -61,11 +67,11 @@ class RadosSaveLogEntryImpl : public  storage_interface::RadosSaveLogEntry{
     while (std::getline(right, item, ':')) {
       storage_interface::RadosMetadata *m= new librmb::RadosMetadataImpl();
       if (!m->from_string(item)) {
+        delete m;
+        m=nullptr;
         return false;
       }
       metadata.push_back(m);
-      delete m;
-      m=nullptr;
     }
     return true;
   }

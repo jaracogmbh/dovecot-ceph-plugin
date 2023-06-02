@@ -107,7 +107,7 @@ TEST(rmb1, save_mail) {
   librados::bufferlist bl;
   std::string attr_val = "1";
   bl.append(attr_val.c_str(), attr_val.length() + 1);
-  (*mail.get_metadata())["U"] = bl;
+  (*mail.get_metadata())["U"] = (void*)&bl;
   std::string mail_guid = "defg";
   void *buffer=(void*)new librados::bufferlist();
   mail.set_mail_buffer(buffer);
@@ -182,80 +182,80 @@ TEST(rmb1, rmb_command_filter_result) {
   {
     std::string key = "M";
     std::string val = "8eed840764b05359f12718004d2485ee";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "I";
     std::string val = "v0.1";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "G";
     std::string val = "8eed840764b05359f12718004d2485ee";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "R";
     std::string val = "1234567";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "S";
     std::string val = "1234561117";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "P";
     std::string val = "1";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "O";
     std::string val = "0";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "Z";
     std::string val = "200";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "V";
     std::string val = "250";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "U";
     std::string val = "1";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "A";
     std::string val = "";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "F";
     std::string val = "01";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "B";
     std::string val = "DRAFTS";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   mails.push_back(&obj1);
 
@@ -280,80 +280,80 @@ TEST(rmb1, rmb_command_filter_result2) {
   {
     std::string key = "M";
     std::string val = "8eed840764b05359f12718004d2485ee";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "I";
     std::string val = "v0.1";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "G";
     std::string val = "8eed840764b05359f12718004d2485ee";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "R";
     std::string val = "aafsadfasdfasdf";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "S";
     std::string val = "adfhasdfhsfdkahsdf";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "P";
     std::string val = "1";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "O";
     std::string val = "0";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "Z";
     std::string val = "";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "V";
     std::string val = "250";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "U";
     std::string val = "1";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "A";
     std::string val = "";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "F";
     std::string val = "01";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   {
     std::string key = "B";
     std::string val = "DRAFTS";
-    librmb::RadosMetadataImpl m(key, val);
-    obj1.add_metadata(&m);
+    librmb::RadosMetadataImpl *m = new librmb::RadosMetadataImpl(key, val);
+    obj1.add_metadata(m);
   }
   mails.push_back(&obj1);
 

@@ -32,35 +32,47 @@ RadosMailImpl::RadosMailImpl()
       restored(false),
       lost_object(false) {}
 
-RadosMailImpl::~RadosMailImpl() {}
+RadosMailImpl::~RadosMailImpl() {
+  /*NOTE: This means all metadata objects must be created with new!*/
+ for(std::list<storage_interface::RadosMetadata*>::iterator
+      it=metadata_list.begin(); it!=metadata_list.end(); ++it){
+    delete *it;
+    *it=nullptr; 
+  }
+  for(std::list<storage_interface::RadosMetadata*>::iterator
+      it=extended_metadata_list.begin(); it!=extended_metadata_list.end(); ++it){
+    delete *it;
+    *it=nullptr; 
+  }
+}
 
 std::string RadosMailImpl::to_string(const string& padding) {
   librmb::RadosUtilsImpl rados_utils;
   char* uid = NULL;
-  rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAIL_UID, &attrset, &uid);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAIL_UID, this->get_metadata(), &uid);
   char* recv_time_str = NULL;
-  rados_utils.get_metadata(storage_interface::RBOX_METADATA_RECEIVED_TIME, &attrset, &recv_time_str);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_RECEIVED_TIME, this->get_metadata(), &recv_time_str);
   char* p_size = NULL;
-  rados_utils.get_metadata(storage_interface::RBOX_METADATA_PHYSICAL_SIZE, &attrset, &p_size);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_PHYSICAL_SIZE, this->get_metadata(), &p_size);
   char* v_size = NULL;
-  rados_utils.get_metadata(storage_interface::RBOX_METADATA_VIRTUAL_SIZE, &attrset, &v_size);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_VIRTUAL_SIZE, this->get_metadata(), &v_size);
 
   char* rbox_version = NULL;
-  rados_utils.get_metadata(storage_interface::RBOX_METADATA_VERSION, &attrset, &rbox_version);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_VERSION, this->get_metadata(), &rbox_version);
   char* mailbox_guid = NULL;
-  rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAILBOX_GUID, &attrset, &mailbox_guid);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAILBOX_GUID, this->get_metadata(), &mailbox_guid);
   char* mail_guid = NULL;
-  rados_utils.get_metadata(storage_interface::RBOX_METADATA_GUID, &attrset, &mail_guid);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_GUID, this->get_metadata(), &mail_guid);
   char* mb_orig_name = NULL;
-  rados_utils.get_metadata(storage_interface::RBOX_METADATA_ORIG_MAILBOX, &attrset, &mb_orig_name);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_ORIG_MAILBOX, this->get_metadata(), &mb_orig_name);
 
   // string keywords = get_metadata(RBOX_METADATA_OLDV1_KEYWORDS);
   char* flags = NULL;
-  rados_utils.get_metadata(storage_interface::RBOX_METADATA_OLDV1_FLAGS, &attrset, &flags);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_OLDV1_FLAGS, this->get_metadata(), &flags);
   char* pvt_flags = NULL;
-  rados_utils.get_metadata(storage_interface::RBOX_METADATA_PVT_FLAGS, &attrset, &pvt_flags);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_PVT_FLAGS, this->get_metadata(), &pvt_flags);
   char* from_envelope = NULL;
-  rados_utils.get_metadata(storage_interface::RBOX_METADATA_FROM_ENVELOPE, &attrset, &from_envelope);
+  rados_utils.get_metadata(storage_interface::RBOX_METADATA_FROM_ENVELOPE, this->get_metadata(), &from_envelope);
 
   time_t ts = -1;
   if (recv_time_str != NULL) {
@@ -127,9 +139,9 @@ std::string RadosMailImpl::to_string(const string& padding) {
 
   if (extended_attrset.size() > 0) {
     ss << padding << "        " << static_cast<char>(storage_interface::RBOX_METADATA_OLDV1_KEYWORDS) << "(keywords): " << std::endl;
-    for (std::map<string, ceph::bufferlist>::iterator iter = extended_attrset.begin(); iter != extended_attrset.end();
+    for (std::map<string, void*>::iterator iter = extended_attrset.begin(); iter != extended_attrset.end();
          ++iter) {
-      ss << "                             " << iter->first << " : " << iter->second.to_str() << endl;
+      ss << "                             " << iter->first << " : " << ((ceph::bufferlist*)iter->second)->to_str() << endl;
     }
   }
 

@@ -26,7 +26,7 @@ namespace librmb {
  */
 class RadosCephConfigImpl : public storage_interface::RadosCephConfig{
  public:
-  explicit RadosCephConfigImpl(librados::IoCtx *io_ctx_);
+  explicit RadosCephConfigImpl(storage_interface::RboxIoCtx *io_ctx_);
   RadosCephConfigImpl() { 
     io_ctx = nullptr;
     if(config==nullptr){
@@ -44,7 +44,7 @@ class RadosCephConfigImpl : public storage_interface::RadosCephConfig{
   int load_cfg() override;
   int save_cfg() override;
 
-  void set_io_ctx(librados::IoCtx *io_ctx_) override{ io_ctx = io_ctx_; }
+  void set_io_ctx(storage_interface::RboxIoCtx *io_ctx_) override{ io_ctx = io_ctx_; }
   bool is_config_valid() override{ return config->is_valid(); }
   void set_config_valid(bool valid_) override{ config->set_valid(valid_); }
   bool is_user_mapping() override{ return !config->get_user_mapping().compare("true"); }
@@ -80,13 +80,13 @@ class RadosCephConfigImpl : public storage_interface::RadosCephConfig{
   const std::string &get_updateable_attribute_key() override{ return config->get_updateable_attribute_key(); }
   const std::string &get_update_attributes_key() override{ return config->get_update_attributes_key(); }
 
-  int save_object(const std::string &oid, librados::bufferlist &buffer) override;
-  int read_object(const std::string &oid, librados::bufferlist *buffer) override;
+  int save_object(const std::string &oid, void* buffer) override;
+  int read_object(const std::string &oid, void* buffer) override;
   void set_io_ctx_namespace(const std::string &namespace_) override;
 
  private:
-  storage_interface::RadosCephJsonConfig *config;
-  librados::IoCtx *io_ctx;
+  storage_interface::RadosCephJsonConfig *config = nullptr;
+  storage_interface::RboxIoCtx *io_ctx = nullptr;
 };
 
 } /* namespace librmb */

@@ -151,11 +151,11 @@ TEST_F(StorageTest, move_mail_from_alt_storage) {
   }
 
   librados::NObjectIterator iter(r_storage->alt->get_io_ctx_wrapper().nobjects_begin());
-  r_storage->ms->get_storage()->set_io_ctx(&r_storage->alt->get_io_ctx_wrapper().get_io_ctx());
+  r_storage->ms->get_storage()->set_io_ctx(r_storage->alt->get_io_ctx_wrapper());
   std::vector<storage_interface::RadosMail *> objects;
   while (iter != r_storage->alt->get_io_ctx_wrapper().nobjects_end()) {
     storage_interface::RadosMail *obj =
-      storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+      storage_engine::StorageBackendFactory::create_mail(storage_engine::CEPH);
     obj->set_oid((*iter).get_oid());
     r_storage->ms->get_storage()->load_metadata(obj);
     objects.push_back(obj);
