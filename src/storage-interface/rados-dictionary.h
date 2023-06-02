@@ -14,7 +14,6 @@
 
 #include <string>
 #include "rbox-io-ctx.h"
-#include <rados/librados.hpp>
 
 namespace storage_interface {
 

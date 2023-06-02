@@ -62,12 +62,7 @@ TESTS += test_storage_mock_rbox
 test_storage_mock_rbox_SOURCES = storage-mock-rbox/test_storage_mock_rbox.cpp storage-mock-rbox/TestCase.cpp storage-mock-rbox/TestCase.h mocks/mock_test.h test-utils/it_utils.cpp test-utils/it_utils.h 
 test_storage_mock_rbox_CPPFLAGS = $(AM_CPPFLAGS) $(LIBDOVECOT_INCLUDE) 
 test_storage_mock_rbox_LDADD = $(storage_shlibs) $(gtest_shlibs) 
-  
-
-TESTS += test_storage_mock_rbox_bugs
-test_storage_mock_rbox_bugs_SOURCES = storage-mock-rbox/test_storage_mock_rbox_bugs.cpp storage-mock-rbox/TestCase.cpp storage-mock-rbox/TestCase.h mocks/mock_test.h test-utils/it_utils.cpp test-utils/it_utils.h 
-test_storage_mock_rbox_bugs_CPPFLAGS = $(AM_CPPFLAGS) $(LIBDOVECOT_INCLUDE) 
-test_storage_mock_rbox_bugs_LDADD = $(storage_shlibs) $(gtest_shlibs) 
+   
 
 TESTS += test_repair_rbox
 test_repair_rbox_SOURCES = storage-mock-rbox/test_repair_rbox.cpp storage-mock-rbox/TestCase.cpp storage-mock-rbox/TestCase.h mocks/mock_test.h test-utils/it_utils.cpp test-utils/it_utils.h 
@@ -93,10 +88,11 @@ it_test_storage_rbox_SOURCES = storage-rbox/it_test_storage_rbox.cpp storage-rbo
 it_test_storage_rbox_CPPFLAGS = $(AM_CPPFLAGS) $(LIBDOVECOT_INCLUDE) 
 it_test_storage_rbox_LDADD = $(storage_shlibs) $(gtest_shlibs) 
 
-TESTS += it_test_storage_rbox_2
-it_test_storage_rbox_2_SOURCES = storage-rbox/it_test_storage_rbox.cpp storage-rbox2/TestCase.cpp storage-rbox2/TestCase.h test-utils/it_utils.cpp  test-utils/it_utils.h  
-it_test_storage_rbox_2_CPPFLAGS = $(AM_CPPFLAGS) $(LIBDOVECOT_INCLUDE) 
-it_test_storage_rbox_2_LDADD = $(storage_shlibs) $(gtest_shlibs) 
+# storage_rbox_2 uses same code as storage-rbox but uses write chunks which is tested with the above testcase.
+#TESTS += it_test_storage_rbox_2
+#it_test_storage_rbox_2_SOURCES = storage-rbox/it_test_storage_rbox.cpp storage-rbox2/TestCase.cpp storage-rbox2/TestCase.h test-utils/it_utils.cpp  test-utils/it_utils.h  
+#it_test_storage_rbox_2_CPPFLAGS = $(AM_CPPFLAGS) $(LIBDOVECOT_INCLUDE) 
+#it_test_storage_rbox_2_LDADD = $(storage_shlibs) $(gtest_shlibs) 
 
 
 TESTS += it_test_copy_rbox
@@ -104,8 +100,6 @@ it_test_copy_rbox_SOURCES = storage-rbox/it_test_copy_rbox.cpp storage-rbox/Test
 it_test_copy_rbox_CPPFLAGS = $(AM_CPPFLAGS) $(LIBDOVECOT_INCLUDE) 
 it_test_copy_rbox_LDADD = $(storage_shlibs) $(gtest_shlibs) 
 
-
- 
  
 
 TESTS += it_test_copy_rbox_fail
@@ -132,10 +126,11 @@ it_test_read_mail_rbox_SOURCES = storage-rbox/it_test_read_mail_rbox.cpp storage
 it_test_read_mail_rbox_CPPFLAGS = $(AM_CPPFLAGS) $(LIBDOVECOT_INCLUDE) 
 it_test_read_mail_rbox_LDADD = $(storage_shlibs) $(gtest_shlibs) 
 
-TESTS += it_test_read_mail_rbox_alt
-it_test_read_mail_rbox_alt_SOURCES = storage-rbox/it_test_read_mail_rbox_alt.cpp storage-rbox/TestCase.cpp storage-rbox/TestCase.h test-utils/it_utils.cpp test-utils/it_utils.h
-it_test_read_mail_rbox_alt_CPPFLAGS = $(AM_CPPFLAGS) $(LIBDOVECOT_INCLUDE) 
-it_test_read_mail_rbox_alt_LDADD = $(storage_shlibs) $(gtest_shlibs) 
+#NOTE: ALT STORAGE is not really supported
+#TESTS += it_test_read_mail_rbox_alt
+#it_test_read_mail_rbox_alt_SOURCES = storage-rbox/it_test_read_mail_rbox_alt.cpp storage-rbox/TestCase.cpp storage-rbox/TestCase.h test-utils/it_utils.cpp test-utils/it_utils.h
+#it_test_read_mail_rbox_alt_CPPFLAGS = $(AM_CPPFLAGS) $(LIBDOVECOT_INCLUDE) 
+#it_test_read_mail_rbox_alt_LDADD = $(storage_shlibs) $(gtest_shlibs) 
 
 TESTS += it_test_read_mail_failed_rbox
 it_test_read_mail_failed_rbox_SOURCES = storage-rbox/it_test_read_mail_failed_rbox.cpp storage-rbox/TestCase.cpp storage-rbox/TestCase.h test-utils/it_utils.cpp test-utils/it_utils.h

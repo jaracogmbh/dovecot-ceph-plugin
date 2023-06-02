@@ -142,7 +142,7 @@ TEST_F(StorageTest, mail_lda_copy_mail_in_inbox) {
   std::vector<storage_interface::RadosMail *> objects;
   while (iter != r_storage->s->get_io_ctx_wrapper()->nobjects_end()) {
     storage_interface::RadosMail *obj =
-      storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+      storage_engine::StorageBackendFactory::create_mail(storage_engine::CEPH);
     obj->set_oid((*iter).get_oid());
     r_storage->ms->get_storage()->load_metadata(obj);
     objects.push_back(obj);
@@ -170,14 +170,15 @@ TEST_F(StorageTest, mail_lda_copy_mail_in_inbox) {
   ASSERT_STREQ(val, val2);
   val = val2 = NULL;
 
+  // changed: as we are copy the mail instead of moving it, that is why we need
+  //          to have a different GUID
   rados_utils.get_metadata(storage_interface::RBOX_METADATA_GUID, mail1->get_metadata(), &val);
   rados_utils.get_metadata(storage_interface::RBOX_METADATA_GUID, mail2->get_metadata(), &val2);
-  ASSERT_STREQ(val, val2);
-
+  ASSERT_NE(val, val2);
   val = val2 = NULL;
   rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAILBOX_GUID, mail1->get_metadata(), &val);
   rados_utils.get_metadata(storage_interface::RBOX_METADATA_MAILBOX_GUID, mail2->get_metadata(), &val2);
-  ASSERT_STREQ(val, val2);
+  ASSERT_NE(val, val2);
   val = val2 = NULL;
   rados_utils.get_metadata(storage_interface::RBOX_METADATA_ORIG_MAILBOX, mail1->get_metadata(), &val);
   rados_utils.get_metadata(storage_interface::RBOX_METADATA_ORIG_MAILBOX, mail2->get_metadata(), &val2);

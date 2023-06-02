@@ -14,7 +14,6 @@
 #include <string>
 #include "rados-ceph-json-config.h"
 #include "rados-types.h"
-#include <rados/librados.hpp>
 #include "rados-storage.h"
 
 namespace storage_interface {
@@ -31,7 +30,7 @@ class RadosCephConfig {
   virtual int load_cfg() = 0;
   virtual int save_cfg() = 0;
 
-  virtual void set_io_ctx(librados::IoCtx *io_ctx_) = 0; 
+  virtual void set_io_ctx(storage_interface::RboxIoCtx *io_ctx_) = 0; 
   virtual bool is_config_valid() = 0;
   virtual void set_config_valid(bool valid_) = 0;
   virtual bool is_user_mapping() = 0;
@@ -63,8 +62,8 @@ class RadosCephConfig {
   virtual const std::string &get_mail_attribute_key() = 0;
   virtual const std::string &get_updateable_attribute_key() = 0;
   virtual const std::string &get_update_attributes_key()  = 0;
-  virtual int save_object(const std::string &oid, librados::bufferlist &buffer) = 0;
-  virtual int read_object(const std::string &oid, librados::bufferlist *buffer) = 0;
+  virtual int save_object(const std::string &oid, void* buffer) = 0;
+  virtual int read_object(const std::string &oid, void* buffer) = 0;
   virtual void set_io_ctx_namespace(const std::string &namespace_) = 0;
 };
 

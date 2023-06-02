@@ -86,7 +86,6 @@ TEST_F(SyncTest, force_resync_missing_rados_object) {
     uint32_t msg_count_before = mail_index_view_get_messages_count(box->view);
     i_debug("Message count before = %u", msg_count_before);
     EXPECT_EQ((uint32_t)3, msg_count_before);
-
     if (mailbox_sync(box, static_cast<mailbox_sync_flags>(MAILBOX_SYNC_FLAG_FORCE_RESYNC |
                                                           MAILBOX_SYNC_FLAG_FIX_INCONSISTENT)) < 0) {
       i_error("Forcing a resync on mailbox %s failed: %s", mailbox, mailbox_get_last_internal_error(box, NULL));

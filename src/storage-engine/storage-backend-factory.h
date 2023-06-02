@@ -32,12 +32,11 @@
 
 
 namespace storage_engine {
+enum StorageType { CEPH, S3 };  
 class StorageBackendFactory {
  public:
-  enum StorageType { CEPH, S3 };
-
   static storage_interface::RadosCluster *create_cluster(StorageType storage_type) {
-    storage_interface::RadosCluster *cluster;
+    storage_interface::RadosCluster *cluster = nullptr;
     if (storage_type == CEPH) {
       cluster = new librmb::RadosClusterImpl();
     }
@@ -45,15 +44,15 @@ class StorageBackendFactory {
   }
 
   static storage_interface::RadosStorage *create_storage(StorageType storage_type, storage_interface::RadosCluster *cluster) {
-    storage_interface::RadosStorage *storage;
+    storage_interface::RadosStorage *storage = nullptr;
     if (storage_type == CEPH) {
       storage = new librmb::RadosStorageImpl(cluster);
     }
     return storage;
   }
 
-  static storage_interface::RadosDovecotCephCfg *create_dovecot_ceph_cfg_io(StorageType storage_type,librados::IoCtx *io_ctx_) {
-    storage_interface::RadosDovecotCephCfg *dovecot_ceph_cfg;
+  static storage_interface::RadosDovecotCephCfg *create_dovecot_ceph_cfg_io(StorageType storage_type,storage_interface::RboxIoCtx *io_ctx_) {
+    storage_interface::RadosDovecotCephCfg *dovecot_ceph_cfg = nullptr;
     if (storage_type == CEPH) {
       dovecot_ceph_cfg = new librmb::RadosDovecotCephCfgImpl(io_ctx_);
     }
@@ -62,7 +61,7 @@ class StorageBackendFactory {
   
   static storage_interface::RadosDovecotCephCfg *create_dovecot_ceph_cfg(
     StorageType storage_type, librmb::RadosConfig &dovecot_cfg_, storage_interface::RadosCephConfig *rados_cfg_){
-      storage_interface::RadosDovecotCephCfg *dovecot_ceph_cfg;
+      storage_interface::RadosDovecotCephCfg *dovecot_ceph_cfg = nullptr;
     if(storage_type == CEPH){
       dovecot_ceph_cfg=new librmb::RadosDovecotCephCfgImpl(dovecot_cfg_, rados_cfg_);
     }
@@ -71,23 +70,24 @@ class StorageBackendFactory {
 
   static storage_interface::RadosNamespaceManager *create_namespace_manager(StorageType storage_type,
                                                           storage_interface::RadosDovecotCephCfg *dovecot_ceph_cfg) {
-    storage_interface::RadosNamespaceManager *name_space_manager;
+    storage_interface::RadosNamespaceManager *name_space_manager = nullptr;
     if (storage_type == CEPH) {
       name_space_manager = new librmb::RadosNamespaceManagerImpl(dovecot_ceph_cfg);
     }
     return name_space_manager;
   }
 
-  static storage_interface::RadosMetadataStorage *create_metadata_storage(StorageType storage_type) {
-    storage_interface::RadosMetadataStorage *metadata_storage;
+  static storage_interface::RadosMetadataStorage *create_metadata_storage(
+    StorageType storage_type,storage_interface::RboxIoCtx *io_ctx,storage_interface::RadosDovecotCephCfg * config) {
+    storage_interface::RadosMetadataStorage *metadata_storage = nullptr;
     if (storage_type == CEPH) {
-      metadata_storage = new librmb::RadosMetadataStorageImpl();
+      metadata_storage = new librmb::RadosMetadataStorageImpl(io_ctx,config);
     }
     return metadata_storage;
   }
 
   static storage_interface::RadosMail *create_mail(StorageType storage_type){
-    storage_interface::RadosMail *mail;
+    storage_interface::RadosMail *mail = nullptr;
     if (storage_type == CEPH){
       mail=new librmb::RadosMailImpl();
     }
@@ -95,15 +95,15 @@ class StorageBackendFactory {
   }
 
   static storage_interface::RadosCephConfig *create_ceph_config(StorageType storage_type){
-    storage_interface::RadosCephConfig *ceph_config;
+    storage_interface::RadosCephConfig *ceph_config = nullptr;
     if(storage_type==CEPH){
       ceph_config=new librmb::RadosCephConfigImpl();
     }
     return ceph_config;
   }
 
-  static storage_interface::RadosCephConfig *create_ceph_config_io(StorageType storage_type,librados::IoCtx *io_ctx_){
-    storage_interface::RadosCephConfig *ceph_config;
+  static storage_interface::RadosCephConfig *create_ceph_config_io(StorageType storage_type,storage_interface::RboxIoCtx *io_ctx_){
+    storage_interface::RadosCephConfig *ceph_config = nullptr;
     if(storage_type==CEPH){
       ceph_config=new librmb::RadosCephConfigImpl(io_ctx_);
     }
@@ -111,7 +111,7 @@ class StorageBackendFactory {
   }
   
   static storage_interface::RadosMetadata *create_metadata_default(StorageType storage_type){
-    storage_interface::RadosMetadata *metadata;
+    storage_interface::RadosMetadata *metadata = nullptr;
     if(storage_type==CEPH){
       metadata=new librmb::RadosMetadataImpl();
     }
@@ -121,7 +121,7 @@ class StorageBackendFactory {
   static storage_interface::RadosMetadata *create_metadata_str_key_val(
     StorageType storage_type,std::string& key_, std::string& val){
 
-    storage_interface::RadosMetadata *metadata;
+    storage_interface::RadosMetadata *metadata = nullptr;
     if(storage_type==CEPH){
       metadata=new librmb::RadosMetadataImpl(key_,val);
     }
@@ -131,7 +131,7 @@ class StorageBackendFactory {
   static storage_interface::RadosMetadata *create_metadata_string(
     StorageType storage_type,storage_interface::rbox_metadata_key _key,const std::string& val){
 
-    storage_interface::RadosMetadata *metadata;
+    storage_interface::RadosMetadata *metadata = nullptr;
     if(storage_type==CEPH){
       metadata=new librmb::RadosMetadataImpl(_key,val);
     }
@@ -141,7 +141,7 @@ class StorageBackendFactory {
   static storage_interface::RadosMetadata *create_metadata_time(
     StorageType storage_type,storage_interface::rbox_metadata_key _key,const time_t& val){
 
-    storage_interface::RadosMetadata *metadata;
+    storage_interface::RadosMetadata *metadata = nullptr;
     if(storage_type==CEPH){
       metadata=new librmb::RadosMetadataImpl(_key,val);
     }
@@ -151,7 +151,7 @@ class StorageBackendFactory {
   static storage_interface::RadosMetadata *create_metadata_char(
     StorageType storage_type,storage_interface::rbox_metadata_key _key,const char* val){
 
-    storage_interface::RadosMetadata *metadata;
+    storage_interface::RadosMetadata *metadata = nullptr;
     if(storage_type==CEPH){
       metadata=new librmb::RadosMetadataImpl(_key,val);
     }
@@ -161,7 +161,7 @@ class StorageBackendFactory {
   static storage_interface::RadosMetadata *create_metadata_uint(
     StorageType storage_type,storage_interface::rbox_metadata_key _key,const uint& val){
 
-    storage_interface::RadosMetadata *metadata;
+    storage_interface::RadosMetadata *metadata = nullptr;
     if(storage_type==CEPH){
       metadata=new librmb::RadosMetadataImpl(_key,val);
     }
@@ -171,7 +171,7 @@ class StorageBackendFactory {
   static storage_interface::RadosMetadata *create_metadata_size_t(
     StorageType storage_type,storage_interface::rbox_metadata_key _key,const size_t& val){
 
-    storage_interface::RadosMetadata *metadata;
+    storage_interface::RadosMetadata *metadata = nullptr;
     if(storage_type==CEPH){
       metadata=new librmb::RadosMetadataImpl(_key,val);
     }
@@ -181,7 +181,7 @@ class StorageBackendFactory {
   static storage_interface::RadosMetadata *create_metadata_int(
     StorageType storage_type,storage_interface::rbox_metadata_key _key,const int val){
 
-    storage_interface::RadosMetadata *metadata;
+    storage_interface::RadosMetadata *metadata = nullptr;
     if(storage_type==CEPH){
       metadata=new librmb::RadosMetadataImpl(_key,val);
     }
@@ -191,14 +191,14 @@ class StorageBackendFactory {
     StorageType storage_type, storage_interface::RadosStorage *storage_, storage_interface::RadosCluster *cluster_,
       std::map<std::string, std::string> *opts_){
 
-    storage_interface::RmbCommands *rmb_commands;
+    storage_interface::RmbCommands *rmb_commands = nullptr;
     if(storage_type==CEPH){
       rmb_commands=new librmb::RmbCommandsImpl(storage_, cluster_, opts_);
     }
     return rmb_commands;    
   }
   static storage_interface::RmbCommands *create_rmb_commands_default(StorageType storage_type){
-    storage_interface::RmbCommands *rmb_commands;
+    storage_interface::RmbCommands *rmb_commands = nullptr;
     if(storage_type==CEPH){
       rmb_commands=new librmb::RmbCommandsImpl();
     }
@@ -208,7 +208,7 @@ class StorageBackendFactory {
   static storage_interface::RadosSaveLogEntry *create_save_log_entry(
     StorageType storage_type,const std::string &oid_, const std::string &ns_, const std::string &pool_, const std::string &op_){
 
-    storage_interface::RadosSaveLogEntry *save_log_entry;
+    storage_interface::RadosSaveLogEntry *save_log_entry = nullptr;
     if(storage_type==CEPH){
       save_log_entry=new librmb::RadosSaveLogEntryImpl(oid_, ns_, pool_, op_);
     }
@@ -216,7 +216,7 @@ class StorageBackendFactory {
   }
 
   static storage_interface::RadosSaveLogEntry *create_save_log_entry_default(StorageType storage_type){
-    storage_interface::RadosSaveLogEntry *save_log_entry;
+    storage_interface::RadosSaveLogEntry *save_log_entry = nullptr;
     if(storage_type==CEPH){
       save_log_entry=new librmb::RadosSaveLogEntryImpl();
     }
@@ -224,14 +224,14 @@ class StorageBackendFactory {
   }
   
   static storage_interface::RadosSaveLog *create_save_log(StorageType storage_type,const std::string& log_file){
-    storage_interface::RadosSaveLog *save_log;
+    storage_interface::RadosSaveLog *save_log = nullptr;
     if(storage_type==CEPH){
       save_log=new librmb::RadosSaveLogImpl(log_file);
     }
     return save_log;
   }
   static storage_interface::RadosSaveLog *create_save_log_default(StorageType storage_type){
-    storage_interface::RadosSaveLog *save_log;
+    storage_interface::RadosSaveLog *save_log = nullptr;
     if(storage_type==CEPH){
       save_log=new librmb::RadosSaveLogImpl();
     }
@@ -239,7 +239,7 @@ class StorageBackendFactory {
   }
 
   static storage_interface::CmdLineParser *create_cmd_line_parser(StorageType storage_type,const std::string &_ls_value){
-    storage_interface::CmdLineParser *cmd_line_parser;
+    storage_interface::CmdLineParser *cmd_line_parser = nullptr;
     if(storage_type==CEPH){
       cmd_line_parser=new librmb::CmdLineParserImpl(_ls_value);
     }
@@ -247,12 +247,24 @@ class StorageBackendFactory {
   }
 
   static storage_interface::RadosUtils *create_rados_utils(StorageType storage_type){
-    storage_interface::RadosUtils *rados_utils;
+    storage_interface::RadosUtils *rados_utils = nullptr;
     if(storage_type==CEPH){
       rados_utils=new librmb::RadosUtilsImpl();
     }
     return rados_utils;
   }
+};
+class StorageObjectFactory{
+ public:
+  template<class BufferType>
+  static BufferType* get_buffer(StorageType storage_type, void* storage_address){
+    BufferType* storage_buffer = nullptr;
+    if(storage_type==CEPH){
+      storage_buffer=(ceph::bufferlist*)storage_address; 
+    }
+    return storage_buffer;
+  } 
+
 };
 }  // namespace interface_engine
 #endif  // SRC_STORAGE_ENGINE_STORAGE_BACKEND_FACTORY_H_

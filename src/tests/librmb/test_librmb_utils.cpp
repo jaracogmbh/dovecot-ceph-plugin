@@ -35,7 +35,7 @@ TEST(librmb, get_metadata_1) {
   enum storage_interface::rbox_metadata_key key = storage_interface::rbox_metadata_key::RBOX_METADATA_GUID;
   librmb::RadosMetadataImpl m(key, "abcdefg");
   storage_interface::RadosMail *mail=
-    storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+    storage_engine::StorageBackendFactory::create_mail(storage_engine::CEPH);
   mail->add_metadata(&m);
   char *val = NULL;
   librmb::RadosUtilsImpl rados_utils;
@@ -357,16 +357,16 @@ TEST(librmb, test_mvn_option) {
   std::list<storage_interface::RadosMetadata *> metadata;
   storage_interface::RadosMetadata *guid=
     storage_engine::StorageBackendFactory::create_metadata_string(
-      storage_engine::StorageBackendFactory::CEPH, storage_interface::RBOX_METADATA_MAILBOX_GUID, "ABCDEFG");
+      storage_engine::CEPH, storage_interface::RBOX_METADATA_MAILBOX_GUID, "ABCDEFG");
 
   storage_interface::RadosMetadata *mb_name=
     storage_engine::StorageBackendFactory::create_metadata_string(
-      storage_engine::StorageBackendFactory::CEPH, storage_interface::RBOX_METADATA_ORIG_MAILBOX, "INBOX");
+      storage_engine::CEPH, storage_interface::RBOX_METADATA_ORIG_MAILBOX, "INBOX");
 
   uint uid_ = 1;
   storage_interface::RadosMetadata *uid=
     storage_engine::StorageBackendFactory::create_metadata_uint(
-      storage_engine::StorageBackendFactory::CEPH, storage_interface::RBOX_METADATA_MAIL_UID, uid_);
+      storage_engine::CEPH, storage_interface::RBOX_METADATA_MAIL_UID, uid_);
 
   metadata.push_back(guid);
   metadata.push_back(mb_name);
@@ -376,7 +376,7 @@ TEST(librmb, test_mvn_option) {
   librmb::RadosSaveLogImpl log_file(test_file_name);
   EXPECT_EQ(true, log_file.open());
   storage_interface::RadosSaveLogEntry *save_log_entry=
-    storage_engine::StorageBackendFactory::create_save_log_entry_default(storage_engine::StorageBackendFactory::CEPH);
+    storage_engine::StorageBackendFactory::create_save_log_entry_default(storage_engine::CEPH);
   log_file.append(&librmb::RadosSaveLogEntryImpl("dest_oid", "ns_dest", "mail_storage",
                                             save_log_entry->op_mv("ns_src", "src_oid", "user", metadata)));
   std::ifstream read(test_file_name);

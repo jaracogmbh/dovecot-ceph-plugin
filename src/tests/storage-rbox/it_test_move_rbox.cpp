@@ -130,7 +130,7 @@ TEST_F(StorageTest, move_mail_test) {
   std::vector<storage_interface::RadosMail *> objects;
   while (iter != r_storage->s->get_io_ctx_wrapper()->nobjects_end()) {
     storage_interface::RadosMail *obj =
-      storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+      storage_engine::StorageBackendFactory::create_mail(storage_engine::CEPH);
     obj->set_oid((*iter).get_oid());
     r_storage->ms->get_storage()->load_metadata(obj);
     objects.push_back(obj);

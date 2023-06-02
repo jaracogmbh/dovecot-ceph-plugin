@@ -32,8 +32,8 @@ class RadosCephJsonConfigImpl : public storage_interface::RadosCephJsonConfig {
   RadosCephJsonConfigImpl();
   virtual ~RadosCephJsonConfigImpl() {}
 
-  bool from_json(librados::bufferlist* buffer) override;
-  bool to_json(librados::bufferlist* buffer) override;
+  bool from_json(void* buffer) override;
+  bool to_json(void* buffer) override;
   std::string to_string();
 
   const std::string& get_cfg_object_name() const override{ return cfg_object_name; }

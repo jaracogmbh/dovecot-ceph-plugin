@@ -13,8 +13,6 @@
 #define SRC_STORAGE_INTERFACES_RADOS_CEPH_JSON_CONFIG_H_
 
 #include <string>
-
-#include <rados/librados.hpp>
 #include "rados-types.h"
 
 namespace storage_interface {
@@ -30,8 +28,8 @@ class RadosCephJsonConfig {
  public:
   virtual ~RadosCephJsonConfig() {}
 
-  virtual bool from_json(librados::bufferlist* buffer) = 0;
-  virtual bool to_json(librados::bufferlist* buffer) = 0;
+  virtual bool from_json(void* buffer) = 0;
+  virtual bool to_json(void* buffer) = 0;
   virtual std::string to_string() = 0;
 
   virtual const std::string& get_cfg_object_name() const = 0;

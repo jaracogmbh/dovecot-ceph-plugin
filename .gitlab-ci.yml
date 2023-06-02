@@ -1,4 +1,4 @@
-image: 192.168.178.73:6088/ceph/dovecot-ceph-demo:latest
+image: 192.168.178.73:6088/ceph-dovecot-combined:b8731464faf885946bdd453ffe3080a2b9827da7
 
 variables:
   DOCKER_REGISTRY_URL: "192.168.178.73:6088"
@@ -6,7 +6,7 @@ variables:
   LANG: "en_US.UTF-8"
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
-  PROJECT_NAME: jaraco-website
+  PROJECT_NAME: dovecot-ceph-plugin
   GIT_SUBMODULE_STRATEGY: recursive
 
 stages:
@@ -16,13 +16,26 @@ build:
   stage: build
   tags: ["kubernetes"]
   script:
-    - chmod 777 /etc/ceph/*
-    - chmod -R 777 /usr/local/var/
+    - /opt/ceph-container/bin/entrypoint.sh demo &
     - ./autogen.sh
     - ./configure --with-dovecot=/usr/local/lib/dovecot --enable-maintainer-mode --enable-debug --with-integration-tests --enable-valgrind --enable-debug
     - make clean install
-    - ldconfig
-    # - ceph tell mon.\* injectargs "--mon-allow-pool-delete=true"
-    # - make check
-
-    
+    - ps -aux
+    - ceph df
+    - ./setup.sh
+    - dovecot    
+    - imaptest user=t%d pass=t port=10143 users=10 clients=10 error_quit secs=30 output=./imaptest.log
+    - cp /var/log/dovecot.log ./
+    #- grep -c "Error:" /var/log/dovecot.log
+    #- grep -c "failed:" /var/log/dovecot.log
+    #- grep -c "Internal error:" /var/log/dovecot.log
+    #- grep -c "killed:" /var/log/dovecot.log
+    #- grep -c "Panic:" /var/log/dovecot.log
+    #- grep -c "Fatal:" /var/log/dovecot.log
+    #- grep -c "BUG:" /var/log/dovecot.log  
+    - ceph df
+    - make check
+  artifacts:
+   paths:
+    - imaptest.log
+    - dovecot.log

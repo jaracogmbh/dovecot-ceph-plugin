@@ -16,9 +16,9 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <rados/librados.hpp>
 #include "../storage-interface/rados-metadata.h"
 #include "../storage-interface/rados-types.h"
-#include <rados/librados.hpp>
 #include "../storage-interface/rados-mail.h"
 
 namespace librmb {
@@ -50,7 +50,9 @@ class RadosMailImpl : public storage_interface::RadosMail {
    */
   void set_mail_buffer(void* buffer) override { this->mail_buffer = buffer;}
   void* get_mail_buffer() override { return this->mail_buffer;}
-  map<string, ceph::bufferlist>* get_metadata() override { return &this->attrset; }
+  map<string, void*>* get_metadata() override {   
+    return &attrset;
+  }
   bool is_index_ref() override { return index_ref; }
   void set_index_ref(bool ref) override { this->index_ref = ref; }
   bool is_valid() override { return valid; }
@@ -61,24 +63,33 @@ class RadosMailImpl : public storage_interface::RadosMail {
   
   bool is_lost_object() override { return lost_object; }
   void set_lost_object(bool is_lost_object) override { lost_object = is_lost_object; }
+  
   string to_string(const string& padding) override;
-  void add_metadata(const storage_interface::RadosMetadata* metadata) override { attrset[metadata->get_key()] = metadata->get_buffer(); }
+  void add_metadata(const storage_interface::RadosMetadata* metadata_) override {
+    metadata_list.push_back(metadata_);
+    attrset[metadata_->get_key()] = metadata_->get_buffer();
+  }
   bool is_deprecated_uid() override {return deprecated_uid;}
   void set_deprecated_uid(bool deprecated_uid_) override {deprecated_uid = deprecated_uid_;}
   /*!
    * Some metadata isn't saved as xattribute (default). To access those, get_extended_metadata can
    * be used.
    */
-  map<string, ceph::bufferlist>* get_extended_metadata() override { return &this->extended_attrset; }
+  map<string, void*>* get_extended_metadata() override { 
+    return &this->extended_attrset;
+  }
   /*!
    * Save metadata to extended metadata store currently omap
    * @param[in] metadata valid radosMetadata.
    */
-  void add_extended_metadata(const storage_interface::RadosMetadata *metadata) override { extended_attrset[metadata->get_key()] = metadata->get_buffer(); }
+  void add_extended_metadata(const storage_interface::RadosMetadata *ext_metadata) override {
+    extended_metadata_list.push_back(ext_metadata);
+    extended_attrset[ext_metadata->get_key()] = ext_metadata->get_buffer();
+  }
 
   const string get_extended_metadata(const string& key) override {
     if (extended_attrset.find(key) != extended_attrset.end()) {
-      return extended_attrset[key].to_str();
+      return ((ceph::bufferlist*)extended_attrset[key])->to_str();
     }
     return nullptr;
   }
@@ -89,9 +100,10 @@ class RadosMailImpl : public storage_interface::RadosMail {
   int object_size;  // byte
   void* mail_buffer;
   time_t save_date_rados;
-
-  map<string, ceph::bufferlist> attrset;
-  map<string, ceph::bufferlist> extended_attrset;
+  std::list<storage_interface::RadosMetadata*> metadata_list;
+  std::list<storage_interface::RadosMetadata*> extended_metadata_list;
+  map<string, void*> attrset;
+  map<string, void*> extended_attrset;
   bool valid;
   bool index_ref;
   bool deprecated_uid;

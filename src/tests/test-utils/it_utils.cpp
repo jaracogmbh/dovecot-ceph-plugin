@@ -76,7 +76,7 @@ void ItUtils::add_mail(const char *message, const char *mailbox, struct mail_nam
 
   librmbtest::RadosStorageMetadataMock ms_mock;
   EXPECT_CALL(*ms_p_mock, get_storage()).WillRepeatedly(Return(&ms_mock));
-  EXPECT_CALL(ms_mock, set_metadata(_, _)).WillRepeatedly(Return(0));
+  EXPECT_CALL(ms_mock, set_metadata(_)).WillRepeatedly(Return(0));
 
   std::string user = "client.admin";
   std::string cluster = "ceph";

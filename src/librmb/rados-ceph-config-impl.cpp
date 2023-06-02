@@ -17,16 +17,16 @@
 
 namespace librmb {
 
-RadosCephConfigImpl::RadosCephConfigImpl(librados::IoCtx *io_ctx_) {
+RadosCephConfigImpl::RadosCephConfigImpl(storage_interface::RboxIoCtx *io_ctx_) {
   io_ctx = io_ctx_;
   if(config==nullptr){
-    config=new librmb::RadosCephJsonConfigImpl();
+    config = new librmb::RadosCephJsonConfigImpl();
   }
 }
 
 int RadosCephConfigImpl::save_cfg() {
-  ceph::bufferlist buffer;
-  bool success = config->to_json(&buffer) ? save_object(config->get_cfg_object_name(), buffer) >= 0 : false;
+  void* buffer=(void*)new ceph::bufferlist();
+  bool success = config->to_json(buffer) ? save_object(config->get_cfg_object_name(), buffer) >= 0 : false;
   return success ? 0 : -1;
 }
 
@@ -34,13 +34,13 @@ int RadosCephConfigImpl::load_cfg() {
   if (config->is_valid()) {
     return 0;
   }
-  ceph::bufferlist buffer;
-  int ret = read_object(config->get_cfg_object_name(), &buffer);
+  void* buffer=(void*)new ceph::bufferlist();
+  int ret = read_object(config->get_cfg_object_name(), buffer);
   if (ret < 0) {
-    return ret;
+  return ret;
   }
   config->set_valid(true);
-  return config->from_json(&buffer) ? 0 : -1;
+  return config->from_json(buffer) ? 0 : -1;
 }
 
 bool RadosCephConfigImpl::is_valid_key_value(const std::string &key, const std::string &value) {
@@ -107,13 +107,17 @@ bool RadosCephConfigImpl::update_valid_key_value(const std::string &key, const s
   return success;
 }
 
-int RadosCephConfigImpl::save_object(const std::string &oid, librados::bufferlist &buffer) {
+int RadosCephConfigImpl::save_object(const std::string &oid, void* buffer) {
   if (io_ctx == nullptr) {
     return -1;
   }
-  return io_ctx->write_full(oid, buffer);
+  ceph::bufferlist *bl=(ceph::bufferlist*)buffer;
+  ceph::bufferlist &bl_ref=*bl;
+  int ret= io_ctx->write_full(oid,bl_ref);
+  delete buffer;
+  return ret;
 }
-int RadosCephConfigImpl::read_object(const std::string &oid, librados::bufferlist *buffer) {
+int RadosCephConfigImpl::read_object(const std::string &oid, void* buffer) {
   size_t max = INT_MAX;
   if (io_ctx == nullptr) {
     return -1;
@@ -121,18 +125,18 @@ int RadosCephConfigImpl::read_object(const std::string &oid, librados::bufferlis
   // retry max times to read the object.
   int max_retry = 10;
   int ret_read = -1;
-
+  ceph::bufferlist *bl=(ceph::bufferlist*)buffer;
+  ceph::bufferlist &bl_ref=*bl;
   for(int i = 0;i<max_retry;i++){
-    ret_read = io_ctx->read(oid, *buffer, max, 0); 
+    ret_read = io_ctx->read(oid,bl_ref, max, 0); 
     if(ret_read >= 0 || ret_read == -ENOENT ){
       // exit here if the file does not exist, or we were successful      
       break;
     }
-    buffer->clear();
+    bl_ref.clear();
     // wait random time before try again!!
     usleep(((rand() % 5) + 1) * 10000);
   }
-
   return ret_read;
 }
 

@@ -25,7 +25,6 @@ class RadosMetadataStorage {
  public:
   virtual ~RadosMetadataStorage() {}
   /* create the medata data class based on configuration */
-  virtual RadosStorageMetadataModule *create_metadata_storage(storage_interface::RboxIoCtx *io_ctx_wrapper, RadosDovecotCephCfg *cfg_) = 0;
   virtual RadosStorageMetadataModule *get_storage() = 0;
 };
 

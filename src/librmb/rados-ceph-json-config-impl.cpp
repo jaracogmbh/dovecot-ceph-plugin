@@ -56,11 +56,11 @@ void RadosCephJsonConfigImpl::set_default_updateable_attributes() {
   updateable_attributes.append(std::string(1, static_cast<char>(storage_interface::RBOX_METADATA_ORIG_MAILBOX)));
 }
 
-bool RadosCephJsonConfigImpl::from_json(librados::bufferlist *buffer) {
+bool RadosCephJsonConfigImpl::from_json(void* buffer) {
   json_t *root;
   json_error_t error;
   bool ret = false;
-  root = json_loads(buffer->to_str().c_str(), 0, &error);
+  root = json_loads(((ceph::bufferlist*)buffer)->to_str().c_str(), 0, &error);
 
   if (root) {
     json_t *ns = json_object_get(root, key_user_mapping.c_str());
@@ -93,11 +93,11 @@ bool RadosCephJsonConfigImpl::from_json(librados::bufferlist *buffer) {
     ret = valid = true;
     json_decref(root);
   }
-
+  delete buffer;
   return ret;
 }
 
-bool RadosCephJsonConfigImpl::to_json(librados::bufferlist *buffer) {
+bool RadosCephJsonConfigImpl::to_json(void* buffer) {
   json_t *root = json_object();
 
   json_object_set_new(root, key_user_mapping.c_str(), json_string(user_mapping.c_str()));
@@ -112,7 +112,7 @@ bool RadosCephJsonConfigImpl::to_json(librados::bufferlist *buffer) {
   json_object_set_new(root, key_metadata_storage_attribute.c_str(), json_string(metadata_storage_attribute.c_str()));
 
   char *s = json_dumps(root, 0);
-  buffer->append(s);
+  ((ceph::bufferlist*)buffer)->append(s);
   free(s);
   json_decref(root);
   return true;

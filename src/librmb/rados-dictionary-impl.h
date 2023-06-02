@@ -57,7 +57,7 @@ class RadosDictionaryImpl : public storage_interface::RadosDictionary {
   storage_interface::RboxIoCtx* RadosDictionary::push_back_completion_wrapper;
 
  private:
-  bool load_configuration(librados::IoCtx* io_ctx);
+  bool load_configuration(storage_interface::RboxIoCtx* io_ctx);
   bool lookup_namespace(std::string& username_, storage_interface::RadosDovecotCephCfg* cfg_, std::string* ns);
 
  private:
@@ -67,12 +67,10 @@ class RadosDictionaryImpl : public storage_interface::RadosDictionary {
   std::string oid;
 
   std::string shared_oid;
-  librados::IoCtx shared_io_ctx;
   storage_interface::RboxIoCtx* shared_io_ctx_wrapper;
   bool shared_io_ctx_created;
 
   std::string private_oid;
-  librados::IoCtx private_io_ctx;
   storage_interface::RboxIoCtx* private_io_ctx_wrapper;
   bool private_io_ctx_created;
 

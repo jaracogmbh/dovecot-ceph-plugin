@@ -161,7 +161,7 @@ TEST_F(StorageTest,first_cluster_connectio){
 
   std::string buffer_text="simple_test_one_chunck";
   storage_interface::RadosMail *rados_mail=
-    storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+    storage_engine::StorageBackendFactory::create_mail(storage_engine::CEPH);
   void *buffer=(void*)new librados::bufferlist();
   rados_mail->set_mail_buffer(buffer);
   ((librados::bufferlist*)rados_mail->get_mail_buffer())->append(buffer_text);
@@ -250,7 +250,7 @@ TEST_F(StorageTest,true_cluster_connection){
 
   std::string buffer_text="simple_test_one_chunck";
   storage_interface::RadosMail *rados_mail=
-    storage_engine::StorageBackendFactory::create_mail(storage_engine::StorageBackendFactory::CEPH);
+    storage_engine::StorageBackendFactory::create_mail(storage_engine::CEPH);
   void *buffer=(void*)new librados::bufferlist();
   rados_mail->set_mail_buffer(buffer);
   ((librados::bufferlist*)rados_mail->get_mail_buffer())->append(buffer_text);

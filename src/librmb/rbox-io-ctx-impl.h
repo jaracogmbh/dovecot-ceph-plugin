@@ -19,9 +19,14 @@
 #include "../storage-interface/rbox-io-ctx.h"
 namespace librmb{
 class RboxIoCtxImpl:public storage_interface::RboxIoCtx{
+    
     public:
+    
     virtual ~RboxIoCtxImpl(){}
-    RboxIoCtxImpl(){}
+    
+    RboxIoCtxImpl(): 
+        remove_completion(nullptr),
+        push_back_completion(nullptr){}
 
     void set_io_ctx(librados::IoCtx& io_ctx_) override{
         io_ctx=io_ctx_;
@@ -34,6 +39,9 @@ class RboxIoCtxImpl:public storage_interface::RboxIoCtx{
     }
     int aio_stat(const std::string& oid,librados::AioCompletion *aio_complete,uint64_t *psize,time_t *pmtime) override{
         return get_io_ctx().aio_stat(oid,aio_complete,psize,pmtime);
+    }
+    int exec(const std::string& oid, const char *cls, const char *method,ceph::bufferlist& inbl, ceph::bufferlist& outbl) override{
+        return get_io_ctx().exec(oid, cls, method, inbl, outbl);
     }
     int omap_get_vals_by_keys(const std::string& oid,const std::set<std::string>& keys,std::map<std::string, librados::bufferlist> *vals)override{
         return get_io_ctx().omap_get_vals_by_keys(oid,keys,vals);

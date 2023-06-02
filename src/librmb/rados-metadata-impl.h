@@ -25,7 +25,11 @@ namespace librmb {
 class RadosMetadataImpl : public storage_interface::RadosMetadata{
  public:
   RadosMetadataImpl() {}
-  RadosMetadataImpl(std::string& key_, std::string& value_) : key(key_) { bl.append(value_.c_str(), value_.length() + 1); }
+  RadosMetadataImpl(std::string& key_, std::string& value_){
+    this->key = key_;
+    (*bl).clear();
+    (*bl).append(value_.c_str(), value_.length() + 1);
+  }
   RadosMetadataImpl(storage_interface::rbox_metadata_key _key, const std::string& val) { convert(_key, val); }
 
   RadosMetadataImpl(storage_interface::rbox_metadata_key _key, const time_t& val) { convert(_key, val); }
@@ -36,7 +40,12 @@ class RadosMetadataImpl : public storage_interface::RadosMetadata{
 
   RadosMetadataImpl(storage_interface::rbox_metadata_key _key, const size_t& val) { convert(_key, val); }
   RadosMetadataImpl(storage_interface::rbox_metadata_key _key, const int val) { convert(_key, val); }
-  ~RadosMetadataImpl() {}
+  ~RadosMetadataImpl() {
+    if(bl != nullptr){
+      delete bl;
+      bl = nullptr;
+    }
+  }
 
   void convert(const char* value, time_t* t) override {
     if (t != NULL) {
@@ -44,6 +53,7 @@ class RadosMetadataImpl : public storage_interface::RadosMetadata{
       stream >> *t;
     }
   }
+  
   bool from_string(const std::string& str) override {
     std::stringstream ss(str);
     std::string item;
@@ -55,73 +65,71 @@ class RadosMetadataImpl : public storage_interface::RadosMetadata{
       return false;
     }
     this->key = token[0];
-    this->bl.append(token[1]);
+    this->bl->append(token[1]);
     return true;
   }
+
   std::string to_string() override {
     std::stringstream str;
-    str << key << "=" << bl.to_str().substr(0, bl.length() - 1);
+    str << key << "=" << (*bl).to_str().substr(0, (*bl).length() - 1);
     return str.str();
   }
 
  public:
-  ceph::bufferlist bl;
+  ceph::bufferlist *bl= new ceph::bufferlist();
   std::string key;
   
-  ceph::bufferlist& get_buffer() override{
-    return bl;
+  void* get_buffer() override{
+    return (void*)bl;
   };
+  
   std::string& get_key() override{
     return key;
   };
-  
-  void set_buffer(ceph::bufferlist& bl_) override{
-    this->bl=bl_;
-  }
 
   void set_key(std::string& key_) override{
     this->key=key_;
   };
 
   void convert(storage_interface::rbox_metadata_key _key, const std::string& val) override {
-    bl.clear();
+    (*bl).clear();
     key = storage_interface::rbox_metadata_key_to_char(_key);
-    bl.append(val.c_str(), val.length() + 1);
+    (*bl).append(val.c_str(), val.length() + 1);
   }
 
   void convert(storage_interface::rbox_metadata_key _key, const time_t& time) override {
-    bl.clear();
+    (*bl).clear();
     key = storage_interface::rbox_metadata_key_to_char(_key);
     std::string time_ = std::to_string(time);
-    bl.append(time_.c_str(), time_.length() + 1);
+    (*bl).append(time_.c_str(), time_.length() + 1);
   }
 
-  void convert(storage_interface::rbox_metadata_key _key, char* value) override {
-    bl.clear();
+  void convert(storage_interface::rbox_metadata_key _key, const char* value) override {
+    (*bl).clear();
     key = storage_interface::rbox_metadata_key_to_char(_key);
     std::string str = value;
-    bl.append(str.c_str(), str.length() + 1);
+    (*bl).append(str.c_str(), str.length() + 1);
   }
 
   void convert(storage_interface::rbox_metadata_key _key, const uint& value) override {
-    bl.clear();
+    (*bl).clear();
     key = storage_interface::rbox_metadata_key_to_char(_key);
     std::string val = std::to_string(value);
-    bl.append(val.c_str(), val.length() + 1);
+    (*bl).append(val.c_str(), val.length() + 1);
   }
 
   void convert(storage_interface::rbox_metadata_key _key, const size_t& value) override {
-    bl.clear();
+    (*bl).clear();
     key = storage_interface::rbox_metadata_key_to_char(_key);
     std::string val = std::to_string(static_cast<int>(value));
-    bl.append(val.c_str(), val.length() + 1);
+    (*bl).append(val.c_str(), val.length() + 1);
   }
 
   void convert(storage_interface::rbox_metadata_key _key, const int value) override {
-    bl.clear();
+    (*bl).clear();
     key = storage_interface::rbox_metadata_key_to_char(_key);
     std::string val = std::to_string(value);
-    bl.append(val.c_str(), val.length() + 1);
+    (*bl).append(val.c_str(), val.length() + 1);
   }
 };
 }  // end namespace
