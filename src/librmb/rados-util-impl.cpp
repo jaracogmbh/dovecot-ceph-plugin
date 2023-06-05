@@ -267,33 +267,30 @@ namespace librmb {
     } else {
       mail=primary->alloc_rados_mail();
       ret = primary->read_mail(src_oid,mail,0);
+      metadata->get_storage()->set_io_ctx(primary->get_io_ctx_wrapper());
     }
 
     if (ret < 0) {
-      metadata->get_storage()->set_io_ctx(primary->get_io_ctx_wrapper());
-      return ret;
+        return ret;
     }
+
     mail->set_mail_size(((librados::bufferlist*)mail->get_mail_buffer())->length());
     // load the metadata;
+    mail->set_oid(dest_oid);
     ret = metadata->get_storage()->load_metadata(mail);
     if (ret < 0) {
       return ret;
     }
-
-    mail->set_oid(dest_oid);
-    metadata->get_storage()->set_metadata(mail);
-
+    ret = metadata->get_storage()->set_metadata(mail);
+    if(ret<0){
+      return ret;
+    }
     bool success;
     if (inverse) {
       success = primary->save_mail(mail);
     } else {
       success = alt_storage->save_mail(mail);
     }
-
-    if (!success) {
-      return 0;
-    }
-
     return success ? 0 : 1;
   }
 
