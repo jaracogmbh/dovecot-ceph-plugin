@@ -143,7 +143,7 @@ class RadosDictionaryMock : public RadosDictionary {
   MOCK_METHOD0(get_shared_io_ctx_wrapper,storage_interface::RboxIoCtx*());
   MOCK_METHOD0(get_private_io_ctx_wrapper,storage_interface::RboxIoCtx*());
   MOCK_METHOD1(remove_completion, void(storage_interface::RboxIoCtx *remove_completion_wrapper));
-  MOCK_METHOD1(push_back_completion, void(storage_interface::RboxIoCtx *push_back_completion_wrapper));
+  MOCK_METHOD1(push_back_completion, void(storage_interface::RboxIoCtx *push_back_completion_wrapper_));
   MOCK_METHOD0(wait_for_completions, void());
   MOCK_METHOD2(get, int(const std::string &key, std::string *value_r));
 };
