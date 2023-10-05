@@ -1,4 +1,7 @@
-image: 192.168.178.73:6088/ceph-dovecot-combined:b8731464faf885946bdd453ffe3080a2b9827da7
+image: 192.168.178.73:6088/ceph-dovecot-combined:01b38bf26bdebdc01f2818fd5613d6a7e03a4df4
+
+services:
+  - docker:19.03.13-dind
 
 variables:
   DOCKER_REGISTRY_URL: "192.168.178.73:6088"
@@ -8,13 +11,20 @@ variables:
   DOCKER_TLS_CERTDIR: ""
   PROJECT_NAME: dovecot-ceph-plugin
   GIT_SUBMODULE_STRATEGY: recursive
+  ROOT_PATH: "apps/develop/apps/"
 
 stages:
   - build
+  - docker
+  - publish
 
 build:
   stage: build
   tags: ["kubernetes"]
+  artifacts:
+   paths:
+    - imaptest.log
+    - dovecot.log
   script:
     - /opt/ceph-container/bin/entrypoint.sh demo &
     - ./autogen.sh
@@ -23,19 +33,78 @@ build:
     - ps -aux
     - ceph df
     - ./setup.sh
-    - dovecot    
+    - dovecot 
+    - ldconfig
+    - smtp-source -v -L -s 1 -m 1 -c -F /root/lmtp_test_mail.tld -f test@example.com -t t1 inet:127.0.0.1:1024 
     - imaptest user=t%d pass=t port=10143 users=10 clients=10 error_quit secs=30 output=./imaptest.log
-    - cp /var/log/dovecot.log ./
-    #- grep -c "Error:" /var/log/dovecot.log
-    #- grep -c "failed:" /var/log/dovecot.log
-    #- grep -c "Internal error:" /var/log/dovecot.log
-    #- grep -c "killed:" /var/log/dovecot.log
-    #- grep -c "Panic:" /var/log/dovecot.log
-    #- grep -c "Fatal:" /var/log/dovecot.log
-    #- grep -c "BUG:" /var/log/dovecot.log  
-    - ceph df
-    - make check
-  artifacts:
-   paths:
-    - imaptest.log
-    - dovecot.log
+    - doveadm -Dv backup -u t1 -m INBOX mdbox:/usr/local/var/mail/mdbox/t1
+    - doveadm -D fetch -u t1 "guid date.received date.sent flags pop3.uidl seq size.virtual uid user mailbox-guid mailbox" ALL > /root/rbox.t1.mails
+    - doveadm -D -c /usr/local/etc/dovecot_mdbox/dovecot.conf fetch -u t1 "guid date.received date.sent flags pop3.uidl seq size.virtual uid user mailbox-guid mailbox" ALL > /root/mdbox.t1.mails
+    
+
+    - src/scripts/sort.sh /root/rbox.t1.mails /root/rbox.t1.mails.sorted
+    - src/scripts/sort.sh /root/mdbox.t1.mails /root/mdbox.t1.mails.sorted
+    - type diff
+    - diff -y -W 1500 /root/rbox.t1.mails.sorted /root/mdbox.t1.mails.sorted
+    - echo $?
+
+    - rm -rf /usr/local/var/mail/rbox/t1
+    - doveadm -Dv -c /usr/local/etc/dovecot_mdbox/dovecot.conf backup -u t1 -m INBOX rbox:/usr/local/var/mail/rbox/t1
+    - doveadm -D fetch -u t1 "guid date.received date.sent flags pop3.uidl seq size.virtual uid user mailbox-guid mailbox" ALL > /root/rbox.t1.mails
+    - src/scripts/sort.sh /root/rbox.t1.mails /root/rbox.t1.mails.sorted
+    - diff -y -W 1500 /root/rbox.t1.mails.sorted /root/mdbox.t1.mails.sorted
+    - echo $?
+    - rm -rf /usr/local/var/mail/rbox
+    - imaptest user=t%d pass=t port=10143 error_quit secs=15 copybox=INBOX.Drafts output=./imaptest.log
+    - doveadm -D force-resync -u t1 INBOX
+
+  #  - git grep -c "Error" -- ./dovecot.log
+  #  - git grep -c "failed" -- ./dovecot.log
+  #  - git grep -c "Internal error" -- ./dovecot.log
+  #  - git grep -c "killed" -- ./dovecot.log
+  #  - git grep -c "Panic" -- ./dovecot.log
+  #  - git grep -c "Fatal" -- ./dovecot.log
+  #  - git grep -c "BUG" -- ./dovecot.log
+  #  - ceph df
+  #  - make check  
+build_image:
+  tags:
+    - kubernetes
+  stage: docker
+  image:
+    name: gcr.io/kaniko-project/executor:v1.14.0-debug
+    entrypoint: [""]
+  before_script:
+    - |
+      echo "$NEXUS_IMAGE_REGISTRY_SSH_KEY" >> /kaniko/ssl/certs/ca-certificates.crt
+  script:
+    - /kaniko/executor
+      --context "$CI_PROJECT_DIR"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --destination "$DOCKER_REGISTRY_URL/$PROJECT_NAME:$CI_COMMIT_SHA"
+      --skip-tls-verify
+
+publish_to_master:
+  dependencies: 
+    - build_image
+  stage: publish
+  tags: 
+    - shell 
+  before_script:
+    - mkdir dev_temp
+    - cd dev_temp
+    - git clone http://${CI_USERNAME}:${CI_PUSH_TOKEN}@${CI_SERVER_HOST}/devops/dev.git
+    - git config --global user.email "gitlab@gitlab.com"
+    - git config --global user.name "GitLab CI/CD"
+  script:
+    - cd dev
+    - git checkout develop
+    - git stash
+    - cd $ROOT_PATH
+    - cd $PROJECT_NAME
+    - export image2="yq e -i '.spec.template.spec.containers[0].image = \""$DOCKER_REGISTRY_URL/$PROJECT_NAME:$CI_COMMIT_SHA\""' deployment.yaml"
+    - eval "$image2"
+    - git commit -am 'kubernetes-deployment.yaml has been updated with new image'
+    - git push origin develop
+    - cd ../../../../../..
+    - rm -r dev_temp

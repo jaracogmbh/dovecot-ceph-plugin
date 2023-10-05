@@ -211,8 +211,8 @@ void RadosDictionaryImpl::remove_completion(storage_interface::RboxIoCtx *remove
   completions.remove(c);
   completions_mutex.unlock();
 }
-void RadosDictionaryImpl::push_back_completion(storage_interface::RboxIoCtx *push_back_completion_wrapper) {
-  librados::AioCompletion *c=&push_back_completion_wrapper->get_push_back_completion();
+void RadosDictionaryImpl::push_back_completion(storage_interface::RboxIoCtx *push_back_completion_wrapper_) {
+  librados::AioCompletion *c=&push_back_completion_wrapper_->get_push_back_completion();
   completions_mutex.lock();
   completions.push_back(c);
   completions_mutex.unlock();

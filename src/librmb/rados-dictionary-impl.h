@@ -48,14 +48,11 @@ class RadosDictionaryImpl : public storage_interface::RadosDictionary {
   storage_interface::RboxIoCtx* get_private_io_ctx_wrapper() override;
 
   void remove_completion(storage_interface::RboxIoCtx* remove_completion_wrapper) override;
-  void push_back_completion(storage_interface::RboxIoCtx* push_back_completion_wrapper) override;
+  void push_back_completion(storage_interface::RboxIoCtx* push_back_completion_wrapper_) override;
   void wait_for_completions() override;
 
   int get(const std::string& key, std::string* value_r) override;
-    
-  storage_interface::RboxIoCtx* RadosDictionary::remove_completion_wrapper;
-  storage_interface::RboxIoCtx* RadosDictionary::push_back_completion_wrapper;
-
+  
  private:
   bool load_configuration(storage_interface::RboxIoCtx* io_ctx);
   bool lookup_namespace(std::string& username_, storage_interface::RadosDovecotCephCfg* cfg_, std::string* ns);

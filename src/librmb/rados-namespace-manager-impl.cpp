@@ -84,6 +84,8 @@ bool RadosNamespaceManagerImpl::add_namespace_entry(const std::string &uid, std:
   }
   // reset namespace
   config->set_io_ctx_namespace("");
+  delete guid_generator_;
+  guid_generator_ = nullptr;
   return retval;
 }
 

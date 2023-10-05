@@ -89,7 +89,6 @@ struct mail_storage *rbox_storage_alloc(void) {
 
 void rbox_storage_get_list_settings(const struct mail_namespace *ns ATTR_UNUSED, struct mailbox_list_settings *set) {
   FUNC_START();
-  std::cout<<"let me know where is the problem"<<std::endl;
   if (set->layout == NULL) {
     set->layout = MAILBOX_LIST_NAME_FS;
     // TODO(peter): better default? set->layout = MAILBOX_LIST_NAME_INDEX;
@@ -122,7 +121,6 @@ static const char *rbox_storage_find_root_dir(const struct mail_namespace *ns) {
 bool rbox_storage_autodetect(const struct mail_namespace *ns, struct mailbox_list_settings *set) {
   FUNC_START();
   struct stat st;
-  std::cout<<"let me know where is the problem::rbox_storage_autodetect"<<std::endl;
   const char *path, *root_dir;
 
   if (set->root_dir != NULL) {
@@ -513,8 +511,8 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
   }
   std::string ns;
   if (!rbox->storage->ns_mgr->lookup_key(uid, &ns)) {
-    RboxGuidGenerator guid_generator;
-    ret = rbox->storage->ns_mgr->add_namespace_entry(uid, &ns, &guid_generator) ? 0 : -1;
+    storage_interface::RadosGuidGenerator *guid_generator = new RboxGuidGenerator() ;
+    ret = rbox->storage->ns_mgr->add_namespace_entry(uid, &ns, guid_generator) ? 0 : -1;
   }
   if (ret >= 0) {
     rados_storage->set_namespace(ns);
@@ -524,7 +522,6 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
   } else {
     i_error("error namespace not set: for uid %s error code is: %d", uid.c_str(), ret);
   }
-
   FUNC_END();
   return ret;
 }

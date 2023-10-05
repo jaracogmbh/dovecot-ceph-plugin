@@ -39,6 +39,7 @@ extern "C" {
 #include "mail-search.h"
 }
 #include "rbox-storage.hpp"
+#include "rbox-mail.h"
 #include "../mocks/mock_test.h"
 #include "dovecot-ceph-plugin-config.h"
 #include "../test-utils/it_utils.h"
@@ -105,17 +106,15 @@ TEST_F(StorageTest, load_update_metadata){
   mail_read->set_oid("test_oid"); 
   std::map<std::string, ceph::bufferlist> metadata_map;
   int ret = storage->get_io_ctx_wrapper()->getxattrs(*mail_read->get_oid(), metadata_map);
-  std::cout<<"it is the metadata size"<<metadata_map.size()<<std::endl<<std::endl;
-  if(true){  
-    for(std::map<std::string,ceph::bufferlist>::iterator it=metadata_map.begin(); it!=metadata_map.end(); ++it){   
-        std::string key = (*it).first;
-        std::string value = std::string((*it).second.c_str());
-        storage_interface::RadosMetadata *xattr= new librmb::RadosMetadataImpl(key,value);
-        mail_read->add_metadata(xattr);     
-    }
-    librmb::RadosUtilsImpl rados_utils;
-    ret = rados_utils.get_all_keys_and_values(storage->get_io_ctx_wrapper(), *mail_read->get_oid(), mail_read);
+  std::cout<<"it is the metadata size"<<metadata_map.size()<<std::endl<<std::endl; 
+  for(std::map<std::string,ceph::bufferlist>::iterator it=metadata_map.begin(); it!=metadata_map.end(); ++it){   
+      std::string key = (*it).first;
+      std::string value = std::string((*it).second.c_str());
+      storage_interface::RadosMetadata *xattr= new librmb::RadosMetadataImpl(key,value);
+      mail_read->add_metadata(xattr);     
   }
+  librmb::RadosUtilsImpl rados_utils;
+  ret = rados_utils.get_all_keys_and_values(storage->get_io_ctx_wrapper(), *mail_read->get_oid(), mail_read);
 
   /**validate_metadata**/
   librmb::RadosUtilsImpl utils;
@@ -192,14 +191,10 @@ TEST_F(StorageTest, read_mail_test) {
       "body\n";
 
   const char *mailbox = "INBOX";
-  std::cout<<"it correctly works 79"<<std::endl;
   // testdata
   testutils::ItUtils::add_mail(message, mailbox, StorageTest::s_test_mail_user->namespaces);
-  std::cout<<"it correctly works 82"<<std::endl;
   search_args = mail_search_build_init();
-  std::cout<<"it correctly works 84"<<std::endl;
   sarg = mail_search_build_add(search_args, SEARCH_ALL);
-  std::cout<<"it correctly works 86"<<std::endl;
   ASSERT_NE(sarg, nullptr);
 
   struct mail_namespace *ns = mail_namespace_find_inbox(s_test_mail_user->namespaces);
@@ -221,7 +216,6 @@ TEST_F(StorageTest, read_mail_test) {
 
   search_ctx = mailbox_search_init(desttrans, search_args, NULL, static_cast<mail_fetch_field>(0), NULL);
   mail_search_args_unref(&search_args);
-  std::cout<<"it correctly works 106"<<std::endl;
   struct message_size hdr_size, body_size;
   struct istream *input = NULL;
   while (mailbox_search_next(search_ctx, &mail)) {
@@ -250,7 +244,6 @@ TEST_F(StorageTest, read_mail_test) {
     std::string buff;
     do {
       (void)i_stream_read_data(input, &data, &iov.iov_len, 0);
-      std::cout<<"it correctly works 135"<<std::endl;
       if (iov.iov_len == 0) {
         if (input->stream_errno != 0)
           FAIL() << "stream errno";
@@ -290,6 +283,73 @@ TEST_F(StorageTest, read_mail_test) {
   mailbox_free(&box);
 }
 
+TEST_F(StorageTest, read_deleted_mail_test) {
+  struct mailbox_transaction_context *desttrans;
+  struct mail *mail;
+  struct mail_search_context *search_ctx;
+  struct mail_search_args *search_args;
+  struct mail_search_arg *sarg;
+
+  const char *message =
+      "From: user@domain.org\n"
+      "Date: Sat, 24 Mar 2017 23:00:00 +0200\n"
+      "Mime-Version: 1.0\n"
+      "Content-Type: text/plain; charset=us-ascii\n"
+      "\n"
+      "body\n";
+
+  const char *mailbox = "INBOX";
+  // testdata
+  testutils::ItUtils::add_mail(message, mailbox, StorageTest::s_test_mail_user->namespaces);
+  search_args = mail_search_build_init();
+  sarg = mail_search_build_add(search_args, SEARCH_ALL);
+  ASSERT_NE(sarg, nullptr);
+
+  struct mail_namespace *ns = mail_namespace_find_inbox(s_test_mail_user->namespaces);
+  ASSERT_NE(ns, nullptr);
+
+  struct mailbox *box = mailbox_alloc(ns->list, mailbox, MAILBOX_FLAG_SAVEONLY);
+
+  if (mailbox_open(box) < 0) {
+    i_error("Opening mailbox %s failed: %s", mailbox, mailbox_get_last_internal_error(box, NULL));
+    FAIL() << " Forcing a resync on mailbox INBOX Failed";
+  }
+#ifdef DOVECOT_CEPH_PLUGIN_HAVE_MAIL_STORAGE_TRANSACTION_OLD_SIGNATURE
+  desttrans = mailbox_transaction_begin(box, MAILBOX_TRANSACTION_FLAG_EXTERNAL);
+#else
+  char reason[256];
+  memset(reason, '\0', sizeof(reason));
+  desttrans = mailbox_transaction_begin(box, MAILBOX_TRANSACTION_FLAG_EXTERNAL, reason);
+#endif
+
+  search_ctx = mailbox_search_init(desttrans, search_args, NULL, static_cast<mail_fetch_field>(0), NULL);
+  mail_search_args_unref(&search_args);
+  struct message_size hdr_size, body_size;
+  struct istream *input = NULL;
+  struct rbox_storage *r_storage = (struct rbox_storage *)box->storage;
+  while(mailbox_search_next(search_ctx, &mail)){
+    struct rbox_mail *rmail = (struct rbox_mail *)mail;
+    const std::string mail_oid=guid_128_to_string(rmail->index_oid);
+    r_storage->s->delete_mail(mail_oid);
+    int ret2 = mail_get_stream(mail, &hdr_size, &body_size, &input);
+    EXPECT_NE(ret2,0);
+    break;
+  }
+
+  if (mailbox_search_deinit(&search_ctx) < 0) {
+    FAIL() << "search deinit failed";
+  }
+
+  if (mailbox_transaction_commit(&desttrans) < 0) {
+    FAIL() << "tnx commit failed";
+  }
+
+  if (mailbox_sync(box, static_cast<mailbox_sync_flags>(0)) < 0) {
+    std::cout<< "sync failed"<<std::endl;
+  }
+
+  mailbox_free(&box);
+}
 TEST_F(StorageTest, deinit) {}
 
 int main(int argc, char **argv) {

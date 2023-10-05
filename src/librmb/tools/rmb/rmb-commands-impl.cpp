@@ -69,11 +69,9 @@ int RmbCommandsImpl::delete_with_save_log(const std::string &save_log, const std
     line_count++;
     librmb::RadosSaveLogEntryImpl *entry = new librmb::RadosSaveLogEntryImpl() ;
     read >> (*entry);
-    std::cout<<"count::"<<count<<"read.eof"<<read.eof()<<std::endl;
     if (read.eof()) {
       break;
     }
-    std::cout<<"count::"<<count<<"read.fail()"<<read.fail()<<std::endl;
     if (read.fail()) {
       std::cout << "Objectentry at line '" << line_count << "' is not valid: " << std::endl;
       break;
@@ -85,7 +83,6 @@ int RmbCommandsImpl::delete_with_save_log(const std::string &save_log, const std
       //       mail_storage_alt.... maybe we should group the entries by pool...
       storage.close_connection();
       int open_connection = storage.open_connection(entry->get_pool(), rados_cluster, rados_user);
-      std::cout<<"open connection has been correctly done"<<open_connection<<"entry.get_pool()::"<<entry->get_pool()<<std::endl;
       if (open_connection < 0) {
         std::cout << " error opening rados connection. Errorcode: " << open_connection << std::endl;
         cluster.deinit();
@@ -93,9 +90,7 @@ int RmbCommandsImpl::delete_with_save_log(const std::string &save_log, const std
       }
     }
     storage.set_namespace(entry->get_ns());
-    std::cout<<"entry.get_op()"<<entry->get_op()<<std::endl;
     if (entry->get_op().compare("save") == 0 || entry->get_op().compare("cpy") == 0) {
-      std::cout<<"name space has problem in comparision"<<std::endl;
       int ret_delete = storage.delete_mail(entry->get_oid());
       if (ret_delete < 0) {
         std::cout << "Object " << entry->get_oid()<< " not deleted: errorcode: " << ret_delete << std::endl;
@@ -104,19 +99,15 @@ int RmbCommandsImpl::delete_with_save_log(const std::string &save_log, const std
         count++;
       }
     } else {
-      std::cout<<"invoke move"<<std::endl;
       int ret = storage.move(entry->get_oid(), entry->get_ns().c_str(), entry->get_src_oid(), entry->get_src_ns().c_str(), entry->get_metadata(), true);
       if (ret < 0) {
         std::cerr << "moving : " << entry->get_oid() << " to " << entry->get_src_oid() << " failed ! ret code: " << ret << "count is::"<<count<<std::endl<<std::endl;
       } else {
-        std::cout<<"move correctly works"<<std::endl;
         if (moved_items->find(entry->get_src_user()) == moved_items->end()) {
-          std::cout<<"110 is the problem"<<std::endl;
           std::list<storage_interface::RadosSaveLogEntry*> entries;
           entries.push_back((storage_interface::RadosSaveLogEntry*)entry);
           (*moved_items)[entry->get_src_user()] = entries;
         } else {
-          std::cout<<"115 is the problem"<<std::endl;
           (*moved_items)[entry->get_src_user()].push_back((storage_interface::RadosSaveLogEntry*)entry);
         }
       }

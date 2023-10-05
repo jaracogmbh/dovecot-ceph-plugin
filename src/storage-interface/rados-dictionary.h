@@ -39,13 +39,13 @@ class RadosDictionary {
   virtual storage_interface::RboxIoCtx* get_private_io_ctx_wrapper() = 0;
 
   virtual void remove_completion(storage_interface::RboxIoCtx* remove_completion_wrapper) = 0;
-  virtual void push_back_completion(storage_interface::RboxIoCtx* push_back_completion_wrapper) = 0;
+  virtual void push_back_completion(storage_interface::RboxIoCtx* push_back_completion_wrapper_) = 0;
   virtual void wait_for_completions() = 0;
 
   virtual int get(const std::string& key, std::string* value_r) = 0;
   
-  static storage_interface::RboxIoCtx* remove_completion_wrapper; 
-  static storage_interface::RboxIoCtx* push_back_completion_wrapper;
+  storage_interface::RboxIoCtx* remove_completion_wrapper; 
+  storage_interface::RboxIoCtx* push_back_completion_wrapper;
 };
 }  // namespace storage_interface
 
