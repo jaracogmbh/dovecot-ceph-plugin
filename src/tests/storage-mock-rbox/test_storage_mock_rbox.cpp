@@ -270,7 +270,7 @@ TEST_F(StorageTest,split_buffer){
   librmbtest::RadosClusterMock *cluster_mock = new librmbtest::RadosClusterMock();
   librmb::RadosStorageImpl under_test(cluster_mock);
 
-  NiceMock<librmbtest::RboxIoCtxMock>* io_ctx_mock=new librmbtest::RboxIoCtxMock();
+  librmbtest::RboxIoCtxMock* io_ctx_mock=new librmbtest::RboxIoCtxMock();
   under_test.set_io_ctx_wrapper(io_ctx_mock);
   librados::IoCtx io_ctx;
   librmb::RadosMetadataStorageDefault rados_metadata_storage (io_ctx_mock);

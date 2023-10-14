@@ -110,10 +110,12 @@ class RadosDovecotCephCfgImpl : public storage_interface::RadosDovecotCephCfg {
     ceph::bufferlist buffer;
     buffer.append(stream_buffer);
     return rados_cfg->save_object(oid,(void*)(&buffer));
-  }
+  } 
   int read_object(const std::string &oid,std::ostream &stream_buffer) override {
     ceph::bufferlist *buffer;
-    buffer->append(stream_buffer);
+    std::stringstream ss;
+    ss << stream_buffer.rdbuf();
+    buffer->append(ss.str());
     return rados_cfg->read_object(oid, (void*)buffer);
   }
   void set_io_ctx_namespace(const std::string &namespace_) override { rados_cfg->set_io_ctx_namespace(namespace_); }

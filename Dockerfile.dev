@@ -1,8 +1,7 @@
-FROM 192.168.178.73:6088/ceph-dovecot-runtime:fe6a06c8907bd7635018205c7eae05dc4c363575
+FROM 192.168.178.73:6088/ceph-dovecot-combined:f551f222f7890a89a2261dcc024e720ba9239bf9 
 WORKDIR /repo
 COPY ./ /repo
 RUN ./autogen.sh
 RUN ./configure --with-dovecot=/usr/local/lib/dovecot --enable-maintainer-mode --enable-debug --with-integration-tests --enable-valgrind --enable-debug
-RUN make install
-ENTRYPOINT ["/bin/bash", "-c", "./startup.sh" ]
-
+RUN make clean install
+RUN ./setup.sh
