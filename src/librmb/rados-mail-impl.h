@@ -66,7 +66,7 @@ class RadosMailImpl : public storage_interface::RadosMail {
   
   string to_string(const string& padding) override;
   void add_metadata(const storage_interface::RadosMetadata* metadata_) override {
-    metadata_list.push_back(metadata_);
+    metadata_list.push_back(const_cast<storage_interface::RadosMetadata*>(metadata_));
     attrset[metadata_->get_key()] = metadata_->get_buffer();
   }
   bool is_deprecated_uid() override {return deprecated_uid;}
@@ -83,7 +83,7 @@ class RadosMailImpl : public storage_interface::RadosMail {
    * @param[in] metadata valid radosMetadata.
    */
   void add_extended_metadata(const storage_interface::RadosMetadata *ext_metadata) override {
-    extended_metadata_list.push_back(ext_metadata);
+    extended_metadata_list.push_back(const_cast<storage_interface::RadosMetadata*>(ext_metadata));
     extended_attrset[ext_metadata->get_key()] = ext_metadata->get_buffer();
   }
 

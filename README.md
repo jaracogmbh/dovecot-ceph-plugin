@@ -79,6 +79,9 @@ If you are using CentOS make sure you also have the following package installed:
     ./configure --with-dovecot=/home/user/workspace/core
     make install
 
+### Docker compose run with dovecot and ceph cluster
+   cd docker
+   docker-compose up 
 ## Thanks
 
 <table border="0">
