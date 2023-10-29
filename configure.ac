@@ -53,6 +53,22 @@ AC_CHECK_HEADER([rados/librados.h], [
   LIBS="$LIBS -lrados"
 ], [AC_MSG_ERROR([cannot build without RADOS support: librados.h not found])])
 
+AC_ARG_WITH([SPDLOG],
+  AS_HELP_STRING([--with-SPDLOG=warn|error], [set action for missing spdlog package]),
+  [SPDLOG_ACTION="$withval"],
+  [SPDLOG_ACTION="error"])
+
+# Check for the presence of spdlog library
+PKG_CHECK_MODULES([SPDLOG], [spdlog], [$SPDLOG_ACTION], [SPDLOG_ACTION="error"])
+
+# Check if spdlog is found and add it to LDFLAGS
+if test "x$SPDLOG_LIBS" != "x"; then
+  LDFLAGS="$LDFLAGS $SPDLOG_LIBS"
+  AC_DEFINE([SPD_LOGGING_FRAMEWORK], [1], [Define if spdlog is found])
+else
+  AC_DEFINE([NO_LOGGING_FRAMEWORK], [1], [Define if spdlog is not found])
+fi
+
 AC_CHECK_FUNC(rados_read_op_omap_get_vals2, AC_DEFINE(HAVE_OMAP_GET_VALS2, 1, [Define if you have the `rados_read_op_omap_get_vals2' function]))
 AC_CHECK_FUNC(rados_set_alloc_hint2, AC_DEFINE(HAVE_ALLOC_HINT_2, 1, [Define if you have the `set_alloc_hint2' function]))
 AC_CHECK_FUNC(rados_read_op_omap_get_keys2, AC_DEFINE(HAVE_OMAP_GET_KEYS_2, 1, [Define if you have the `omap_get_keys2' function]))

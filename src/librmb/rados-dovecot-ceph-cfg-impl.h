@@ -67,6 +67,9 @@ class RadosDovecotCephCfgImpl : public storage_interface::RadosDovecotCephCfg {
   int get_object_search_method()  override { return std::stoi(dovecot_cfg.get_object_search_method()); }
   int get_object_search_threads() override { return std::stoi(dovecot_cfg.get_object_search_threads()); }
 
+  const std::string &get_log_file_path() override { return dovecot_cfg.get_logfile_path();}
+  const std::string &get_log_level() override {return dovecot_cfg.get_loglevel();}
+
   void set_rbox_cfg_object_name(const std::string &value) override { dovecot_cfg.set_rbox_cfg_object_name(value); }
 
   std::map<std::string, std::string> *get_config() override { return dovecot_cfg.get_config(); }

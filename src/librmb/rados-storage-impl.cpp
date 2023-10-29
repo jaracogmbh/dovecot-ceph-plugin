@@ -20,6 +20,7 @@
 #include <mutex>
 #include <iostream>
 #include "rados-util-impl.h"
+#include "../storage-interface/rados-plugin-logger.h"
 
 #include <rados/librados.hpp>
 
@@ -32,6 +33,7 @@
 #include "rbox-io-ctx-impl.h"
 #include "rados-metadata-impl.h"
 #include "rados-mail-impl.h"
+
 
 using std::pair;
 using std::string;
@@ -164,6 +166,7 @@ int RadosStorageImpl::read_mail(const std::string &oid, storage_interface::Rados
 
 int RadosStorageImpl::delete_mail(const std::string &oid) {
   if (!cluster->is_connected() || oid.empty() || !io_ctx_created) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"Delete mail {} failed ", oid);
     return -1;
   }
   return io_ctx_wrapper->remove(oid);
@@ -171,6 +174,7 @@ int RadosStorageImpl::delete_mail(const std::string &oid) {
 
 bool RadosStorageImpl::execute_operation(std::string &oid, librados::ObjectWriteOperation *write_op_xattr) {
   if (!cluster->is_connected() || !io_ctx_created) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"operation can't be executed as there is no cluster connection available ");
     return false;
   }
   return io_ctx_wrapper->operate(oid, write_op_xattr) >=0 ? true : false;
@@ -178,6 +182,7 @@ bool RadosStorageImpl::execute_operation(std::string &oid, librados::ObjectWrite
 
 bool RadosStorageImpl::append_to_object(std::string &oid, librados::bufferlist &bufferlist, int length) {
   if (!cluster->is_connected() || !io_ctx_created) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"appending to {} is not possible as there is no cluster connection available ", oid);
     return false;
   }
   return io_ctx_wrapper->append(oid, bufferlist, length) >=0 ? true : false;
@@ -186,6 +191,7 @@ bool RadosStorageImpl::append_to_object(std::string &oid, librados::bufferlist &
 int RadosStorageImpl::aio_operate(librados::IoCtx *io_ctx_, const std::string &oid, librados::AioCompletion *c,
                                   librados::ObjectWriteOperation *op) {
   if (!cluster->is_connected() || !io_ctx_created) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"execting async operation for {} is not possible as there is no cluster connection available ", oid);
     return -1;
   }
 
@@ -198,6 +204,7 @@ int RadosStorageImpl::aio_operate(librados::IoCtx *io_ctx_, const std::string &o
 
 int RadosStorageImpl::stat_mail(const std::string &oid, uint64_t *psize, time_t *pmtime) {
   if (!cluster->is_connected() || !io_ctx_created) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"stat for {} is not possible as there is no cluster connection available ", oid);
     return -1;
   }
   return io_ctx_wrapper->stat(oid, psize, pmtime);
@@ -210,6 +217,7 @@ void RadosStorageImpl::set_namespace(const std::string &_nspace) {
 
 std::set<std::string> RadosStorageImpl::find_mails(const storage_interface::RadosMetadata *attr) {
   if (!cluster->is_connected() || !io_ctx_created) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"find_mails {} is not possible as there is no cluster connection available ");
     return ;
   }
   std::set<std::string> mail_list;
@@ -327,10 +335,12 @@ int RadosStorageImpl::open_connection(const std::string &poolname, const std::st
                                       const std::string &rados_username) {
   if (cluster->is_connected() && io_ctx_created) {
     // cluster is already connected!
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::DEBUG_LEVEL,"connection to {}->{} is is already open", poolname, clustername);
     return 1;
   }
 
   if (cluster->init(clustername, rados_username) < 0) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"creating connection to {} with user {} is not possible", clustername, rados_username);
     return -1;
   }
   return create_connection(poolname, index_pool);
@@ -341,10 +351,12 @@ int RadosStorageImpl::open_connection(const std::string &poolname,
                                       const std::string &rados_username) {
   if (cluster->is_connected() && io_ctx_created) {
     // cluster is already connected!
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::DEBUG_LEVEL,"connection to {}->{} is is already open", poolname, clustername);
     return 1;
   }
 
   if (cluster->init(clustername, rados_username) < 0) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"creating connection to {} with user {} is not possible", clustername, rados_username);
     return -1;
   }
   return create_connection(poolname, poolname);
@@ -352,6 +364,7 @@ int RadosStorageImpl::open_connection(const std::string &poolname,
 
 int RadosStorageImpl::open_connection(const string &poolname, const string &index_pool) {
   if (cluster->init() < 0) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"cluser init failed");
     return -1;
   }
   return create_connection(poolname, index_pool);
@@ -359,25 +372,31 @@ int RadosStorageImpl::open_connection(const string &poolname, const string &inde
 
 int RadosStorageImpl::open_connection(const string &poolname) {
   if (cluster->init() < 0) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"cluser init failed");
     return -1;
   }
   return create_connection(poolname, poolname);
 }
 
 int RadosStorageImpl::create_connection(const std::string &poolname, const std::string &index_pool){
+
   // pool exists? else create
   int err = cluster->io_ctx_create(poolname,io_ctx_wrapper);
   if (err < 0) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"Io Ctx creation failed for pool {}", poolname);
     return err;
   }
 
   err = cluster->recovery_index_io_ctx(index_pool,io_ctx_wrapper);
   if (err < 0) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"Recovery Io Ctx creation failed for pool {}", index_pool);
     return err;
   }
+
   string max_write_size_str;
   err = cluster->get_config_option(RadosStorageImpl::CFG_OSD_MAX_WRITE_SIZE, &max_write_size_str);
   if (err < 0) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"getting cluster option failed for  {}", RadosStorageImpl::CFG_OSD_MAX_WRITE_SIZE);
     return err;
   }
 
@@ -388,8 +407,10 @@ int RadosStorageImpl::create_connection(const std::string &poolname, const std::
   string max_object_size_str;
   err = cluster->get_config_option(RadosStorageImpl::CFG_OSD_MAX_OBJECT_SIZE, &max_object_size_str);
   if (err < 0) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"getting cluster option failed for  {}", RadosStorageImpl::CFG_OSD_MAX_OBJECT_SIZE);
     return err;
   }
+  
   std::stringstream ss;
   ss << max_object_size_str;
   ss >> max_object_size;
@@ -411,6 +432,7 @@ void RadosStorageImpl::close_connection() {
 int RadosStorageImpl::move(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
                            std::list<storage_interface::RadosMetadata*> &to_update, bool delete_source) {
   if (!cluster->is_connected() || !io_ctx_created) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"move ns({}) {} to {} is not possible as there is no cluster connection available ",src_ns, src_oid, dest_oid);
     return -1;
   }
 
@@ -434,15 +456,13 @@ int RadosStorageImpl::move(std::string &src_oid, const char *src_ns, std::string
 #else
     write_op.copy_from(src_oid, src_io_ctx, 0);
 #endif
-  } else {
-    std::cout<<"else strcmp from move method"<<std::endl;
+  } else {  
     src_io_ctx = dest_io_ctx;
     time_t t;
     uint64_t size;
-    std::cout<<"stat is problematic point"<<std::endl;
-    ret = src_io_ctx.stat(src_oid, &size, &t);
-    std::cout<<"stat is problematic point"<<ret<<std::endl;
+    ret = src_io_ctx.stat(src_oid, &size, &t);    
     if (ret < 0) {
+      RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"move {} to {} is not successful stat src failed",src_oid, dest_oid);
       return ret;
     }
   }
@@ -452,8 +472,7 @@ int RadosStorageImpl::move(std::string &src_oid, const char *src_ns, std::string
   // and restore it in read_metadata function. => save_date of copy/move will be same as source.
   // write_op.mtime(&ctx->data.save_date);
   time_t save_time = time(NULL);
-  write_op.mtime(&save_time);
-  std::cout<<"mtime is problematic point"<<std::endl;
+  write_op.mtime(&save_time);  
   // update metadata
   ceph::bufferlist bl;
   std::string bl_str;
@@ -462,10 +481,8 @@ int RadosStorageImpl::move(std::string &src_oid, const char *src_ns, std::string
     bl.append(bl_str.c_str(), bl_str.size() + 1);
     write_op.setxattr((*it)->get_key().c_str(), bl);
     bl.clear();
-  }
-  std::cout<<"to_update iteration"<<std::endl;
-  ret = aio_operate(&dest_io_ctx, dest_oid, completion, &write_op);
-  std::cout<<"aio_operate::"<<ret<<std::endl;
+  }  
+  ret = aio_operate(&dest_io_ctx, dest_oid, completion, &write_op);  
   if (ret >= 0) {
     completion->wait_for_complete();
     ret = completion->get_return_value();
@@ -483,6 +500,7 @@ int RadosStorageImpl::move(std::string &src_oid, const char *src_ns, std::string
 int RadosStorageImpl::copy(std::string &src_oid, const char *src_ns, std::string &dest_oid, const char *dest_ns,
                            std::list<storage_interface::RadosMetadata*> &to_update) {
   if (!cluster->is_connected() || !io_ctx_created) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"copy ns({}) {} to {} is not possible as there is no cluster connection available ",src_ns, src_oid, dest_oid);
     return -1;
   }
 
@@ -539,12 +557,14 @@ int RadosStorageImpl::copy(std::string &src_oid, const char *src_ns, std::string
 bool  RadosStorageImpl::save_mail(storage_interface::RadosMail *current_object){
   
   if (!cluster->is_connected() || !io_ctx_created) {
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"save_mail ({}) is not possible as there is no cluster connection available ",*current_object->get_oid());
     return false;
   }
   bool ret_val=false;
   int object_size = current_object->get_mail_size();
   int max_object_size = this->get_max_object_size();
   if( max_object_size < object_size ||object_size<0||max_object_size==0){
+    RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"save_mail ({}) is not possible as the object exceeds the max object size {}",*current_object->get_oid(),max_object_size);
     return false;
   }
 
@@ -580,6 +600,7 @@ bool  RadosStorageImpl::save_mail(storage_interface::RadosMail *current_object){
       ret_val = append_to_object(*current_object->get_oid(), tmp_buffer, length); 
     }
     if(!ret_val){
+      RadosPluginLogger::getInstance().log(librmb::LOG_LEVEL::ERROR,"save_mail ({}) failed while writing to cluster",*current_object->get_oid());
       return ret_val;
     }
   }

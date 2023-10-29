@@ -29,12 +29,18 @@
 #include "../librmb/tools/rmb/ls_cmd_parser_impl.h"
 #include "../storage-interface/rados-util.h"
 #include "../librmb/rados-util-impl.h"
-
+#include "../storage-interface/rados-plugin-logger.h"
 
 namespace storage_engine {
 enum StorageType { CEPH, S3 };  
 class StorageBackendFactory {
  public:
+
+  static void init_logger(storage_interface::RadosDovecotCephCfg *dovecot_ceph_cfg) {
+    librmb::RadosPluginLogger::getInstance().init(dovecot_ceph_cfg->get_log_file_path(), 
+                                                  dovecot_ceph_cfg->get_log_level());
+  }
+
   static storage_interface::RadosCluster *create_cluster(StorageType storage_type) {
     storage_interface::RadosCluster *cluster = nullptr;
     if (storage_type == CEPH) {

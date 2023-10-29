@@ -55,6 +55,10 @@ class RadosConfig {
   const std::string &get_object_search_method()  { return config[rbox_object_search_method]; }
   const std::string &get_object_search_threads() { return config[rbox_object_search_threads]; }
 
+
+  const std::string &get_logfile_path() { return config[rbox_log_file_name];}
+  const std::string &get_loglevel() {return config[rbox_log_level];}
+
   void update_metadata(const std::string &key, const char *value_);
   bool is_ceph_posix_bugfix_enabled() {
     return config[bugfix_cephfs_posix_hardlinks].compare("true") == 0 ? true : false;
@@ -95,6 +99,8 @@ class RadosConfig {
   std::string rbox_write_method;
   std::string rbox_object_search_method;
   std::string rbox_object_search_threads;
+  std::string rbox_log_file_name;
+  std::string rbox_log_level;
   bool is_valid;
 };
 

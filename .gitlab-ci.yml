@@ -1,4 +1,4 @@
-image: 192.168.178.73:6088/ceph-dovecot-combined:01b38bf26bdebdc01f2818fd5613d6a7e03a4df4
+image: 192.168.178.73:6088/ceph-dovecot-combined:fe6a06c8907bd7635018205c7eae05dc4c363575
 
 services:
   - docker:19.03.13-dind
