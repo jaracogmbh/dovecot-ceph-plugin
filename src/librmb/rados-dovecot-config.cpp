@@ -32,7 +32,9 @@ RadosConfig::RadosConfig()
       rbox_chunk_size("rbox_chunk_size"),
       rbox_write_method("rbox_write_method"),
       rbox_object_search_method("rbox_object_search_method"),
-      rbox_object_search_threads("rbox_object_search_threads") {
+      rbox_object_search_threads("rbox_object_search_threads"),
+      rbox_log_file_name("rbox_log_file_name"),
+      rbox_log_level("rbox_log_level") {
         
   config[pool_name] = "mail_storage";
   config[index_pool_name] = "object_recovery";
@@ -48,6 +50,8 @@ RadosConfig::RadosConfig()
   config[rbox_write_method] = "0";
   config[rbox_object_search_method] = "0";
   config[rbox_object_search_threads] = "4";
+  config[rbox_log_file_name] = "/var/log/dovecot_ceph_plugin.log";
+  config[rbox_log_level] = "error";
   
   is_valid = false;
 }

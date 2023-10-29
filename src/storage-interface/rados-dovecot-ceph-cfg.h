@@ -48,6 +48,9 @@ class RadosDovecotCephCfg {
   virtual int get_chunk_size() = 0;
   virtual int get_write_method() = 0;
 
+  virtual const std::string &get_log_file_path() = 0;
+  virtual const std::string &get_log_level() = 0;
+  
   virtual int get_object_search_method()  = 0;
   virtual int get_object_search_threads() = 0;
 

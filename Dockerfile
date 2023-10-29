@@ -1,4 +1,4 @@
-FROM 192.168.178.73:6088/ceph-dovecot-runtime:fe6a06c8907bd7635018205c7eae05dc4c363575
+FROM 192.168.178.73:6088/ceph-dovecot-runtime:f3031c31a2aae0bcfcb504d660a6d4dc555e804d
 WORKDIR /repo
 COPY ./ /repo
 RUN ./autogen.sh

@@ -70,7 +70,7 @@ struct mail_storage *rbox_storage_alloc(void) {
     storage_engine::StorageBackendFactory::create_storage(storage_engine::CEPH,r_storage->cluster); 
   r_storage->config =
     storage_engine::StorageBackendFactory::create_dovecot_ceph_cfg_io(
-      storage_engine::CEPH,r_storage->s->get_io_ctx_wrapper());
+      storage_engine::CEPH,r_storage->s->get_io_ctx_wrapper());      
   r_storage->ns_mgr =
     storage_engine::StorageBackendFactory::create_namespace_manager(storage_engine::CEPH,r_storage->config);
   r_storage->ms =
@@ -81,8 +81,11 @@ struct mail_storage *rbox_storage_alloc(void) {
 
   // logfile is set when 90-plugin.conf param rados_save_cfg is evaluated.
   r_storage->save_log = 
-    storage_engine::StorageBackendFactory::create_save_log_default(storage_engine::CEPH);
-
+   storage_engine::StorageBackendFactory::create_save_log_default(storage_engine::CEPH);
+  
+  // set ceph-plugin logger for c++ components
+  storage_engine::StorageBackendFactory::init_logger(r_storage->config);
+  
   FUNC_END();
   return &r_storage->storage;
 }
@@ -480,10 +483,11 @@ int rbox_open_rados_connection(struct mailbox *box, bool alt_storage) {
   
   if (ret < 0) {
     i_error(
-        "Open rados connection. Error(%d,%s) (pool_name(%s), cluster_name(%s), rados_user_name(%s), "
+        "Open rados connection. Error(%d,%s) (pool_name(%s), (index_pool(%s)), cluster_name(%s), rados_user_name(%s), "
         "alt_storage(%d), "
         "alt_dir(%s) )",
         ret, strerror(ret * -1), rbox->storage->config->get_pool_name().c_str(),
+        rbox->storage->config->get_index_pool_name().c_str(),
         rbox->storage->config->get_rados_cluster_name().c_str(), rbox->storage->config->get_rados_username().c_str(),
         alt_storage, box->list->set.alt_dir);
     return ret;

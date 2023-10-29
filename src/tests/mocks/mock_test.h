@@ -188,7 +188,9 @@ class RadosDovecotCephCfgMock : public RadosDovecotCephCfg {
   MOCK_METHOD0(get_object_search_method,int());
 
   MOCK_METHOD0(get_object_search_threads,int());  
-
+  MOCK_METHOD0(get_log_level,const std::string &());
+  MOCK_METHOD0(get_log_file_path,const std::string &());
+  
   MOCK_METHOD1(update_mail_attributes, void(const char *value));
   MOCK_METHOD1(update_updatable_attributes, void(const char *value));
   MOCK_METHOD1(update_pool_name_metadata, void(const char *value));

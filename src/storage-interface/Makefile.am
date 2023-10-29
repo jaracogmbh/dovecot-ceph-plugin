@@ -31,6 +31,7 @@ libinterface_la_SOURCES = \
     rados-storage.h \
     rados-types.h \
     rados-util.h \
-    rbox-io-ctx.h 
+    rbox-io-ctx.h \
+    rados-plugin-logger.h
 
 
