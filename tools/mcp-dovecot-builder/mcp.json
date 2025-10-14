@@ -1,0 +1,8 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/mcp.json",
+  "name": "dovecot-builder",
+  "command": "node",
+  "args": ["tools/mcp-dovecot-builder/src/server.js"],
+  "env": {},
+  "cwd": "${workspaceFolder}"
+}
