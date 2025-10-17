@@ -79,6 +79,48 @@ If you are using CentOS make sure you also have the following package installed:
     ./configure --with-dovecot=/home/user/workspace/core
     make install
 
+## MCP Dovecot Builder: quick prompts
+
+This repository ships a tiny Model Context Protocol (MCP) server that automates common developer tasks
+like bringing up the Docker environment, building Dovecot, compiling the plugin, and running tests.
+
+Setup (once):
+- Ensure Docker is running on your machine.
+- Ensure Node.js is installed on your host (for the MCP server).
+- In VS Code, the task “Install MCP server deps” runs on folder open. If not, run it once.
+- Start the MCP server with the VS Code task “Start MCP Dovecot Builder”.
+
+Then you can ask your AI assistant (Copilot Chat) to run these simple prompts:
+
+- compose_up
+  - Starts the Ceph and build containers defined in `docker/docker-compose.yml`.
+- compose_status
+  - Shows the current container status.
+- compose_logs service=build tail=200
+  - Shows logs for a service (defaults to `dovecot`; use `service=build` for the build container).
+- dovecot_build
+  - Builds and installs Dovecot inside the build container (defaults to branch `2.3.15`).
+  - Example: `dovecot_build branch=2.3.15`
+- plugin_build
+  - Runs `./autogen.sh`, `./configure` and `make` inside the build container.
+  - Submodules (googletest) are auto-initialized; a shallow fallback clone is used if needed.
+  - Examples:
+    - `plugin_build`
+    - `plugin_build clean=true`
+    - `plugin_build configureArgs=["--with-dovecot=/usr/local/lib/dovecot","--enable-debug"]`
+- plugin_test
+  - Builds and runs tests (googletest) inside the build container.
+  - Example: `plugin_test withIntegration=true`
+- plugin_valgrind_tests
+  - Runs valgrind on selected tests (mirrors CI workflow defaults).
+- build_exec cmd=bash args=[-lc,"cd /repo && make clean"]
+  - Executes an arbitrary command inside the build container (repo is mounted at `/repo`).
+
+Notes:
+- The MCP config lives at `tools/mcp-dovecot-builder/mcp.json` and launches `src/server.js`.
+- The build container is named `build` and the repo is mounted to `/repo` inside it.
+- The server’s defaults mirror `.github/workflows/build.yml` where practical.
+
 ## Thanks
 
 <table border="0">
