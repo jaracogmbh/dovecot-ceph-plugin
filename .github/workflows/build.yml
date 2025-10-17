@@ -9,7 +9,7 @@ jobs:
   container-job:
 
     runs-on: ubuntu-latest
-    container: cephdovecot/travis-build-master-2.3:latest
+    container: cephdovecot/travis-build:master-2.3
 
     steps:
     - name: clean outdated repos 
