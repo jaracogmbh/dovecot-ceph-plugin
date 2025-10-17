@@ -185,6 +185,9 @@ AS_IF([$GREP -A 3 'index_mail_init(struct index_mail \*mail' $dovecot_pkginclude
       [AC_MSG_RESULT(yes) AC_DEFINE([HAVE_INDEX_MAIL_INIT_OLD_SIGNATURE],,[HAVE_INDEX_MAIL_INIT_OLD_SIGNATURE supported])],
       [AC_MSG_RESULT(no)])
 
+# Optional newer Dovecot APIs used by rbox code. Guard at compile time
+AC_CHECK_FUNCS([mailbox_sync_notify mail_index_lock_sync mail_index_unlock])
+
 AC_CONFIG_HEADERS([config-local.h])
 AX_PREFIX_CONFIG_H([$PACKAGE-config.h], [$PACKAGE], [config-local.h])
 

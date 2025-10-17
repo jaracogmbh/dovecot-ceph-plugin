@@ -7,13 +7,14 @@ services:
     volumes:
       - ceph-data:/etc/ceph/
     environment:
-      - MON_IP=192.168.100.2
+      - MON_IP=192.168.100.3
       - CEPH_PUBLIC_NETWORK=192.168.100.0/24
       - CEPH_DEMO_UID=demo_uid
     ports:
       - 3300:3300
     networks:
-      - ceph_network
+      ceph_network:
+        ipv4_address: 192.168.100.3
       
   dovecot:
   #  image: cephdovecot/travis-build-master-2.3:latest
@@ -30,11 +31,11 @@ services:
       - 1024:1024
       - 10110:10110
     networks:
-      - ceph_network
+      ceph_network:
+        ipv4_address: 192.168.100.2
 
 volumes:
     ceph-data:
-        external: false
 
 networks:
   ceph_network:

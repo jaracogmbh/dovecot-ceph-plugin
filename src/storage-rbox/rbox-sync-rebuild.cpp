@@ -427,7 +427,13 @@ int repair_namespace(struct mail_namespace *ns, bool force, struct rbox_storage 
         return -1;
       }
 
-      mail_index_lock_sync(box->index, "LOCKED_FOR_REPAIR");
+  /* Some older Dovecot versions (e.g. 2.3.15) do not provide
+     mail_index_lock_sync()/mail_index_unlock(). We already feature-check
+     these in configure.ac via AC_CHECK_FUNCS. Only call them when
+     available to keep the plugin buildable across versions. */
+#ifdef HAVE_MAIL_INDEX_LOCK_SYNC
+  mail_index_lock_sync(box->index, "LOCKED_FOR_REPAIR");
+#endif
       
       if(rados_mails.size() == 0) {
         if (rbox_open_rados_connection(box, false) < 0) {
@@ -519,7 +525,9 @@ int repair_namespace(struct mail_namespace *ns, bool force, struct rbox_storage 
         i_error("error resync (%s), error(%d), force(%d)", info->vname, ret, force);
       }
 
-      mail_index_unlock(box->index, "UNLOCKED_FOR_REPAIR");
+#ifdef HAVE_MAIL_INDEX_UNLOCK
+  mail_index_unlock(box->index, "UNLOCKED_FOR_REPAIR");
+#endif
       
       mailbox_free(&box);
     }

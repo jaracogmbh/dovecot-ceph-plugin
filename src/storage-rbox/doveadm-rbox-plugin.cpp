@@ -877,7 +877,10 @@ static int iterate_list_objects(struct mail_namespace* ns, const struct mailbox_
     return -1;
   }
   // lock box
+  /* lock index if API is available */
+#ifdef HAVE_MAIL_INDEX_LOCK_SYNC
   mail_index_lock_sync(box->index, "LOCKED_FOR_INDEX_CREATION");
+#endif
 
   mailbox_transaction = mailbox_transaction_begin(box, MAILBOX_TRANSACTION_FLAG_EXTERNAL, "ceph_index_creation");
 
@@ -906,7 +909,10 @@ static int iterate_list_objects(struct mail_namespace* ns, const struct mailbox_
   if (mailbox_transaction_commit(&mailbox_transaction) < 0) {
     return -1;
   }
+  /* unlock index if API is available */
+#ifdef HAVE_MAIL_INDEX_UNLOCK
   mail_index_unlock(box->index, "UNLOCKED_FOR_INDEX_CREATION");
+#endif
 
   mailbox_free(&box);
   

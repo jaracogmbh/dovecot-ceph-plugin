@@ -477,7 +477,12 @@ static int rbox_sync_object_expunge(struct rbox_sync_context *ctx, struct expung
     }
   }
  // directly notify
-  mailbox_sync_notify(box, item->uid, MAILBOX_SYNC_TYPE_EXPUNGE);    
+  /* mailbox_sync_notify is available only in newer Dovecot versions */
+#ifdef HAVE_MAILBOX_SYNC_NOTIFY
+  mailbox_sync_notify(box, item->uid, MAILBOX_SYNC_TYPE_EXPUNGE);
+#else
+  (void)box; (void)item; /* no-op on older versions */
+#endif
 
   FUNC_END();
   return ret_remove;
@@ -500,7 +505,10 @@ static void rbox_sync_expunge_rbox_objects(struct rbox_sync_context *ctx) {
       T_END;
     }
   }
+  /* mailbox_sync_notify is optional - guard for older Dovecot */
+#ifdef HAVE_MAILBOX_SYNC_NOTIFY
   mailbox_sync_notify(&ctx->rbox->box, 0, 0);
+#endif
   
   FUNC_END();
 }

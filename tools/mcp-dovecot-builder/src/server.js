@@ -63,6 +63,10 @@ async function buildTool({ clean = false, configureArgs = [] } = {}) {
   if (clean) {
     steps.push(await execInBuild(["bash", "-lc", "cd /repo && git clean -fdx || true"]));
   }
+  // Always ensure submodules (e.g., googletest) are initialized and updated
+  steps.push(await execInBuild(["bash", "-lc", "cd /repo && git submodule update --init --recursive || true"]));
+  // Fallback: if googletest sources still missing, force shallow clone (build-only convenience)
+  steps.push(await execInBuild(["bash", "-lc", "cd /repo && if [ ! -f src/tests/googletest/googletest/src/gtest-all.cc ]; then echo 'googletest submodule incomplete; performing fallback shallow clone'; rm -rf src/tests/googletest; git clone --depth=1 https://github.com/google/googletest.git src/tests/googletest; fi"]));
   steps.push(await execInBuild(["bash", "-lc", "cd /repo && ./autogen.sh"]));
   // Default to workflow-like configure if none supplied
   const defaultArgs = [
@@ -87,6 +91,10 @@ async function testTool({ withIntegration = false } = {}) {
   const commands = [
     "set -e",
     "cd /repo",
+    // Ensure submodules before building tests
+    "git submodule update --init --recursive || true",
+    // Fallback shallow clone if needed (tests require real sources)
+    "if [ ! -f src/tests/googletest/googletest/src/gtest-all.cc ]; then echo 'googletest submodule incomplete; performing fallback shallow clone'; rm -rf src/tests/googletest; git clone --depth=1 https://github.com/google/googletest.git src/tests/googletest; fi",
     "./autogen.sh",
     `./configure ${cfgArg}`.trim(),
     "make -j$(nproc)",
