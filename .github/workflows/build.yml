@@ -18,7 +18,7 @@ jobs:
       run: add-apt-repository ppa:git-core/ppa -y
     - name: update
       run: (DEBIAN_FRONTEND=noninteractive apt update & apt-get install -qq -y flex bison git)
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v5
       with:
         submodules: 'true'
     - name: update dovecot
